@@ -42,7 +42,7 @@ export default function TeamPage() {
     if (wsRef.current) wsRef.current.close();
     setMessages([]);
     const token = localStorage.getItem('token');
-    const ws = new WebSocket(`ws://127.0.0.1:8000/api/chat/ws/${teamId}?token=${token}`);
+    const ws = new WebSocket(`wss://web-production-00104.up.railway.app/api/chat/ws/${teamId}?token=${token}`);
     ws.onmessage = (e) => {
       const msg = JSON.parse(e.data);
       setMessages(prev => [...prev, msg]);
@@ -103,7 +103,6 @@ export default function TeamPage() {
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 20px' }}>
         <h2 style={{ fontSize: 22, fontWeight: 600, color: '#f0f0f0', marginBottom: 20 }}>팀 공간</h2>
 
-        {/* 팀 선택 */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
           {teams.length === 0 && <div style={{ fontSize: 13, color: 'rgba(255,255,255,.3)' }}>팀이 없습니다. 관리자에게 문의하세요.</div>}
           {teams.map(t => (
@@ -116,7 +115,6 @@ export default function TeamPage() {
 
         {selectedTeam && (
           <>
-            {/* 탭 */}
             <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,.08)', marginBottom: 20 }}>
               {[['chat', '💬 채팅'], ['submissions', '📎 과제 제출']].map(([k, label]) => (
                 <button key={k} onClick={() => setTab(k)}
@@ -126,7 +124,6 @@ export default function TeamPage() {
               ))}
             </div>
 
-            {/* 채팅 */}
             {tab === 'chat' && (
               <div style={{ display: 'flex', flexDirection: 'column', height: 520 }}>
                 <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -167,7 +164,6 @@ export default function TeamPage() {
               </div>
             )}
 
-            {/* 과제 제출 */}
             {tab === 'submissions' && (
               <div>
                 <div style={{ marginBottom: 16 }}>
@@ -213,7 +209,7 @@ export default function TeamPage() {
                       {s.content && <div style={{ fontSize: 13, color: 'rgba(255,255,255,.5)', marginTop: 6, lineHeight: 1.6 }}>{s.content}</div>}
                       <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
                         {s.file_name && (
-                          <a href={`http://127.0.0.1:8000${s.file_url}`} target="_blank" rel="noreferrer"
+                          <a href={`https://web-production-00104.up.railway.app${s.file_url}`} target="_blank" rel="noreferrer"
                             style={{ fontSize: 12, color: '#a78bfa', textDecoration: 'none' }}>
                             📄 {s.file_name}
                           </a>

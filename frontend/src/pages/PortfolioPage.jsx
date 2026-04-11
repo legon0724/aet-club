@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
 
+const BACKEND = 'https://web-production-00104.up.railway.app';
+
 export default function PortfolioPage() {
   const [user, setUser] = useState(null);
   const [portfolio, setPortfolio] = useState({});
@@ -38,7 +40,7 @@ export default function PortfolioPage() {
         notion_url: r.data.notion_url || '',
       });
       if (r.data.profile_image) {
-        setProfilePreview(`http://127.0.0.1:8000${r.data.profile_image}`);
+        setProfilePreview(`${BACKEND}${r.data.profile_image}`);
       }
     }).catch(() => {});
   };
@@ -88,10 +90,7 @@ export default function PortfolioPage() {
       <Navbar user={user} />
       <div style={{ maxWidth: 860, margin: '0 auto', padding: '40px 20px' }}>
 
-        {/* 프로필 헤더 */}
         <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 16, padding: '32px', marginBottom: 24, display: 'flex', gap: 28, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-
-          {/* 프로필 이미지 */}
           <div style={{ flexShrink: 0 }}>
             <div onClick={() => editing && imgRef.current.click()}
               style={{ width: 100, height: 100, borderRadius: '50%', background: profilePreview ? 'none' : 'rgba(255,210,60,.12)', border: `2px solid ${profilePreview ? 'rgba(255,210,60,.4)' : 'rgba(255,255,255,.1)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: editing ? 'pointer' : 'default', overflow: 'hidden', position: 'relative' }}>
@@ -108,7 +107,6 @@ export default function PortfolioPage() {
             <input ref={imgRef} type="file" accept=".jpg,.jpeg,.png,.webp" onChange={handleImageChange} style={{ display: 'none' }} />
           </div>
 
-          {/* 이름 & 링크 */}
           <div style={{ flex: 1, minWidth: 200 }}>
             <div style={{ fontSize: 24, fontWeight: 700, color: '#f0f0f0', marginBottom: 4 }}>{user?.username}</div>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,.35)', marginBottom: 18 }}>{user?.email}</div>
@@ -139,7 +137,6 @@ export default function PortfolioPage() {
             )}
           </div>
 
-          {/* 버튼 */}
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'rgba(255,255,255,.4)', cursor: 'pointer' }}>
               <input type="checkbox" checked={form.is_public} onChange={e => setForm(f => ({ ...f, is_public: e.target.checked }))} style={{ accentColor: '#ffd43b' }} />
@@ -158,7 +155,6 @@ export default function PortfolioPage() {
 
         {msg && <div style={{ background: 'rgba(34,197,94,.08)', border: '1px solid rgba(34,197,94,.2)', borderRadius: 8, padding: '10px 14px', color: '#86efac', fontSize: 13, marginBottom: 16 }}>{msg}</div>}
 
-        {/* 섹션 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {sections.map(s => (
             <div key={s.key} style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 14, padding: '24px 26px' }}>

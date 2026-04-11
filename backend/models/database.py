@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import Any
+from urllib.parse import quote_plus
 from sqlalchemy import (
     Boolean, Column, DateTime, ForeignKey,
     Integer, String, Text, TypeDecorator, create_engine
@@ -30,11 +31,11 @@ def get_db_url() -> str:
     if settings.CLOUD_SQL_INSTANCE:
         socket_dir = f"/cloudsql/{settings.CLOUD_SQL_INSTANCE}"
         return (
-            f"postgresql+pg8000://{settings.DB_USER}:{settings.DB_PASSWORD}"
+            f"postgresql+pg8000://{settings.DB_USER}:{quote_plus(settings.DB_PASSWORD)}"
             f"@/{settings.DB_NAME}?unix_sock={socket_dir}/.s.PGSQL.5432"
         )
     return (
-        f"postgresql+pg8000://{settings.DB_USER}:{settings.DB_PASSWORD}"
+        f"postgresql+pg8000://{settings.DB_USER}:{quote_plus(settings.DB_PASSWORD)}"
         f"@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
     )
 

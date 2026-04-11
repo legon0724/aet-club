@@ -1,0 +1,11 @@
+backend/__pycache__/
+backend/core/__pycache__/
+backend/models/__pycache__/
+backend/routers/__pycache__/
+backend/venv/
+aet_club.db
+uploads/
+backend/.env
+frontend/node_modules/
+frontend/dist/
+.DS_Store

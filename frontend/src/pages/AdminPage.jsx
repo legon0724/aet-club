@@ -33,7 +33,7 @@ export default function AdminPage() {
       <div style={{ maxWidth: 960, margin: '0 auto', padding: '32px 20px' }}>
         <h2 style={{ fontSize: 22, fontWeight: 600, color: '#f0f0f0', marginBottom: 20 }}>관리자 패널</h2>
 
-        <div style={{ display: 'flex', gap: 4, marginBottom: 24, flexWrap: 'wrap', borderBottom: '1px solid rgba(255,255,255,.08)', paddingBottom: 0 }}>
+        <div style={{ display: 'flex', gap: 4, marginBottom: 24, flexWrap: 'wrap', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
           {tabs.map(([k, label]) => (
             <button key={k} onClick={() => setTab(k)}
               style={{ padding: '10px 16px', border: 'none', borderBottom: tab === k ? '2px solid #ffd43b' : '2px solid transparent', background: 'transparent', color: tab === k ? '#ffd43b' : 'rgba(255,255,255,.4)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -95,8 +95,7 @@ function UsersTab() {
             style={{ padding: '5px 12px', background: u.is_admin ? 'rgba(255,210,60,.15)' : 'rgba(255,255,255,.05)', border: '1px solid', borderColor: u.is_admin ? 'rgba(255,210,60,.3)' : 'rgba(255,255,255,.1)', borderRadius: 6, color: u.is_admin ? '#ffd43b' : 'rgba(255,255,255,.4)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
             {u.is_admin ? '관리자' : '일반'}
           </button>
-          <button onClick={() => deleteUser(u.id)}
-            style={{ padding: '5px 10px', background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', borderRadius: 6, color: '#fca5a5', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>삭제</button>
+          <button onClick={() => deleteUser(u.id)} style={dBtn}>삭제</button>
         </div>
       ))}
     </div>
@@ -210,14 +209,22 @@ function NoticesTab() {
 
 function BannersTab() {
   const [banners, setBanners] = useState([]);
-  const [form, setForm] = useState({ title: '', image_url: '', link_url: '', order_num: 0 });
+  const [form, setForm] = useState({ title: '', link_url: '', order_num: 0 });
+  const [imageFile, setImageFile] = useState(null);
   const [show, setShow] = useState(false);
+  const imgRef = { current: null };
 
   useEffect(() => { api.get('/api/banners/').then(r => setBanners(r.data)).catch(() => {}); }, []);
 
   const create = async () => {
-    await api.post('/api/banners/', form);
-    setForm({ title: '', image_url: '', link_url: '', order_num: 0 });
+    const formData = new FormData();
+    if (form.title) formData.append('title', form.title);
+    if (form.link_url) formData.append('link_url', form.link_url);
+    formData.append('order_num', String(form.order_num));
+    if (imageFile) formData.append('image_file', imageFile);
+    await api.post('/api/banners/', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+    setForm({ title: '', link_url: '', order_num: 0 });
+    setImageFile(null);
     setShow(false);
     api.get('/api/banners/').then(r => setBanners(r.data));
   };
@@ -238,26 +245,44 @@ function BannersTab() {
       <button onClick={() => setShow(f => !f)} style={yBtn}>+ 배너 추가</button>
       {show && (
         <div style={formBox}>
-          <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="제목" style={iStyle} />
-          <input value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} placeholder="이미지 URL" style={iStyle} />
-          <input value={form.link_url} onChange={e => setForm(f => ({ ...f, link_url: e.target.value }))} placeholder="링크 URL" style={iStyle} />
-          <input value={form.order_num} onChange={e => setForm(f => ({ ...f, order_num: Number(e.target.value) }))} placeholder="순서" type="number" style={iStyle} />
+          <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="배너 제목 (이미지 없을 때 표시)" style={iStyle} />
+          <input value={form.link_url} onChange={e => setForm(f => ({ ...f, link_url: e.target.value }))} placeholder="클릭 시 이동할 링크 URL (선택)" style={iStyle} />
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,.3)', marginBottom: 6 }}>순서 번호 — 숫자가 작을수록 앞에 표시 (예: 1번이 2번보다 먼저)</div>
+            <input value={form.order_num} onChange={e => setForm(f => ({ ...f, order_num: Number(e.target.value) }))} placeholder="순서 (0, 1, 2...)" type="number" style={iStyle} />
+          </div>
+          <div
+            onClick={() => imgRef.current?.click()}
+            style={{ border: '1px dashed rgba(255,255,255,.12)', borderRadius: 8, padding: '12px 14px', cursor: 'pointer', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10 }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(255,210,60,.3)'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,.12)'}>
+            <span>🖼️</span>
+            <div>
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,.5)' }}>{imageFile ? imageFile.name : '배너 이미지 업로드 (선택)'}</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,.25)', marginTop: 2 }}>JPG, PNG, WebP, GIF</div>
+            </div>
+          </div>
+          <input ref={el => imgRef.current = el} type="file" accept=".jpg,.jpeg,.png,.webp,.gif" onChange={e => setImageFile(e.target.files[0])} style={{ display: 'none' }} />
           <button onClick={create} style={yBtn}>추가</button>
         </div>
       )}
-      {banners.map(b => (
-        <div key={b.id} style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 10, padding: '12px 16px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: '#d0d0d0' }}>{b.title || '제목 없음'}</div>
-            {b.image_url && <div style={{ fontSize: 11, color: 'rgba(255,255,255,.3)' }}>{b.image_url}</div>}
+      {banners.map(b => {
+        const imgUrl = b.image_url?.startsWith('/api') ? `${BACKEND}${b.image_url}` : b.image_url;
+        return (
+          <div key={b.id} style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 10, padding: '12px 16px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
+            {imgUrl && <img src={imgUrl} alt="" style={{ width: 60, height: 36, objectFit: 'cover', borderRadius: 6 }} />}
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: '#d0d0d0' }}>{b.title || '제목 없음'} <span style={{ fontSize: 11, color: 'rgba(255,255,255,.3)' }}>순서: {b.order_num}</span></div>
+              {b.link_url && <div style={{ fontSize: 11, color: 'rgba(255,255,255,.3)' }}>{b.link_url}</div>}
+            </div>
+            <button onClick={() => toggle(b.id, b.is_active)}
+              style={{ padding: '5px 12px', background: b.is_active ? 'rgba(34,197,94,.1)' : 'rgba(255,255,255,.05)', border: '1px solid', borderColor: b.is_active ? 'rgba(34,197,94,.3)' : 'rgba(255,255,255,.1)', borderRadius: 6, color: b.is_active ? '#86efac' : 'rgba(255,255,255,.4)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+              {b.is_active ? '활성' : '비활성'}
+            </button>
+            <button onClick={() => del(b.id)} style={dBtn}>삭제</button>
           </div>
-          <button onClick={() => toggle(b.id, b.is_active)}
-            style={{ padding: '5px 12px', background: b.is_active ? 'rgba(34,197,94,.1)' : 'rgba(255,255,255,.05)', border: '1px solid', borderColor: b.is_active ? 'rgba(34,197,94,.3)' : 'rgba(255,255,255,.1)', borderRadius: 6, color: b.is_active ? '#86efac' : 'rgba(255,255,255,.4)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
-            {b.is_active ? '활성' : '비활성'}
-          </button>
-          <button onClick={() => del(b.id)} style={dBtn}>삭제</button>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

@@ -15,9 +15,13 @@ class LoginRequest(BaseModel):
     password: str
 
 
-class PasswordResetRequest(BaseModel):
+class PasswordResetCodeRequest(BaseModel):
     email: EmailStr
-    username: str
+
+
+class PasswordResetConfirmRequest(BaseModel):
+    email: EmailStr
+    code: str
     new_password: str
 
 

@@ -26,27 +26,32 @@ const terms = [
 
 const modeText = {
   login: {
-    label: 'Sign in',
-    title: '다시 만나서 반가워요',
-    helper: 'NC 계정으로 공지, 팀 공간, 포트폴리오를 이어서 관리하세요.',
+    tab: 'Login',
+    eyebrow: 'Welcome back',
+    title: '로그인',
+    helper: 'NC 계정으로 활동 기록과 팀 공간을 이어서 관리하세요.',
   },
   register: {
-    label: 'Join',
-    title: '새 계정 만들기',
+    tab: 'Join',
+    eyebrow: 'Start now',
+    title: '회원가입',
     helper: '@cam.hs.kr 학교 이메일로 가입할 수 있습니다.',
   },
   reset: {
-    label: 'Reset',
+    tab: 'Reset',
+    eyebrow: 'Email code',
     title: '비밀번호 재설정',
-    helper: '가입한 이메일과 닉네임을 확인한 뒤 새 비밀번호로 바꿉니다.',
+    helper: '가입한 이메일로 인증번호를 받고 새 비밀번호를 설정하세요.',
   },
 };
 
 export default function LoginPage() {
   const [mode, setMode] = useState('login');
+  const [resetStep, setResetStep] = useState('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [code, setCode] = useState('');
   const [username, setUsername] = useState('');
   const [agreements, setAgreements] = useState({ service: false, privacy: false, notice: false });
   const [openTerm, setOpenTerm] = useState('service');
@@ -70,6 +75,7 @@ export default function LoginPage() {
 
   const switchMode = (nextMode) => {
     setMode(nextMode);
+    setResetStep('email');
     resetMessage();
   };
 
@@ -125,7 +131,23 @@ export default function LoginPage() {
     }
   };
 
-  const handleResetPassword = async (e) => {
+  const handleSendResetCode = async (e) => {
+    e.preventDefault();
+    resetMessage();
+    setLoading(true);
+
+    try {
+      await api.post('/api/auth/password-reset/request', { email });
+      setSuccess('인증번호를 이메일로 보냈습니다. 메일함을 확인해주세요.');
+      setResetStep('code');
+    } catch (err) {
+      setError(err.response?.data?.detail || '이메일 발송에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmReset = async (e) => {
     e.preventDefault();
     resetMessage();
 
@@ -137,57 +159,62 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await api.post('/api/auth/reset-password', {
+      await api.post('/api/auth/password-reset/confirm', {
         email,
-        username,
+        code,
         new_password: newPassword,
       });
       setSuccess('비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.');
       setMode('login');
+      setResetStep('email');
       setPassword('');
+      setCode('');
       setNewPassword('');
     } catch (err) {
-      setError(err.response?.data?.detail || '계정 정보를 다시 확인해주세요.');
+      setError(err.response?.data?.detail || '인증번호와 새 비밀번호를 다시 확인해주세요.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="auth-page nc-auth">
-      <section className="nc-showcase" aria-label="NC 소개">
-        <div className="nc-showcase-top">
-          <span className="nc-logo">NC</span>
-          <span className="nc-badge">Club OS</span>
+    <main className="auth-page nc-editorial">
+      <section className="editorial-scene" aria-label="NC 소개">
+        <div className="editorial-nav">
+          <span className="editorial-logo">NC</span>
+          <span>Club portfolio system</span>
         </div>
 
-        <div className="nc-phone">
-          <div className="nc-phone-bar" />
-          <img src={heroImage} alt="" />
-          <div className="nc-phone-card">
-            <span>Portfolio</span>
-            <strong>7 projects</strong>
+        <div className="poster-stack" aria-hidden="true">
+          <div className="poster-card poster-card-main">
+            <div className="poster-noise" />
+            <img src={heroImage} alt="" />
+            <span>New Creative</span>
+          </div>
+          <div className="poster-card poster-card-sub">
+            <span>Team</span>
+            <strong>Archive<br />Projects</strong>
           </div>
         </div>
 
-        <div className="nc-showcase-copy">
-          <p>동아리 기록을 더 깔끔하게</p>
-          <h1>NC에서 활동, 팀, 포트폴리오를 한 번에 정리합니다.</h1>
+        <div className="editorial-copy">
+          <p>NC MEMBERS ONLY</p>
+          <h1>동아리 기록을 더 감각적으로 정리하세요.</h1>
         </div>
       </section>
 
-      <section className="nc-auth-panel" aria-label={copy.title}>
-        <div className="nc-auth-card">
-          <div className="nc-auth-heading">
-            <span>{copy.label}</span>
+      <section className="editorial-form-wrap" aria-label={copy.title}>
+        <div className="editorial-form">
+          <div className="form-title">
+            <span>{copy.eyebrow}</span>
             <h2>{copy.title}</h2>
             <p>{copy.helper}</p>
           </div>
 
-          <div className="nc-switcher" role="tablist" aria-label="인증 방식 선택">
+          <div className="editorial-tabs" role="tablist" aria-label="인증 방식 선택">
             {Object.entries(modeText).map(([key, item]) => (
               <button key={key} type="button" className={mode === key ? 'active' : ''} onClick={() => switchMode(key)}>
-                {item.label}
+                {item.tab}
               </button>
             ))}
           </div>
@@ -240,12 +267,20 @@ export default function LoginPage() {
             </form>
           )}
 
-          {mode === 'reset' && (
-            <form onSubmit={handleResetPassword} className="auth-form">
+          {mode === 'reset' && resetStep === 'email' && (
+            <form onSubmit={handleSendResetCode} className="auth-form">
               <Field label="가입 이메일" type="email" value={email} onChange={setEmail} placeholder="name@cam.hs.kr" autoComplete="email" />
-              <Field label="닉네임" type="text" value={username} onChange={setUsername} placeholder="가입할 때 쓴 닉네임" autoComplete="nickname" />
+              <SubmitButton loading={loading}>인증번호 받기</SubmitButton>
+            </form>
+          )}
+
+          {mode === 'reset' && resetStep === 'code' && (
+            <form onSubmit={handleConfirmReset} className="auth-form">
+              <Field label="이메일" type="email" value={email} onChange={setEmail} placeholder="name@cam.hs.kr" autoComplete="email" />
+              <Field label="인증번호" type="text" value={code} onChange={setCode} placeholder="6자리 숫자" autoComplete="one-time-code" />
               <Field label="새 비밀번호" type="password" value={newPassword} onChange={setNewPassword} placeholder="8자 이상" autoComplete="new-password" />
               <SubmitButton loading={loading}>비밀번호 변경</SubmitButton>
+              <button className="text-button" type="button" onClick={() => setResetStep('email')}>이메일 다시 입력</button>
             </form>
           )}
         </div>

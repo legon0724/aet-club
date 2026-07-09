@@ -72,6 +72,16 @@ class User(Base):
     ai_usage = relationship("AIUsage", back_populates="user", cascade="all, delete")
 
 
+class PasswordResetCode(Base):
+    __tablename__ = "password_reset_codes"
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    email = Column(String(100), nullable=False, index=True)
+    code_hash = Column(String(255), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    used = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class Team(Base):
     __tablename__ = "teams"
     id = Column(UUID(), primary_key=True, default=uuid.uuid4)

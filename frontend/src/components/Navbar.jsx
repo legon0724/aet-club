@@ -18,7 +18,7 @@ export default function Navbar({ user }) {
   return (
     <nav className="site-nav">
       <Link to="/" className="site-logo" aria-label="AET 홈">
-        <span>AET</span>
+        <span>NC</span>
       </Link>
 
       <div className="site-links">

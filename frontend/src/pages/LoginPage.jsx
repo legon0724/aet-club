@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
+import heroImage from '../assets/hero.png';
 
 const terms = [
   {
     id: 'service',
     required: true,
     title: '서비스 이용약관',
-    body: 'AET 홈페이지는 동아리 활동, 공지, 팀 협업, 포트폴리오 관리를 위한 서비스입니다. 가입한 사용자는 본인 계정으로만 이용해야 하며, 허위 정보 등록이나 동아리 활동과 무관한 게시물 작성은 제한될 수 있습니다.',
+    body: 'NC는 동아리 활동, 공지, 팀 협업, 포트폴리오 관리를 위한 서비스입니다. 가입한 사용자는 본인 계정으로만 이용해야 하며, 허위 정보 등록이나 동아리 활동과 무관한 게시물 작성은 제한될 수 있습니다.',
   },
   {
     id: 'privacy',
@@ -23,10 +24,29 @@ const terms = [
   },
 ];
 
+const modeText = {
+  login: {
+    label: 'Sign in',
+    title: '다시 만나서 반가워요',
+    helper: 'NC 계정으로 공지, 팀 공간, 포트폴리오를 이어서 관리하세요.',
+  },
+  register: {
+    label: 'Join',
+    title: '새 계정 만들기',
+    helper: '@cam.hs.kr 학교 이메일로 가입할 수 있습니다.',
+  },
+  reset: {
+    label: 'Reset',
+    title: '비밀번호 재설정',
+    helper: '가입한 이메일과 닉네임을 확인한 뒤 새 비밀번호로 바꿉니다.',
+  },
+};
+
 export default function LoginPage() {
-  const [tab, setTab] = useState('login');
+  const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [username, setUsername] = useState('');
   const [agreements, setAgreements] = useState({ service: false, privacy: false, notice: false });
   const [openTerm, setOpenTerm] = useState('service');
@@ -37,23 +57,19 @@ export default function LoginPage() {
 
   const requiredAccepted = agreements.service && agreements.privacy;
   const allAccepted = terms.every((term) => agreements[term.id]);
+  const copy = useMemo(() => modeText[mode], [mode]);
 
   useEffect(() => {
     if (localStorage.getItem('token')) navigate('/');
   }, [navigate]);
-
-  const helperText = useMemo(() => {
-    if (tab === 'login') return '동아리 계정으로 공지, 팀 공간, 포트폴리오를 이어서 관리하세요.';
-    return '@cam.hs.kr 학교 이메일로 가입할 수 있습니다.';
-  }, [tab]);
 
   const resetMessage = () => {
     setError('');
     setSuccess('');
   };
 
-  const switchTab = (nextTab) => {
-    setTab(nextTab);
+  const switchMode = (nextMode) => {
+    setMode(nextMode);
     resetMessage();
   };
 
@@ -100,7 +116,7 @@ export default function LoginPage() {
         privacy_consented: agreements.privacy,
       });
       setSuccess('가입이 완료되었습니다. 이제 로그인해주세요.');
-      setTab('login');
+      setMode('login');
       setPassword('');
     } catch (err) {
       setError(err.response?.data?.detail || '가입 정보를 다시 확인해주세요.');
@@ -109,49 +125,86 @@ export default function LoginPage() {
     }
   };
 
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    resetMessage();
+
+    if (newPassword.length < 8) {
+      setError('새 비밀번호는 8자 이상으로 설정해주세요.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await api.post('/api/auth/reset-password', {
+        email,
+        username,
+        new_password: newPassword,
+      });
+      setSuccess('비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.');
+      setMode('login');
+      setPassword('');
+      setNewPassword('');
+    } catch (err) {
+      setError(err.response?.data?.detail || '계정 정보를 다시 확인해주세요.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <main className="auth-page">
-      <section className="auth-hero" aria-label="AET 소개">
-        <div className="brand-mark">AET</div>
-        <p className="auth-eyebrow">AI Engineering Team</p>
-        <h1>동아리 활동과 포트폴리오를 한곳에서 관리합니다.</h1>
-        <p className="auth-copy">
-          공지 확인, 팀 프로젝트 협업, 생기부 분석, 개인 포트폴리오 정리를
-          동아리 구성원이 함께 쓰기 좋게 묶었습니다.
-        </p>
-        <div className="auth-stats" aria-label="주요 기능">
-          <span>공지</span>
-          <span>팀 공간</span>
-          <span>포트폴리오</span>
-          <span>AI 분석</span>
+    <main className="auth-page nc-auth">
+      <section className="nc-showcase" aria-label="NC 소개">
+        <div className="nc-showcase-top">
+          <span className="nc-logo">NC</span>
+          <span className="nc-badge">Club OS</span>
+        </div>
+
+        <div className="nc-phone">
+          <div className="nc-phone-bar" />
+          <img src={heroImage} alt="" />
+          <div className="nc-phone-card">
+            <span>Portfolio</span>
+            <strong>7 projects</strong>
+          </div>
+        </div>
+
+        <div className="nc-showcase-copy">
+          <p>동아리 기록을 더 깔끔하게</p>
+          <h1>NC에서 활동, 팀, 포트폴리오를 한 번에 정리합니다.</h1>
         </div>
       </section>
 
-      <section className="auth-panel" aria-label={tab === 'login' ? '로그인' : '회원가입'}>
-        <div className="auth-card">
-          <div className="auth-card-head">
-            <div>
-              <p className="auth-kicker">{tab === 'login' ? 'Welcome back' : 'Create account'}</p>
-              <h2>{tab === 'login' ? '로그인' : '회원가입'}</h2>
-            </div>
-            <div className="auth-tabs" role="tablist" aria-label="인증 방식 선택">
-              <button type="button" className={tab === 'login' ? 'active' : ''} onClick={() => switchTab('login')}>로그인</button>
-              <button type="button" className={tab === 'register' ? 'active' : ''} onClick={() => switchTab('register')}>가입</button>
-            </div>
+      <section className="nc-auth-panel" aria-label={copy.title}>
+        <div className="nc-auth-card">
+          <div className="nc-auth-heading">
+            <span>{copy.label}</span>
+            <h2>{copy.title}</h2>
+            <p>{copy.helper}</p>
           </div>
 
-          <p className="auth-helper">{helperText}</p>
+          <div className="nc-switcher" role="tablist" aria-label="인증 방식 선택">
+            {Object.entries(modeText).map(([key, item]) => (
+              <button key={key} type="button" className={mode === key ? 'active' : ''} onClick={() => switchMode(key)}>
+                {item.label}
+              </button>
+            ))}
+          </div>
 
           {error && <div className="form-alert error">{error}</div>}
           {success && <div className="form-alert success">{success}</div>}
 
-          {tab === 'login' ? (
+          {mode === 'login' && (
             <form onSubmit={handleLogin} className="auth-form">
               <Field label="이메일" type="email" value={email} onChange={setEmail} placeholder="name@cam.hs.kr" autoComplete="email" />
               <Field label="비밀번호" type="password" value={password} onChange={setPassword} placeholder="비밀번호" autoComplete="current-password" />
               <SubmitButton loading={loading}>로그인</SubmitButton>
+              <button className="text-button" type="button" onClick={() => switchMode('reset')}>비밀번호를 잊으셨나요?</button>
             </form>
-          ) : (
+          )}
+
+          {mode === 'register' && (
             <form onSubmit={handleRegister} className="auth-form">
               <Field label="학교 이메일" type="email" value={email} onChange={setEmail} placeholder="name@cam.hs.kr" autoComplete="email" />
               <Field label="닉네임" type="text" value={username} onChange={setUsername} placeholder="활동명 또는 이름" autoComplete="nickname" />
@@ -184,6 +237,15 @@ export default function LoginPage() {
               </div>
 
               <SubmitButton loading={loading} disabled={!requiredAccepted}>가입하기</SubmitButton>
+            </form>
+          )}
+
+          {mode === 'reset' && (
+            <form onSubmit={handleResetPassword} className="auth-form">
+              <Field label="가입 이메일" type="email" value={email} onChange={setEmail} placeholder="name@cam.hs.kr" autoComplete="email" />
+              <Field label="닉네임" type="text" value={username} onChange={setUsername} placeholder="가입할 때 쓴 닉네임" autoComplete="nickname" />
+              <Field label="새 비밀번호" type="password" value={newPassword} onChange={setNewPassword} placeholder="8자 이상" autoComplete="new-password" />
+              <SubmitButton loading={loading}>비밀번호 변경</SubmitButton>
             </form>
           )}
         </div>

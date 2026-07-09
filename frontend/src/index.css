@@ -607,3 +607,317 @@ a {
     grid-template-columns: 1fr;
   }
 }
+
+.nc-auth {
+  min-height: 100vh;
+  grid-template-columns: minmax(340px, 0.92fr) minmax(390px, 1.08fr);
+  background:
+    radial-gradient(circle at 6% 8%, rgba(251, 113, 133, 0.22), transparent 22rem),
+    radial-gradient(circle at 38% 88%, rgba(110, 231, 183, 0.18), transparent 28rem),
+    linear-gradient(135deg, #f7efe7 0%, #f5f7fb 45%, #eef4ff 100%);
+  color: #12141b;
+}
+
+.nc-showcase,
+.nc-auth-panel {
+  min-height: 100vh;
+}
+
+.nc-showcase {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  padding: clamp(28px, 5vw, 64px);
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.24)),
+    radial-gradient(circle at 18% 18%, rgba(244, 114, 182, 0.3), transparent 18rem),
+    radial-gradient(circle at 78% 74%, rgba(96, 165, 250, 0.26), transparent 19rem);
+}
+
+.nc-showcase::before {
+  content: "";
+  position: absolute;
+  inset: 18px;
+  border: 1px solid rgba(18, 20, 27, 0.08);
+  border-radius: 30px;
+  pointer-events: none;
+}
+
+.nc-showcase-top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nc-logo {
+  display: inline-grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  background: #12141b;
+  color: white;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.nc-badge {
+  border: 1px solid rgba(18, 20, 27, 0.1);
+  border-radius: 999px;
+  padding: 9px 14px;
+  background: rgba(255, 255, 255, 0.52);
+  color: rgba(18, 20, 27, 0.7);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.nc-phone {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  width: min(78%, 340px);
+  aspect-ratio: 0.72;
+  display: grid;
+  place-items: center;
+  margin: 38px 0;
+  border: 12px solid #171923;
+  border-radius: 42px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.54)),
+    linear-gradient(145deg, #fb7185, #fbbf24 48%, #60a5fa);
+  box-shadow: 0 34px 80px rgba(31, 41, 55, 0.28);
+}
+
+.nc-phone-bar {
+  position: absolute;
+  top: 13px;
+  width: 86px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(18, 20, 27, 0.2);
+}
+
+.nc-phone img {
+  width: min(68%, 230px);
+  filter: drop-shadow(0 28px 30px rgba(88, 28, 135, 0.22));
+}
+
+.nc-phone-card {
+  position: absolute;
+  right: -22px;
+  bottom: 54px;
+  display: grid;
+  gap: 4px;
+  min-width: 146px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 18px;
+  padding: 15px 17px;
+  background: rgba(255, 255, 255, 0.74);
+  color: #12141b;
+  box-shadow: 0 18px 48px rgba(31, 41, 55, 0.18);
+  backdrop-filter: blur(16px);
+}
+
+.nc-phone-card span {
+  color: rgba(18, 20, 27, 0.54);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.nc-phone-card strong {
+  font-size: 19px;
+}
+
+.nc-showcase-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.nc-showcase-copy p,
+.nc-auth-heading span {
+  margin: 0 0 12px;
+  color: #e11d48;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.nc-showcase-copy h1 {
+  max-width: 620px;
+  margin: 0;
+  color: #12141b;
+  font-size: clamp(34px, 5vw, 58px);
+  line-height: 1.04;
+}
+
+.nc-auth-panel {
+  display: grid;
+  place-items: center;
+  padding: clamp(24px, 6vw, 72px);
+}
+
+.nc-auth-card {
+  width: min(100%, 470px);
+  border: 1px solid rgba(18, 20, 27, 0.08);
+  border-radius: 30px;
+  padding: clamp(24px, 4vw, 38px);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 30px 90px rgba(31, 41, 55, 0.16);
+  backdrop-filter: blur(22px);
+}
+
+.nc-auth-heading h2 {
+  margin: 0;
+  color: #12141b;
+  font-size: clamp(32px, 4vw, 44px);
+  line-height: 1.05;
+}
+
+.nc-auth-heading p {
+  margin: 14px 0 0;
+  color: rgba(18, 20, 27, 0.58);
+  line-height: 1.6;
+}
+
+.nc-switcher {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 26px 0 18px;
+  border-radius: 18px;
+  padding: 6px;
+  background: rgba(18, 20, 27, 0.06);
+}
+
+.nc-switcher button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: rgba(18, 20, 27, 0.54);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.nc-switcher button.active {
+  background: #12141b;
+  color: white;
+  box-shadow: 0 12px 28px rgba(18, 20, 27, 0.18);
+}
+
+.nc-auth .field {
+  color: rgba(18, 20, 27, 0.7);
+}
+
+.nc-auth .field input {
+  min-height: 52px;
+  border: 1px solid rgba(18, 20, 27, 0.09);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #12141b;
+}
+
+.nc-auth .field input:focus {
+  border-color: rgba(225, 29, 72, 0.5);
+  box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.1);
+}
+
+.nc-auth .primary-button {
+  min-height: 54px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #12141b, #2f3443);
+  color: white;
+  box-shadow: 0 18px 36px rgba(18, 20, 27, 0.22);
+}
+
+.nc-auth .primary-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #262b38, #12141b);
+}
+
+.text-button {
+  border: 0;
+  background: transparent;
+  color: rgba(225, 29, 72, 0.9);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.nc-auth .terms-box {
+  border-color: rgba(18, 20, 27, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.nc-auth .terms-all {
+  border-bottom-color: rgba(18, 20, 27, 0.08);
+  color: #12141b;
+}
+
+.nc-auth .term-row label,
+.nc-auth .term-body {
+  color: rgba(18, 20, 27, 0.66);
+}
+
+.nc-auth .term-row button {
+  color: #e11d48;
+}
+
+.nc-auth .form-alert.error {
+  color: #9f1239;
+  background: rgba(251, 113, 133, 0.16);
+}
+
+.nc-auth .form-alert.success {
+  color: #047857;
+  background: rgba(110, 231, 183, 0.18);
+}
+
+@media (max-width: 900px) {
+  .nc-auth {
+    grid-template-columns: 1fr;
+  }
+
+  .nc-showcase,
+  .nc-auth-panel {
+    min-height: auto;
+  }
+
+  .nc-phone {
+    width: min(62%, 280px);
+  }
+}
+
+@media (max-width: 560px) {
+  .nc-showcase {
+    padding: 24px;
+  }
+
+  .nc-showcase::before {
+    inset: 10px;
+    border-radius: 24px;
+  }
+
+  .nc-phone {
+    width: min(82%, 260px);
+    border-width: 9px;
+    border-radius: 34px;
+  }
+
+  .nc-phone-card {
+    right: -10px;
+    bottom: 36px;
+  }
+
+  .nc-auth-panel {
+    padding: 18px;
+  }
+
+  .nc-auth-card {
+    border-radius: 24px;
+  }
+}

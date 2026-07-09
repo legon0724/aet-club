@@ -23,7 +23,7 @@ const BannerSlider = memo(({ banners }) => {
   if (!banners.length) {
     return (
       <section className="home-hero">
-        <p>AET Club</p>
+        <p>NC Club</p>
         <h1>오늘 할 일을 놓치지 않게, 동아리 활동을 한 화면에 모았습니다.</h1>
       </section>
     );
@@ -36,7 +36,7 @@ const BannerSlider = memo(({ banners }) => {
     <section className="home-hero with-image">
       {imgUrl && <img src={imgUrl} alt="" />}
       <div>
-        <p>AET Notice</p>
+        <p>NC Notice</p>
         <h1>{banner.title}</h1>
       </div>
       {banner.link_url && <a href={banner.link_url} target="_blank" rel="noreferrer" aria-label={`${banner.title} 자세히 보기`} />}

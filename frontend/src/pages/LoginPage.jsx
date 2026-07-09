@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import heroImage from '../assets/hero.png';
 
+const SCHOOL_EMAIL_DOMAIN = '@cam.hs.kr';
+
+const isSchoolEmail = (value) => value.trim().toLowerCase().endsWith(SCHOOL_EMAIL_DOMAIN);
+
 const terms = [
   {
     id: 'service',
@@ -27,9 +31,9 @@ const terms = [
 const modeText = {
   login: {
     tab: 'Login',
-    eyebrow: 'Welcome back',
+    eyebrow: 'NC access',
     title: '로그인',
-    helper: 'NC 계정으로 활동 기록과 팀 공간을 이어서 관리하세요.',
+    helper: '학교 이메일로만 접속할 수 있습니다.',
   },
   register: {
     tab: 'Join',
@@ -90,6 +94,12 @@ export default function LoginPage() {
   const handleLogin = async (e) => {
     e.preventDefault();
     resetMessage();
+
+    if (!isSchoolEmail(email)) {
+      setError('@cam.hs.kr 학교 이메일만 로그인할 수 있습니다.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -106,6 +116,11 @@ export default function LoginPage() {
   const handleRegister = async (e) => {
     e.preventDefault();
     resetMessage();
+
+    if (!isSchoolEmail(email)) {
+      setError('@cam.hs.kr 학교 이메일만 가입할 수 있습니다.');
+      return;
+    }
 
     if (!requiredAccepted) {
       setError('필수 약관에 동의해야 가입할 수 있습니다.');
@@ -134,6 +149,12 @@ export default function LoginPage() {
   const handleSendResetCode = async (e) => {
     e.preventDefault();
     resetMessage();
+
+    if (!isSchoolEmail(email)) {
+      setError('@cam.hs.kr 학교 이메일만 재설정할 수 있습니다.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -150,6 +171,11 @@ export default function LoginPage() {
   const handleConfirmReset = async (e) => {
     e.preventDefault();
     resetMessage();
+
+    if (!isSchoolEmail(email)) {
+      setError('@cam.hs.kr 학교 이메일만 재설정할 수 있습니다.');
+      return;
+    }
 
     if (newPassword.length < 8) {
       setError('새 비밀번호는 8자 이상으로 설정해주세요.');
@@ -182,24 +208,36 @@ export default function LoginPage() {
       <section className="editorial-scene" aria-label="NC 소개">
         <div className="editorial-nav">
           <span className="editorial-logo">NC</span>
-          <span>Club portfolio system</span>
+          <span>School email only</span>
         </div>
 
         <div className="poster-stack" aria-hidden="true">
+          <div className="motion-pixel pixel-a" />
+          <div className="motion-pixel pixel-b" />
           <div className="poster-card poster-card-main">
             <div className="poster-noise" />
+            <div className="poster-eyes">
+              <span />
+              <span />
+            </div>
             <img src={heroImage} alt="" />
-            <span>New Creative</span>
+            <span className="poster-title">New Creative</span>
           </div>
-          <div className="poster-card poster-card-sub">
-            <span>Team</span>
-            <strong>Archive<br />Projects</strong>
+          <div className="poster-card poster-code-card">
+            <span>auth.js</span>
+            <code>
+              if email.endsWith('@cam.hs.kr') {'{'}
+              <br />
+              &nbsp;&nbsp;openNC()
+              <br />
+              {'}'}
+            </code>
           </div>
         </div>
 
         <div className="editorial-copy">
           <p>NC MEMBERS ONLY</p>
-          <h1>동아리 기록을 더 감각적으로 정리하세요.</h1>
+          <h1>학교 이메일로 여는 동아리 작업실.</h1>
         </div>
       </section>
 
@@ -224,7 +262,7 @@ export default function LoginPage() {
 
           {mode === 'login' && (
             <form onSubmit={handleLogin} className="auth-form">
-              <Field label="이메일" type="email" value={email} onChange={setEmail} placeholder="name@cam.hs.kr" autoComplete="email" />
+              <Field label="학교 이메일" type="email" value={email} onChange={setEmail} placeholder="name@cam.hs.kr" autoComplete="email" />
               <Field label="비밀번호" type="password" value={password} onChange={setPassword} placeholder="비밀번호" autoComplete="current-password" />
               <SubmitButton loading={loading}>로그인</SubmitButton>
               <button className="text-button" type="button" onClick={() => switchMode('reset')}>비밀번호를 잊으셨나요?</button>

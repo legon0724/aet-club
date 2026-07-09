@@ -37,6 +37,20 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = ""
     SMTP_FROM_NAME: str = "NC"
+    EMAIL_HOST: str = ""
+    EMAIL_PORT: int = 587
+    EMAIL_HOST_USER: str = ""
+    EMAIL_HOST_PASSWORD: str = ""
+    EMAIL_USERNAME: str = ""
+    EMAIL_PASSWORD: str = ""
+    EMAIL_FROM: str = ""
+    DEFAULT_FROM_EMAIL: str = ""
+    MAIL_SERVER: str = ""
+    MAIL_PORT: int = 587
+    MAIL_USERNAME: str = ""
+    MAIL_PASSWORD: str = ""
+    MAIL_FROM: str = ""
+    MAIL_FROM_NAME: str = ""
 
     CORS_ORIGINS: List[str] = [
         "http://localhost:5173",

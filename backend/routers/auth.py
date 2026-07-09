@@ -2,6 +2,7 @@ import random
 import smtplib
 from datetime import datetime, timedelta
 from email.message import EmailMessage
+from email.utils import formataddr
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from backend.core.config import settings
@@ -20,17 +21,36 @@ from backend.models.schemas import (
 router = APIRouter()
 
 
+def require_school_email(email: str):
+    if not is_allowed_email(email):
+        raise HTTPException(400, detail="@cam.hs.kr 학교 이메일만 사용할 수 있습니다.")
+
+
+def smtp_setting(*names: str) -> str:
+    for name in names:
+        value = getattr(settings, name, "")
+        if value:
+            return value
+    return ""
+
+
 def send_reset_email(to_email: str, code: str):
-    if not settings.SMTP_HOST or not settings.SMTP_USERNAME or not settings.SMTP_PASSWORD:
+    smtp_host = smtp_setting("SMTP_HOST", "EMAIL_HOST", "MAIL_SERVER")
+    smtp_port = int(smtp_setting("SMTP_PORT", "EMAIL_PORT", "MAIL_PORT") or 587)
+    smtp_username = smtp_setting("SMTP_USERNAME", "EMAIL_HOST_USER", "EMAIL_USERNAME", "MAIL_USERNAME")
+    smtp_password = smtp_setting("SMTP_PASSWORD", "EMAIL_HOST_PASSWORD", "EMAIL_PASSWORD", "MAIL_PASSWORD")
+    sender = smtp_setting("SMTP_FROM_EMAIL", "DEFAULT_FROM_EMAIL", "MAIL_FROM", "EMAIL_FROM") or smtp_username
+    sender_name = smtp_setting("SMTP_FROM_NAME", "MAIL_FROM_NAME") or "NC"
+
+    if not smtp_host or not smtp_username or not smtp_password or not sender:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="이메일 발송 설정이 아직 연결되지 않았습니다.",
+            detail="이메일 서버 설정이 아직 연결되지 않았습니다. 관리자에게 SMTP 설정을 확인해달라고 알려주세요.",
         )
 
-    sender = settings.SMTP_FROM_EMAIL or settings.SMTP_USERNAME
     message = EmailMessage()
     message["Subject"] = "NC 비밀번호 재설정 인증번호"
-    message["From"] = f"{settings.SMTP_FROM_NAME} <{sender}>"
+    message["From"] = formataddr((sender_name, sender))
     message["To"] = to_email
     message.set_content(
         "\n".join(
@@ -45,16 +65,26 @@ def send_reset_email(to_email: str, code: str):
         )
     )
 
-    with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10) as smtp:
-        smtp.starttls()
-        smtp.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-        smtp.send_message(message)
+    try:
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as smtp:
+            smtp.starttls()
+            smtp.login(smtp_username, smtp_password)
+            smtp.send_message(message)
+    except smtplib.SMTPException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="이메일 서버에서 인증번호 발송을 거절했습니다. SMTP 계정 정보를 확인해주세요.",
+        ) from exc
+    except OSError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="이메일 서버에 연결하지 못했습니다. SMTP 주소와 포트를 확인해주세요.",
+        ) from exc
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(body: RegisterRequest, db: Session = Depends(get_db)):
-    if not is_allowed_email(body.email):
-        raise HTTPException(400, detail="@cam.hs.kr 학교 이메일만 가입 가능합니다.")
+    require_school_email(body.email)
     if not body.privacy_consented:
         raise HTTPException(400, detail="개인정보 처리방침에 동의해주세요.")
     if db.query(User).filter(User.email == body.email).first():
@@ -76,6 +106,7 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=TokenResponse)
 def login(body: LoginRequest, db: Session = Depends(get_db)):
+    require_school_email(body.email)
     user = db.query(User).filter(User.email == body.email).first()
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(401, detail="이메일 또는 비밀번호가 올바르지 않습니다.")
@@ -84,6 +115,7 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
 
 @router.post("/password-reset/request")
 def request_password_reset(body: PasswordResetCodeRequest, db: Session = Depends(get_db)):
+    require_school_email(body.email)
     user = db.query(User).filter(User.email == body.email).first()
     if not user:
         raise HTTPException(404, detail="가입된 이메일을 찾을 수 없습니다.")
@@ -100,13 +132,18 @@ def request_password_reset(body: PasswordResetCodeRequest, db: Session = Depends
             expires_at=datetime.utcnow() + timedelta(minutes=10),
         )
     )
-    send_reset_email(body.email, code)
-    db.commit()
+    try:
+        send_reset_email(body.email, code)
+        db.commit()
+    except HTTPException:
+        db.rollback()
+        raise
     return {"message": "비밀번호 재설정 인증번호를 이메일로 보냈습니다."}
 
 
 @router.post("/password-reset/confirm")
 def confirm_password_reset(body: PasswordResetConfirmRequest, db: Session = Depends(get_db)):
+    require_school_email(body.email)
     reset_code = (
         db.query(PasswordResetCode)
         .filter(PasswordResetCode.email == body.email, PasswordResetCode.used == False)

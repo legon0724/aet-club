@@ -4,14 +4,16 @@ import api from '../api/client';
 import Navbar from '../components/Navbar';
 import { getCurrentLocalUser, readLocalUsers, rememberCurrentUser, writeLocalUsers } from '../utils/localAuth';
 import {
-  DEFAULT_TEAMS,
   addLocalAssignment,
+  addLocalTeam,
   deleteLocalAssignment,
+  deleteLocalTeam,
   fileToDataUrl,
   getAllLocalPortfolios,
   getFallbackNotices,
   getLocalAdminUsers,
   getLocalAssignments,
+  getLocalTeams,
 } from '../utils/localWorkspace';
 
 const BACKEND = 'https://web-production-00104.up.railway.app';
@@ -107,7 +109,7 @@ function UsersTab() {
 
   useEffect(() => {
     api.get('/api/admin/users').then((r) => setUsers(r.data)).catch(() => setUsers(getLocalAdminUsers()));
-    api.get('/api/teams/').then((r) => setTeams(r.data.length ? r.data : DEFAULT_TEAMS)).catch(() => setTeams(DEFAULT_TEAMS));
+    api.get('/api/teams/').then((r) => setTeams(r.data)).catch(() => setTeams(getLocalTeams()));
   }, []);
 
   const toggleAdmin = async (id, isAdmin) => {
@@ -123,10 +125,14 @@ function UsersTab() {
   };
 
   const assignTeam = async (id, teamId) => {
-    const nextUsers = readLocalUsers().map((localUser) => (
-      localUser.email === id ? { ...localUser, team_id: teamId || null } : localUser
-    ));
-    writeLocalUsers(nextUsers);
+    try {
+      await api.patch(`/api/admin/users/${id}`, { team_id: teamId || null });
+    } catch {
+      const nextUsers = readLocalUsers().map((localUser) => (
+        localUser.email === id ? { ...localUser, team_id: teamId || null } : localUser
+      ));
+      writeLocalUsers(nextUsers);
+    }
     setUsers((current) => current.map((item) => (item.id === id ? { ...item, team_id: teamId || null } : item)));
   };
 
@@ -169,7 +175,7 @@ function TeamsTab() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    api.get('/api/teams/').then((r) => setTeams(r.data.length ? r.data : DEFAULT_TEAMS)).catch(() => setTeams(DEFAULT_TEAMS));
+    api.get('/api/teams/').then((r) => setTeams(r.data)).catch(() => setTeams(getLocalTeams()));
   }, []);
 
   const create = async () => {
@@ -177,9 +183,9 @@ function TeamsTab() {
     try {
       await api.post('/api/teams/', form);
       const r = await api.get('/api/teams/');
-      setTeams(r.data.length ? r.data : DEFAULT_TEAMS);
+      setTeams(r.data);
     } catch {
-      setTeams((current) => [...current, { ...form, id: `local-team-${Date.now()}` }]);
+      setTeams(addLocalTeam(form));
     }
     setForm({ name: '', description: '', color: '#2dd4bf' });
     setShow(false);
@@ -190,7 +196,8 @@ function TeamsTab() {
     try {
       await api.delete(`/api/teams/${id}`);
     } catch {
-      // 로컬 미리보기에서는 화면에서만 제거합니다.
+      setTeams(deleteLocalTeam(id));
+      return;
     }
     setTeams((current) => current.filter((item) => item.id !== id));
   };
@@ -225,8 +232,8 @@ function TeamsTab() {
 }
 
 function AssignmentsTab({ user }) {
-  const [teams, setTeams] = useState(DEFAULT_TEAMS);
-  const [teamId, setTeamId] = useState(DEFAULT_TEAMS[0]?.id || '');
+  const [teams, setTeams] = useState(() => getLocalTeams());
+  const [teamId, setTeamId] = useState(() => getLocalTeams()[0]?.id || '');
   const [assignments, setAssignments] = useState([]);
   const [form, setForm] = useState(emptyAssignment);
   const [file, setFile] = useState(null);
@@ -235,12 +242,13 @@ function AssignmentsTab({ user }) {
 
   useEffect(() => {
     api.get('/api/teams/').then((r) => {
-      const nextTeams = r.data.length ? r.data : DEFAULT_TEAMS;
+      const nextTeams = r.data;
       setTeams(nextTeams);
-      setTeamId((current) => current || nextTeams[0]?.id || '');
+      setTeamId((current) => nextTeams.find((team) => team.id === current)?.id || nextTeams[0]?.id || '');
     }).catch(() => {
-      setTeams(DEFAULT_TEAMS);
-      setTeamId((current) => current || DEFAULT_TEAMS[0]?.id || '');
+      const nextTeams = getLocalTeams();
+      setTeams(nextTeams);
+      setTeamId((current) => nextTeams.find((team) => team.id === current)?.id || nextTeams[0]?.id || '');
     });
   }, []);
 
@@ -352,8 +360,8 @@ function NoticesTab() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    api.get('/api/notices/').then((r) => setNotices(r.data.length ? r.data : getFallbackNotices())).catch(() => setNotices(getFallbackNotices()));
-    api.get('/api/teams/').then((r) => setTeams(r.data.length ? r.data : DEFAULT_TEAMS)).catch(() => setTeams(DEFAULT_TEAMS));
+    api.get('/api/notices/').then((r) => setNotices(r.data)).catch(() => setNotices(getFallbackNotices()));
+    api.get('/api/teams/').then((r) => setTeams(r.data)).catch(() => setTeams(getLocalTeams()));
   }, []);
 
   const create = async () => {
@@ -361,7 +369,7 @@ function NoticesTab() {
     try {
       await api.post('/api/notices/', { ...form, team_id: form.team_id || null });
       const r = await api.get('/api/notices/');
-      setNotices(r.data.length ? r.data : getFallbackNotices());
+      setNotices(r.data);
     } catch {
       setNotices((current) => [{
         ...form,

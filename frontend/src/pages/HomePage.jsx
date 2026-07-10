@@ -65,7 +65,7 @@ export default function HomePage() {
       setUser(rememberCurrentUser(r.data));
     }).catch(() => {});
     api.get('/api/banners/').then((r) => setBanners(r.data.filter((b) => b.is_active))).catch(() => {});
-    api.get('/api/notices/').then((r) => setNotices(r.data.length ? r.data : getFallbackNotices())).catch(() => {
+    api.get('/api/notices/').then((r) => setNotices(r.data)).catch(() => {
       setNotices(getFallbackNotices());
     });
   }, []);

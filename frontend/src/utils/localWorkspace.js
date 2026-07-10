@@ -25,6 +25,7 @@ const LOCAL_PORTFOLIO_KEY = 'nc-local-portfolio-v2';
 const LOCAL_MESSAGES_KEY = 'nc-local-messages-v2';
 const LOCAL_SUBMISSIONS_KEY = 'nc-local-submissions-v2';
 const LOCAL_ASSIGNMENTS_KEY = 'nc-local-assignments-v2';
+const LOCAL_TEAMS_KEY = 'nc-local-teams-v2';
 const LOCAL_AI_USAGE_KEY = 'nc-local-ai-usage-v2';
 const LOCAL_NOTICES_KEY = 'nc-local-notices-v2';
 
@@ -42,6 +43,36 @@ export const writeJson = (key, value) => {
 };
 
 const userKey = (user) => (user?.email || 'guest').trim().toLowerCase();
+
+export const getLocalTeams = () => readJson(LOCAL_TEAMS_KEY, DEFAULT_TEAMS);
+
+export const setLocalTeams = (teams) => {
+  writeJson(LOCAL_TEAMS_KEY, teams);
+  return teams;
+};
+
+export const addLocalTeam = (data) => {
+  const teams = getLocalTeams();
+  const team = {
+    id: `local-team-${Date.now()}`,
+    name: data.name,
+    description: data.description || '',
+    color: data.color || '#2dd4bf',
+    created_at: new Date().toISOString(),
+  };
+  return setLocalTeams([...teams, team]);
+};
+
+export const deleteLocalTeam = (teamId) => {
+  const teams = getLocalTeams().filter((team) => team.id !== teamId);
+  writeJson(LOCAL_TEAMS_KEY, teams);
+  writeJson(LOCAL_ASSIGNMENTS_KEY, readJson(LOCAL_ASSIGNMENTS_KEY, []).filter((item) => item.team_id !== teamId));
+  writeJson(LOCAL_SUBMISSIONS_KEY, readJson(LOCAL_SUBMISSIONS_KEY, []).filter((item) => item.team_id !== teamId));
+  const messages = readJson(LOCAL_MESSAGES_KEY, {});
+  delete messages[teamId];
+  writeJson(LOCAL_MESSAGES_KEY, messages);
+  return teams;
+};
 
 export const getFallbackNotices = () => {
   const saved = readJson(LOCAL_NOTICES_KEY, []);

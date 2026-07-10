@@ -3,13 +3,13 @@ import api from '../api/client';
 import Navbar from '../components/Navbar';
 import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
 import {
-  DEFAULT_TEAMS,
   addLocalMessage,
   addLocalSubmission,
   deleteLocalSubmission,
   getLocalAssignments,
   getLocalMessages,
   getLocalSubmissions,
+  getLocalTeams,
 } from '../utils/localWorkspace';
 
 const BACKEND = 'https://web-production-00104.up.railway.app';
@@ -19,8 +19,8 @@ const blankSubmission = { title: '', content: '', link_url: '' };
 
 export default function TeamPage() {
   const [user, setUser] = useState(() => getCurrentLocalUser());
-  const [teams, setTeams] = useState(DEFAULT_TEAMS);
-  const [selectedTeam, setSelectedTeam] = useState(DEFAULT_TEAMS[0]);
+  const [teams, setTeams] = useState(() => getLocalTeams());
+  const [selectedTeam, setSelectedTeam] = useState(() => getLocalTeams()[0] || null);
   const [tab, setTab] = useState('assignments');
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -37,12 +37,13 @@ export default function TeamPage() {
   useEffect(() => {
     api.get('/api/auth/me').then((r) => setUser(rememberCurrentUser(r.data))).catch(() => {});
     api.get('/api/teams/').then((r) => {
-      const nextTeams = r.data.length ? r.data : DEFAULT_TEAMS;
+      const nextTeams = r.data;
       setTeams(nextTeams);
-      setSelectedTeam(nextTeams[0]);
+      setSelectedTeam((current) => nextTeams.find((team) => team.id === current?.id) || nextTeams[0] || null);
     }).catch(() => {
-      setTeams(DEFAULT_TEAMS);
-      setSelectedTeam(DEFAULT_TEAMS[0]);
+      const nextTeams = getLocalTeams();
+      setTeams(nextTeams);
+      setSelectedTeam((current) => nextTeams.find((team) => team.id === current?.id) || nextTeams[0] || null);
     });
   }, []);
 

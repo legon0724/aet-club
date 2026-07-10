@@ -1,11 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from backend.core.deps import get_admin_user
 from backend.models.database import User, Portfolio, Submission, AIUsage, get_db
 from backend.models.schemas import UserResponse
 
 router = APIRouter()
+
+
+class UserAdminUpdate(BaseModel):
+    is_admin: Optional[bool] = None
+    team_id: Optional[str] = None
 
 
 @router.get("/users", response_model=List[UserResponse])
@@ -23,6 +29,25 @@ def toggle_admin(user_id: str, db: Session = Depends(get_db), current_user: User
     user.is_admin = not user.is_admin
     db.commit()
     return {"message": "권한이 변경되었습니다.", "is_admin": user.is_admin}
+
+
+@router.patch("/users/{user_id}", response_model=UserResponse)
+def update_user(user_id: str, body: UserAdminUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_admin_user)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(404, detail="사용자를 찾을 수 없습니다.")
+
+    if body.is_admin is not None:
+        if str(user.id) == str(current_user.id):
+            raise HTTPException(400, detail="본인의 권한은 변경할 수 없습니다.")
+        user.is_admin = body.is_admin
+
+    if body.team_id is not None:
+        user.team_id = body.team_id or None
+
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 @router.delete("/users/{user_id}")

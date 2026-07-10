@@ -308,7 +308,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="auth-page nc-editorial">
+    <main className="auth-page nc-editorial nc-login-stage">
       <section className="editorial-scene" aria-label="NC 소개">
         <div className="editorial-nav">
           <span className="editorial-logo">NC</span>
@@ -333,6 +333,7 @@ export default function LoginPage() {
       <section className="editorial-form-wrap" aria-label={copy.title}>
         <div className="editorial-form">
           <div className="form-title">
+            <strong>NC Portal</strong>
             <span>{copy.eyebrow}</span>
             <h2>{copy.title}</h2>
             <p>{copy.helper}</p>

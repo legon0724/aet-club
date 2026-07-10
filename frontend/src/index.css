@@ -1115,51 +1115,12 @@ a {
   letter-spacing: 0;
 }
 
-.poster-code-card {
-  position: absolute;
-  right: -28px;
-  bottom: -34px;
-  width: min(88%, 260px);
-  display: grid;
-  gap: 10px;
-  padding: 16px;
-  transform: rotate(2deg);
-}
-
-.poster-code-card span {
-  color: rgba(255, 255, 255, 0.45);
-  font-size: 12px;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.poster-code-card code {
-  color: rgba(248, 248, 255, 0.82);
-  font-size: 12px;
-  line-height: 1.65;
-}
-
-.editorial-copy {
-  position: relative;
-  z-index: 1;
-  max-width: 720px;
-}
-
-.editorial-copy p,
 .form-title span {
   margin: 0 0 12px;
   color: #0dd3ea;
   font-size: 12px;
   font-weight: 900;
   text-transform: uppercase;
-}
-
-.editorial-copy h1 {
-  margin: 0;
-  max-width: 640px;
-  color: #f8f8ff;
-  font-size: clamp(30px, 4.1vw, 50px);
-  line-height: 1.05;
 }
 
 .editorial-form-wrap {
@@ -1315,12 +1276,6 @@ a {
 
   .poster-stack {
     width: min(88%, 310px);
-  }
-
-  .poster-code-card {
-    right: -10px;
-    bottom: -26px;
-    width: min(92%, 240px);
   }
 
   .editorial-form {

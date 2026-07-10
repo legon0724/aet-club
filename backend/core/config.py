@@ -9,10 +9,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
 
     ADMIN_EMAILS: List[str] = [
-        "hyouk0724@gmail.com",
         "2620325@cam.hs.kr",
         "bliss00@cam.hs.kr",
-        "gssth8286@gmail.com",
     ]
 
     ALLOWED_EMAIL_DOMAIN: str = "@cam.hs.kr"

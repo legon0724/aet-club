@@ -4,8 +4,29 @@ import api from '../api/client';
 import heroImage from '../assets/hero.png';
 
 const SCHOOL_EMAIL_DOMAIN = '@cam.hs.kr';
+const LOCAL_USERS_KEY = 'nc-local-users-v2';
+const LOCAL_RESET_KEY = 'nc-local-reset-v2';
+const LOCAL_RESET_VERSION_KEY = 'nc-local-auth-reset-version';
+const LOCAL_RESET_VERSION = '2026-07-10-clean-start';
 
 const isSchoolEmail = (value) => value.trim().toLowerCase().endsWith(SCHOOL_EMAIL_DOMAIN);
+const encodePassword = (value) => window.btoa(unescape(encodeURIComponent(value)));
+
+const readLocalUsers = () => {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_USERS_KEY) || '[]');
+  } catch {
+    return [];
+  }
+};
+
+const writeLocalUsers = (users) => {
+  localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users));
+};
+
+const isApiUnavailable = (err) => !err.response || err.response.status === 404 || err.response.status >= 500;
+
+const createLocalToken = (email) => `local:${email}:${Date.now()}`;
 
 const terms = [
   {
@@ -69,6 +90,15 @@ export default function LoginPage() {
   const copy = useMemo(() => modeText[mode], [mode]);
 
   useEffect(() => {
+    if (localStorage.getItem(LOCAL_RESET_VERSION_KEY) !== LOCAL_RESET_VERSION) {
+      localStorage.removeItem(LOCAL_USERS_KEY);
+      localStorage.removeItem(LOCAL_RESET_KEY);
+      localStorage.removeItem('token');
+      localStorage.setItem(LOCAL_RESET_VERSION_KEY, LOCAL_RESET_VERSION);
+    }
+  }, []);
+
+  useEffect(() => {
     if (localStorage.getItem('token')) navigate('/');
   }, [navigate]);
 
@@ -107,6 +137,16 @@ export default function LoginPage() {
       localStorage.setItem('token', res.data.access_token);
       navigate('/');
     } catch (err) {
+      if (isApiUnavailable(err)) {
+        const localUser = readLocalUsers().find((user) => user.email === email.trim().toLowerCase());
+        if (localUser && localUser.password === encodePassword(password)) {
+          localStorage.setItem('token', createLocalToken(localUser.email));
+          navigate('/');
+          return;
+        }
+        setError('가입한 학교 이메일과 비밀번호를 다시 확인해주세요.');
+        return;
+      }
       setError(err.response?.data?.detail || '이메일과 비밀번호를 다시 확인해주세요.');
     } finally {
       setLoading(false);
@@ -140,6 +180,32 @@ export default function LoginPage() {
       setMode('login');
       setPassword('');
     } catch (err) {
+      if (isApiUnavailable(err)) {
+        const normalizedEmail = email.trim().toLowerCase();
+        const users = readLocalUsers();
+        if (users.some((user) => user.email === normalizedEmail)) {
+          setError('이미 가입된 학교 이메일입니다.');
+          return;
+        }
+        if (users.some((user) => user.username === username.trim())) {
+          setError('이미 사용 중인 닉네임입니다.');
+          return;
+        }
+        writeLocalUsers([
+          ...users,
+          {
+            email: normalizedEmail,
+            username: username.trim(),
+            password: encodePassword(password),
+            is_admin: false,
+            created_at: new Date().toISOString(),
+          },
+        ]);
+        setSuccess('가입이 완료되었습니다. 이제 로그인해주세요.');
+        setMode('login');
+        setPassword('');
+        return;
+      }
       setError(err.response?.data?.detail || '가입 정보를 다시 확인해주세요.');
     } finally {
       setLoading(false);
@@ -162,6 +228,26 @@ export default function LoginPage() {
       setSuccess('인증번호를 이메일로 보냈습니다. 메일함을 확인해주세요.');
       setResetStep('code');
     } catch (err) {
+      if (isApiUnavailable(err)) {
+        const normalizedEmail = email.trim().toLowerCase();
+        const localUser = readLocalUsers().find((user) => user.email === normalizedEmail);
+        if (!localUser) {
+          setError('가입된 학교 이메일을 찾을 수 없습니다.');
+          return;
+        }
+        const fallbackCode = String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
+        localStorage.setItem(
+          LOCAL_RESET_KEY,
+          JSON.stringify({
+            email: normalizedEmail,
+            code: fallbackCode,
+            expiresAt: Date.now() + 10 * 60 * 1000,
+          }),
+        );
+        setSuccess(`메일 서버 연결 전 임시 인증번호: ${fallbackCode}`);
+        setResetStep('code');
+        return;
+      }
       setError(err.response?.data?.detail || '이메일 발송에 실패했습니다.');
     } finally {
       setLoading(false);
@@ -197,6 +283,27 @@ export default function LoginPage() {
       setCode('');
       setNewPassword('');
     } catch (err) {
+      if (isApiUnavailable(err)) {
+        const normalizedEmail = email.trim().toLowerCase();
+        const reset = JSON.parse(localStorage.getItem(LOCAL_RESET_KEY) || 'null');
+        if (!reset || reset.email !== normalizedEmail || reset.code !== code || reset.expiresAt < Date.now()) {
+          setError('인증번호가 만료되었거나 올바르지 않습니다.');
+          return;
+        }
+        const users = readLocalUsers();
+        const nextUsers = users.map((user) => (
+          user.email === normalizedEmail ? { ...user, password: encodePassword(newPassword) } : user
+        ));
+        writeLocalUsers(nextUsers);
+        localStorage.removeItem(LOCAL_RESET_KEY);
+        setSuccess('비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.');
+        setMode('login');
+        setResetStep('email');
+        setPassword('');
+        setCode('');
+        setNewPassword('');
+        return;
+      }
       setError(err.response?.data?.detail || '인증번호와 새 비밀번호를 다시 확인해주세요.');
     } finally {
       setLoading(false);
@@ -223,21 +330,6 @@ export default function LoginPage() {
             <img src={heroImage} alt="" />
             <span className="poster-title">New Creative</span>
           </div>
-          <div className="poster-card poster-code-card">
-            <span>auth.js</span>
-            <code>
-              if email.endsWith('@cam.hs.kr') {'{'}
-              <br />
-              &nbsp;&nbsp;openNC()
-              <br />
-              {'}'}
-            </code>
-          </div>
-        </div>
-
-        <div className="editorial-copy">
-          <p>NC MEMBERS ONLY</p>
-          <h1>학교 이메일로 여는 동아리 작업실.</h1>
         </div>
       </section>
 

@@ -1,49 +1,84 @@
-import { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
+import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
+import { fileToDataUrl, getLocalPortfolio, saveLocalPortfolio } from '../utils/localWorkspace';
 
 const BACKEND = 'https://web-production-00104.up.railway.app';
 
+const emptyForm = {
+  intro: '',
+  projects: '',
+  skills: '',
+  awards: '',
+  goals: '',
+  is_public: false,
+  github_url: '',
+  blog_url: '',
+  notion_url: '',
+};
+
+const links = [
+  { key: 'github_url', label: 'GitHub' },
+  { key: 'blog_url', label: 'Blog' },
+  { key: 'notion_url', label: 'Notion' },
+];
+
+const sections = [
+  { key: 'intro', label: '자기소개', placeholder: '관심 분야, 성격, 작업 방식이 드러나게 작성하세요.' },
+  { key: 'projects', label: '프로젝트', placeholder: '프로젝트명, 기간, 역할, 사용 기술, 결과를 정리하세요.' },
+  { key: 'skills', label: '역량 / 기술', placeholder: '언어, 프레임워크, 협업 도구, 강점을 나눠 적으세요.' },
+  { key: 'awards', label: '수상 / 활동', placeholder: '대회, 활동, 맡은 역할과 결과를 함께 기록하세요.' },
+  { key: 'goals', label: '목표 / 진로', placeholder: '앞으로 만들고 싶은 것과 진로 방향을 작성하세요.' },
+];
+
 export default function PortfolioPage() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => getCurrentLocalUser());
   const [portfolio, setPortfolio] = useState({});
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({
-    intro: '', projects: '', skills: '', awards: '', goals: '',
-    is_public: false, github_url: '', blog_url: '', notion_url: ''
-  });
+  const [form, setForm] = useState(emptyForm);
   const [profileImage, setProfileImage] = useState(null);
-  const [profilePreview, setProfilePreview] = useState(null);
+  const [profilePreview, setProfilePreview] = useState('');
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const imgRef = useRef(null);
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    api.get('/api/auth/me').then(r => setUser(r.data)).catch(() => navigate('/login'));
-    loadPortfolio();
+  const hydratePortfolio = useCallback((data) => {
+    const next = { ...emptyForm, ...data };
+    setPortfolio(next);
+    setForm({
+      intro: next.intro || '',
+      projects: next.projects || '',
+      skills: next.skills || '',
+      awards: next.awards || '',
+      goals: next.goals || '',
+      is_public: Boolean(next.is_public),
+      github_url: next.github_url || '',
+      blog_url: next.blog_url || '',
+      notion_url: next.notion_url || '',
+    });
+    if (next.profile_image) {
+      setProfilePreview(next.profile_image.startsWith('/api') ? `${BACKEND}${next.profile_image}` : next.profile_image);
+    }
   }, []);
 
-  const loadPortfolio = () => {
-    api.get('/api/portfolio/me').then(r => {
-      setPortfolio(r.data);
-      setForm({
-        intro: r.data.intro || '',
-        projects: r.data.projects || '',
-        skills: r.data.skills || '',
-        awards: r.data.awards || '',
-        goals: r.data.goals || '',
-        is_public: r.data.is_public || false,
-        github_url: r.data.github_url || '',
-        blog_url: r.data.blog_url || '',
-        notion_url: r.data.notion_url || '',
-      });
-      if (r.data.profile_image) {
-        setProfilePreview(`${BACKEND}${r.data.profile_image}`);
-      }
-    }).catch(() => {});
-  };
+  const loadPortfolio = useCallback((activeUser) => {
+    const resolvedUser = activeUser || getCurrentLocalUser();
+    api.get('/api/portfolio/me').then((r) => hydratePortfolio(r.data)).catch(() => {
+      hydratePortfolio(getLocalPortfolio(resolvedUser));
+    });
+  }, [hydratePortfolio]);
+
+  useEffect(() => {
+    const localUser = getCurrentLocalUser();
+    api.get('/api/auth/me').then((r) => {
+      const remembered = rememberCurrentUser(r.data);
+      setUser(remembered);
+      loadPortfolio(remembered);
+    }).catch(() => {
+      loadPortfolio(localUser);
+    });
+  }, [loadPortfolio]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -53,131 +88,119 @@ export default function PortfolioPage() {
   };
 
   const save = async () => {
-    setSaving(true); setMsg('');
+    setSaving(true);
+    setMsg('');
+    const activeUser = user || getCurrentLocalUser();
+
     try {
       const formData = new FormData();
-      Object.entries(form).forEach(([k, v]) => {
-        if (v !== null && v !== undefined) formData.append(k, String(v));
-      });
+      Object.entries(form).forEach(([key, value]) => formData.append(key, String(value ?? '')));
       if (profileImage) formData.append('profile_image_file', profileImage);
-      await api.put('/api/portfolio/me', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      await api.put('/api/portfolio/me', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       setMsg('저장되었습니다.');
       setEditing(false);
-      loadPortfolio();
-    } catch { setMsg('저장 실패'); }
-    finally { setSaving(false); }
+      loadPortfolio(activeUser);
+    } catch {
+      const imageData = profileImage ? await fileToDataUrl(profileImage) : portfolio.profile_image;
+      const saved = saveLocalPortfolio(activeUser, { ...form, profile_image: imageData || '' });
+      hydratePortfolio(saved);
+      setMsg('저장되었습니다.');
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const links = [
-    { key: 'github_url', label: 'GitHub', icon: '🐙', color: '#e0e0e0' },
-    { key: 'blog_url', label: '블로그', icon: '📝', color: '#60a5fa' },
-    { key: 'notion_url', label: 'Notion', icon: '📄', color: '#a78bfa' },
-  ];
-
-  const sections = [
-    { key: 'intro', label: '자기소개', icon: '👤', placeholder: '자신을 소개해주세요.\n관심사, 성격, 가치관 등을 자유롭게 작성하세요.' },
-    { key: 'projects', label: '프로젝트', icon: '🚀', placeholder: '[프로젝트명]\n- 기간:\n- 역할:\n- 사용 기술:\n- 성과:\n- GitHub/링크:' },
-    { key: 'skills', label: '역량 / 기술', icon: '⚡', placeholder: '프로그래밍: Python, C++\nAI/ML: TensorFlow, PyTorch\n기타: Git, Linux' },
-    { key: 'awards', label: '수상 / 활동', icon: '🏆', placeholder: '[대회명] - 수상내용 (날짜)\n[활동명] - 역할 (기간)' },
-    { key: 'goals', label: '목표 / 진로', icon: '🎯', placeholder: '앞으로의 목표와 진로 계획을 작성해주세요.' },
-  ];
-
   return (
-    <div style={{ minHeight: '100vh', background: '#080808', color: '#e0e0e0', fontFamily: "'DM Sans', sans-serif" }}>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <div className="app-shell workspace-shell">
       <Navbar user={user} />
-      <div style={{ maxWidth: 860, margin: '0 auto', padding: '40px 20px' }}>
-
-        <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 16, padding: '32px', marginBottom: 24, display: 'flex', gap: 28, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-          <div style={{ flexShrink: 0 }}>
-            <div onClick={() => editing && imgRef.current.click()}
-              style={{ width: 100, height: 100, borderRadius: '50%', background: profilePreview ? 'none' : 'rgba(255,210,60,.12)', border: `2px solid ${profilePreview ? 'rgba(255,210,60,.4)' : 'rgba(255,255,255,.1)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: editing ? 'pointer' : 'default', overflow: 'hidden', position: 'relative' }}>
-              {profilePreview
-                ? <img src={profilePreview} alt="프로필" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <span style={{ fontSize: 36 }}>👤</span>
-              }
-              {editing && (
-                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#fff' }}>
-                  변경
-                </div>
-              )}
-            </div>
-            <input ref={imgRef} type="file" accept=".jpg,.jpeg,.png,.webp" onChange={handleImageChange} style={{ display: 'none' }} />
+      <main className="workspace-page portfolio-page">
+        <section className="page-hero compact">
+          <div>
+            <span>Portfolio</span>
+            <h1>활동 기록을 대학 제출용으로 정리합니다.</h1>
+            <p>프로젝트, 기술, 수상, 진로를 한 화면에서 관리하세요.</p>
           </div>
+          <button className="modern-btn primary" type="button" onClick={() => setEditing((current) => !current)}>
+            {editing ? '보기로 전환' : '편집'}
+          </button>
+        </section>
 
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ fontSize: 24, fontWeight: 700, color: '#f0f0f0', marginBottom: 4 }}>{user?.username}</div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,.35)', marginBottom: 18 }}>{user?.email}</div>
+        <section className="profile-card">
+          <button className="profile-avatar" type="button" onClick={() => editing && imgRef.current?.click()} disabled={!editing}>
+            {profilePreview ? <img src={profilePreview} alt="프로필" /> : <span>{(user?.username || 'N')[0]}</span>}
+            {editing && <small>변경</small>}
+          </button>
+          <input ref={imgRef} type="file" accept=".jpg,.jpeg,.png,.webp" onChange={handleImageChange} hidden />
 
+          <div className="profile-meta">
+            <strong>{user?.username || 'NC member'}</strong>
+            <span>{user?.email || 'school email'}</span>
             {editing ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {links.map(l => (
-                  <div key={l.key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 14, width: 20 }}>{l.icon}</span>
-                    <input value={form[l.key]} onChange={e => setForm(f => ({ ...f, [l.key]: e.target.value }))}
-                      placeholder={`${l.label} URL`}
-                      style={{ flex: 1, padding: '7px 10px', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 7, color: '#ddd', fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
-                  </div>
+              <div className="link-editor">
+                {links.map((link) => (
+                  <input
+                    key={link.key}
+                    value={form[link.key]}
+                    onChange={(e) => setForm((current) => ({ ...current, [link.key]: e.target.value }))}
+                    placeholder={`${link.label} URL`}
+                  />
                 ))}
               </div>
             ) : (
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {links.map(l => portfolio[l.key] && (
-                  <a key={l.key} href={portfolio[l.key]} target="_blank" rel="noreferrer"
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 20, fontSize: 12, color: l.color, textDecoration: 'none' }}>
-                    {l.icon} {l.label}
-                  </a>
+              <div className="pill-row">
+                {links.map((link) => portfolio[link.key] && (
+                  <a key={link.key} href={portfolio[link.key]} target="_blank" rel="noreferrer">{link.label}</a>
                 ))}
-                {!portfolio.github_url && !portfolio.blog_url && !portfolio.notion_url && (
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,.2)' }}>편집을 눌러 링크를 추가하세요</span>
-                )}
+                {!links.some((link) => portfolio[link.key]) && <span>링크를 추가해 주세요</span>}
               </div>
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'rgba(255,255,255,.4)', cursor: 'pointer' }}>
-              <input type="checkbox" checked={form.is_public} onChange={e => setForm(f => ({ ...f, is_public: e.target.checked }))} style={{ accentColor: '#ffd43b' }} />
-              공개
-            </label>
-            {editing ? (
-              <>
-                <button onClick={() => { setEditing(false); loadPortfolio(); }} style={ghostBtn}>취소</button>
-                <button onClick={save} disabled={saving} style={yellowBtn}>{saving ? '저장 중...' : '저장'}</button>
-              </>
-            ) : (
-              <button onClick={() => setEditing(true)} style={yellowBtn}>편집</button>
-            )}
-          </div>
-        </div>
+          <label className="public-toggle">
+            <input
+              type="checkbox"
+              checked={form.is_public}
+              onChange={(e) => setForm((current) => ({ ...current, is_public: e.target.checked }))}
+            />
+            공개
+          </label>
+        </section>
 
-        {msg && <div style={{ background: 'rgba(34,197,94,.08)', border: '1px solid rgba(34,197,94,.2)', borderRadius: 8, padding: '10px 14px', color: '#86efac', fontSize: 13, marginBottom: 16 }}>{msg}</div>}
+        {msg && <div className="inline-alert success">{msg}</div>}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {sections.map(s => (
-            <div key={s.key} style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 14, padding: '24px 26px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                <span style={{ fontSize: 16 }}>{s.icon}</span>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,.5)', letterSpacing: '.08em', textTransform: 'uppercase' }}>{s.label}</div>
+        <section className="portfolio-grid">
+          {sections.map((section) => (
+            <article key={section.key} className="workspace-card">
+              <div className="card-head">
+                <span>{section.label}</span>
               </div>
               {editing ? (
-                <textarea value={form[s.key]} onChange={e => setForm(f => ({ ...f, [s.key]: e.target.value }))}
-                  rows={6} placeholder={s.placeholder}
-                  style={{ width: '100%', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 8, color: '#e0e0e0', fontSize: 14, padding: '12px 14px', outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box', lineHeight: 1.7 }} />
+                <textarea
+                  className="workspace-textarea"
+                  value={form[section.key]}
+                  onChange={(e) => setForm((current) => ({ ...current, [section.key]: e.target.value }))}
+                  rows={7}
+                  placeholder={section.placeholder}
+                />
               ) : (
-                <div style={{ fontSize: 14, color: portfolio[s.key] ? '#c0c0c0' : 'rgba(255,255,255,.2)', lineHeight: 1.8, whiteSpace: 'pre-wrap', minHeight: 32 }}>
-                  {portfolio[s.key] || `${s.label} 내용을 추가해주세요.`}
-                </div>
+                <p className={portfolio[section.key] ? 'portfolio-text' : 'portfolio-text muted'}>
+                  {portfolio[section.key] || `${section.label} 내용을 추가해 주세요.`}
+                </p>
               )}
-            </div>
+            </article>
           ))}
-        </div>
-      </div>
+        </section>
+
+        {editing && (
+          <div className="floating-save">
+            <button className="modern-btn ghost" type="button" onClick={() => { setEditing(false); loadPortfolio(); }}>취소</button>
+            <button className="modern-btn primary" type="button" onClick={save} disabled={saving}>
+              {saving ? '저장 중...' : '저장'}
+            </button>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
-
-const yellowBtn = { padding: '8px 18px', background: 'rgba(255,210,60,.12)', border: '1px solid rgba(255,210,60,.4)', borderRadius: 8, color: '#ffd43b', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' };
-const ghostBtn = { padding: '8px 18px', background: 'transparent', border: '1px solid rgba(255,255,255,.12)', borderRadius: 8, color: 'rgba(255,255,255,.4)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' };

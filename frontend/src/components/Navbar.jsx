@@ -1,17 +1,19 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { clearLocalSession, getCurrentLocalUser } from '../utils/localAuth';
 
 const navItems = [
   ['/', '홈'],
   ['/portfolio', '포트폴리오'],
-  ['/team', '팀'],
+  ['/team', '팀 공간'],
   ['/ai', 'AI 분석'],
 ];
 
 export default function Navbar({ user }) {
   const navigate = useNavigate();
+  const resolvedUser = user || getCurrentLocalUser();
 
   const logout = () => {
-    localStorage.removeItem('token');
+    clearLocalSession();
     navigate('/login');
   };
 
@@ -27,11 +29,11 @@ export default function Navbar({ user }) {
             {label}
           </NavLink>
         ))}
-        {user?.is_admin && <NavLink to="/admin">관리자</NavLink>}
+        {resolvedUser?.is_admin && <NavLink to="/admin">관리자</NavLink>}
       </div>
 
       <div className="site-account">
-        {user?.username && <span>{user.username}</span>}
+        {resolvedUser?.username && <span>{resolvedUser.username}</span>}
         <button type="button" onClick={logout}>로그아웃</button>
       </div>
     </nav>

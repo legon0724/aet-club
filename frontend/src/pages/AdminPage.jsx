@@ -1,7 +1,9 @@
-import { useEffect, useState, memo } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
+import { getCurrentLocalUser, readLocalUsers, rememberCurrentUser, writeLocalUsers } from '../utils/localAuth';
+import { DEFAULT_TEAMS, getAllLocalPortfolios, getFallbackNotices, getLocalAdminUsers } from '../utils/localWorkspace';
 
 const BACKEND = 'https://web-production-00104.up.railway.app';
 
@@ -11,11 +13,21 @@ export default function AdminPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const localUser = getCurrentLocalUser();
+    if (localUser) {
+      if (!localUser.is_admin) {
+        navigate('/');
+        return;
+      }
+    }
     api.get('/api/auth/me').then(r => {
-      if (!r.data.is_admin) navigate('/');
-      setUser(r.data);
-    }).catch(() => navigate('/login'));
-  }, []);
+      const resolvedUser = rememberCurrentUser(r.data);
+      if (!resolvedUser.is_admin) navigate('/');
+      setUser(resolvedUser);
+    }).catch(() => {
+      if (!localUser) navigate('/login');
+    });
+  }, [navigate]);
 
   const tabs = [
     ['users', '회원 관리'],
@@ -58,23 +70,41 @@ function UsersTab() {
   const [teams, setTeams] = useState([]);
 
   useEffect(() => {
-    api.get('/api/admin/users').then(r => setUsers(r.data)).catch(() => {});
-    api.get('/api/teams/').then(r => setTeams(r.data)).catch(() => {});
+    api.get('/api/admin/users').then(r => setUsers(r.data)).catch(() => setUsers(getLocalAdminUsers()));
+    api.get('/api/teams/').then(r => setTeams(r.data.length ? r.data : DEFAULT_TEAMS)).catch(() => setTeams(DEFAULT_TEAMS));
   }, []);
 
   const toggleAdmin = async (id, isAdmin) => {
-    await api.patch(`/api/admin/users/${id}`, { is_admin: !isAdmin });
+    try {
+      await api.patch(`/api/admin/users/${id}`, { is_admin: !isAdmin });
+    } catch {
+      const nextUsers = readLocalUsers().map((user) => (
+        user.email === id ? { ...user, is_admin: !isAdmin } : user
+      ));
+      writeLocalUsers(nextUsers);
+    }
     setUsers(u => u.map(x => x.id === id ? { ...x, is_admin: !isAdmin } : x));
   };
 
   const assignTeam = async (id, teamId) => {
-    await api.patch(`/api/admin/users/${id}`, { team_id: teamId || null });
+    try {
+      await api.patch(`/api/admin/users/${id}`, { team_id: teamId || null });
+    } catch {
+      const nextUsers = readLocalUsers().map((user) => (
+        user.email === id ? { ...user, team_id: teamId || null } : user
+      ));
+      writeLocalUsers(nextUsers);
+    }
     setUsers(u => u.map(x => x.id === id ? { ...x, team_id: teamId } : x));
   };
 
   const deleteUser = async (id) => {
     if (!window.confirm('삭제할까요?')) return;
-    await api.delete(`/api/admin/users/${id}`);
+    try {
+      await api.delete(`/api/admin/users/${id}`);
+    } catch {
+      writeLocalUsers(readLocalUsers().filter((user) => user.email !== id));
+    }
     setUsers(u => u.filter(x => x.id !== id));
   };
 
@@ -107,18 +137,26 @@ function TeamsTab() {
   const [form, setForm] = useState({ name: '', description: '', color: '#3b82f6' });
   const [show, setShow] = useState(false);
 
-  useEffect(() => { api.get('/api/teams/').then(r => setTeams(r.data)).catch(() => {}); }, []);
+  useEffect(() => { api.get('/api/teams/').then(r => setTeams(r.data.length ? r.data : DEFAULT_TEAMS)).catch(() => setTeams(DEFAULT_TEAMS)); }, []);
 
   const create = async () => {
-    await api.post('/api/teams/', form);
+    try {
+      await api.post('/api/teams/', form);
+      api.get('/api/teams/').then(r => setTeams(r.data.length ? r.data : DEFAULT_TEAMS));
+    } catch {
+      setTeams((current) => [...current, { ...form, id: `local-team-${Date.now()}` }]);
+    }
     setForm({ name: '', description: '', color: '#3b82f6' });
     setShow(false);
-    api.get('/api/teams/').then(r => setTeams(r.data));
   };
 
   const del = async (id) => {
     if (!window.confirm('삭제할까요?')) return;
-    await api.delete(`/api/teams/${id}`);
+    try {
+      await api.delete(`/api/teams/${id}`);
+    } catch {
+      // Local fallback only.
+    }
     setTeams(t => t.filter(x => x.id !== id));
   };
 
@@ -153,20 +191,33 @@ function NoticesTab() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    api.get('/api/notices/').then(r => setNotices(r.data)).catch(() => {});
-    api.get('/api/teams/').then(r => setTeams(r.data)).catch(() => {});
+    api.get('/api/notices/').then(r => setNotices(r.data.length ? r.data : getFallbackNotices())).catch(() => setNotices(getFallbackNotices()));
+    api.get('/api/teams/').then(r => setTeams(r.data.length ? r.data : DEFAULT_TEAMS)).catch(() => setTeams(DEFAULT_TEAMS));
   }, []);
 
   const create = async () => {
-    await api.post('/api/notices/', { ...form, team_id: form.team_id || null });
+    try {
+      await api.post('/api/notices/', { ...form, team_id: form.team_id || null });
+      api.get('/api/notices/').then(r => setNotices(r.data.length ? r.data : getFallbackNotices()));
+    } catch {
+      setNotices((current) => [{
+        ...form,
+        id: `local-notice-${Date.now()}`,
+        team_id: form.team_id || null,
+        created_at: new Date().toISOString(),
+      }, ...current]);
+    }
     setForm({ title: '', content: '', is_pinned: false, team_id: '' });
     setShow(false);
-    api.get('/api/notices/').then(r => setNotices(r.data));
   };
 
   const del = async (id) => {
     if (!window.confirm('삭제할까요?')) return;
-    await api.delete(`/api/notices/${id}`);
+    try {
+      await api.delete(`/api/notices/${id}`);
+    } catch {
+      // Local fallback only.
+    }
     setNotices(n => n.filter(x => x.id !== id));
   };
 
@@ -212,7 +263,7 @@ function BannersTab() {
   const [form, setForm] = useState({ title: '', link_url: '', order_num: 0 });
   const [imageFile, setImageFile] = useState(null);
   const [show, setShow] = useState(false);
-  const imgRef = { current: null };
+  const imgRef = useRef(null);
 
   useEffect(() => { api.get('/api/banners/').then(r => setBanners(r.data)).catch(() => {}); }, []);
 
@@ -262,7 +313,7 @@ function BannersTab() {
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,.25)', marginTop: 2 }}>JPG, PNG, WebP, GIF</div>
             </div>
           </div>
-          <input ref={el => imgRef.current = el} type="file" accept=".jpg,.jpeg,.png,.webp,.gif" onChange={e => setImageFile(e.target.files[0])} style={{ display: 'none' }} />
+          <input ref={imgRef} type="file" accept=".jpg,.jpeg,.png,.webp,.gif" onChange={e => setImageFile(e.target.files[0])} style={{ display: 'none' }} />
           <button onClick={create} style={yBtn}>추가</button>
         </div>
       )}
@@ -292,14 +343,17 @@ function PortfoliosTab() {
   const [selected, setSelected] = useState(null);
   const [portfolio, setPortfolio] = useState(null);
 
-  useEffect(() => { api.get('/api/admin/users').then(r => setUsers(r.data)).catch(() => {}); }, []);
+  useEffect(() => { api.get('/api/admin/users').then(r => setUsers(r.data)).catch(() => setUsers(getLocalAdminUsers())); }, []);
 
   const view = async (userId) => {
     setSelected(userId);
     try {
       const r = await api.get(`/api/portfolio/${userId}`);
       setPortfolio(r.data);
-    } catch { setPortfolio(null); }
+    } catch {
+      const localPortfolio = getAllLocalPortfolios()[userId];
+      setPortfolio(localPortfolio || null);
+    }
   };
 
   const links = [

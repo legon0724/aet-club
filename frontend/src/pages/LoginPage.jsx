@@ -2,31 +2,21 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import heroImage from '../assets/hero.png';
-
-const SCHOOL_EMAIL_DOMAIN = '@cam.hs.kr';
-const LOCAL_USERS_KEY = 'nc-local-users-v2';
-const LOCAL_RESET_KEY = 'nc-local-reset-v2';
-const LOCAL_RESET_VERSION_KEY = 'nc-local-auth-reset-version';
-const LOCAL_RESET_VERSION = '2026-07-10-clean-start';
-
-const isSchoolEmail = (value) => value.trim().toLowerCase().endsWith(SCHOOL_EMAIL_DOMAIN);
-const encodePassword = (value) => window.btoa(unescape(encodeURIComponent(value)));
-
-const readLocalUsers = () => {
-  try {
-    return JSON.parse(localStorage.getItem(LOCAL_USERS_KEY) || '[]');
-  } catch {
-    return [];
-  }
-};
-
-const writeLocalUsers = (users) => {
-  localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users));
-};
-
-const isApiUnavailable = (err) => !err.response || err.response.status === 404 || err.response.status >= 500;
-
-const createLocalToken = (email) => `local:${email}:${Date.now()}`;
+import {
+  LOCAL_RESET_KEY,
+  LOCAL_RESET_VERSION,
+  LOCAL_RESET_VERSION_KEY,
+  LOCAL_USERS_KEY,
+  clearLocalSession,
+  encodePassword,
+  isAdminEmail,
+  isApiUnavailable,
+  isSchoolEmail,
+  readLocalUsers,
+  rememberCurrentUser,
+  setLocalSession,
+  writeLocalUsers,
+} from '../utils/localAuth';
 
 const terms = [
   {
@@ -51,19 +41,19 @@ const terms = [
 
 const modeText = {
   login: {
-    tab: 'Login',
+    tab: '로그인',
     eyebrow: 'NC access',
     title: '로그인',
     helper: '학교 이메일로만 접속할 수 있습니다.',
   },
   register: {
-    tab: 'Join',
+    tab: '가입',
     eyebrow: 'Start now',
     title: '회원가입',
     helper: '@cam.hs.kr 학교 이메일로 가입할 수 있습니다.',
   },
   reset: {
-    tab: 'Reset',
+    tab: '재설정',
     eyebrow: 'Email code',
     title: '비밀번호 재설정',
     helper: '가입한 이메일로 인증번호를 받고 새 비밀번호를 설정하세요.',
@@ -93,7 +83,7 @@ export default function LoginPage() {
     if (localStorage.getItem(LOCAL_RESET_VERSION_KEY) !== LOCAL_RESET_VERSION) {
       localStorage.removeItem(LOCAL_USERS_KEY);
       localStorage.removeItem(LOCAL_RESET_KEY);
-      localStorage.removeItem('token');
+      clearLocalSession();
       localStorage.setItem(LOCAL_RESET_VERSION_KEY, LOCAL_RESET_VERSION);
     }
   }, []);
@@ -135,12 +125,18 @@ export default function LoginPage() {
     try {
       const res = await api.post('/api/auth/login', { email, password });
       localStorage.setItem('token', res.data.access_token);
+      try {
+        const me = await api.get('/api/auth/me');
+        rememberCurrentUser(me.data);
+      } catch {
+        // If the profile request is unavailable, the route guards still keep the token.
+      }
       navigate('/');
     } catch (err) {
       if (isApiUnavailable(err)) {
         const localUser = readLocalUsers().find((user) => user.email === email.trim().toLowerCase());
         if (localUser && localUser.password === encodePassword(password)) {
-          localStorage.setItem('token', createLocalToken(localUser.email));
+          setLocalSession(localUser);
           navigate('/');
           return;
         }
@@ -197,7 +193,8 @@ export default function LoginPage() {
             email: normalizedEmail,
             username: username.trim(),
             password: encodePassword(password),
-            is_admin: false,
+            is_admin: isAdminEmail(normalizedEmail),
+            team_id: 'creative',
             created_at: new Date().toISOString(),
           },
         ]);
@@ -315,7 +312,7 @@ export default function LoginPage() {
       <section className="editorial-scene" aria-label="NC 소개">
         <div className="editorial-nav">
           <span className="editorial-logo">NC</span>
-          <span>School email only</span>
+          <span>CAM High Club</span>
         </div>
 
         <div className="poster-stack" aria-hidden="true">
@@ -328,7 +325,7 @@ export default function LoginPage() {
               <span />
             </div>
             <img src={heroImage} alt="" />
-            <span className="poster-title">New Creative</span>
+            <span className="poster-title">NC</span>
           </div>
         </div>
       </section>

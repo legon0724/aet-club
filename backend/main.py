@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.core.config import settings
 from backend.models.database import init_db
-from backend.routers import auth, portfolio, teams, submissions, notices, banners, ai, admin, chat
+from backend.routers import auth, portfolio, teams, assignments, submissions, notices, banners, ai, admin, chat
 
 app = FastAPI(title=settings.APP_NAME, version="1.0.0", docs_url="/api/docs")
 
@@ -17,6 +17,7 @@ app.add_middleware(
 app.include_router(auth.router,        prefix="/api/auth",        tags=["인증"])
 app.include_router(portfolio.router,   prefix="/api/portfolio",   tags=["포트폴리오"])
 app.include_router(teams.router,       prefix="/api/teams",       tags=["팀"])
+app.include_router(assignments.router, prefix="/api/assignments", tags=["과제관리"])
 app.include_router(submissions.router, prefix="/api/submissions", tags=["과제제출"])
 app.include_router(notices.router,     prefix="/api/notices",     tags=["공지"])
 app.include_router(banners.router,     prefix="/api/banners",     tags=["배너"])

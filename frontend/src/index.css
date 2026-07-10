@@ -2469,20 +2469,20 @@ a {
   }
 }
 
-.classroom-hero {
+.assignment-hero {
   background:
     linear-gradient(135deg, rgba(45, 212, 191, 0.16), rgba(139, 92, 246, 0.08)),
     rgba(16, 20, 30, 0.86);
 }
 
-.classroom-switcher {
+.assignment-switcher {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
 
-.classroom-switcher button {
+.assignment-switcher button {
   min-height: 126px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
@@ -2493,17 +2493,18 @@ a {
   cursor: pointer;
 }
 
-.classroom-switcher button.active {
+.assignment-switcher button.active {
   border-color: var(--team-color);
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--team-color) 22%, transparent), rgba(255, 255, 255, 0.04)),
     rgba(255, 255, 255, 0.04);
 }
 
-.classroom-switcher small,
-.classwork-card span,
+.assignment-switcher small,
+.assignment-card > div > span,
 .stream-header span,
 .turn-in-head span,
+.selected-assignment span,
 .admin-hero span,
 .admin-content-head span {
   display: block;
@@ -2514,32 +2515,37 @@ a {
   text-transform: uppercase;
 }
 
-.classroom-switcher strong {
+.assignment-switcher strong {
   display: block;
   margin-bottom: 8px;
   font-size: 18px;
 }
 
-.classroom-switcher button > span {
+.assignment-switcher button > span {
   color: #aab4c4;
   font-size: 13px;
   line-height: 1.55;
 }
 
-.classroom-layout {
+.assignment-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
   gap: 16px;
 }
 
-.classroom-stream,
+.assignment-stream,
 .turn-in-panel {
   display: grid;
   align-content: start;
   gap: 14px;
 }
 
-.classwork-card {
+.assignment-list-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.assignment-card {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 16px;
@@ -2551,7 +2557,16 @@ a {
     rgba(255, 255, 255, 0.04);
 }
 
-.classwork-icon {
+.assignment-card.active {
+  border-color: rgba(45, 212, 191, 0.45);
+  box-shadow: 0 18px 44px rgba(45, 212, 191, 0.08);
+}
+
+.assignment-card.empty {
+  border-style: dashed;
+}
+
+.assignment-icon {
   display: grid;
   place-items: center;
   width: 52px;
@@ -2563,18 +2578,18 @@ a {
   font-weight: 900;
 }
 
-.classwork-card h2,
+.assignment-card h2,
 .stream-header h3 {
   margin: 0;
 }
 
-.classwork-card p {
+.assignment-card p {
   margin: 10px 0 0;
   color: #aab4c4;
   line-height: 1.65;
 }
 
-.classwork-meta {
+.assignment-meta {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 7px 12px;
@@ -2585,7 +2600,37 @@ a {
   font-size: 13px;
 }
 
-.classwork-meta strong {
+.assignment-meta strong {
+  color: #f8fafc;
+}
+
+.assignment-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.assignment-card-actions button,
+.assignment-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  border: 1px solid rgba(45, 212, 191, 0.26);
+  border-radius: 8px;
+  padding: 0 12px;
+  background: rgba(45, 212, 191, 0.1);
+  color: #99f6e4;
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.assignment-card-actions button {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
   color: #f8fafc;
 }
 
@@ -2598,11 +2643,21 @@ a {
   padding-bottom: 12px;
 }
 
-.classroom-list {
+.stream-header.compact {
+  margin-top: 8px;
+}
+
+.stream-header small {
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.assignment-list {
   gap: 12px;
 }
 
-.classroom-submission {
+.assignment-submission {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: start;
 }
@@ -2634,6 +2689,33 @@ a {
   gap: 12px;
 }
 
+.selected-assignment {
+  border: 1px solid rgba(45, 212, 191, 0.18);
+  border-radius: 8px;
+  padding: 14px;
+  background: rgba(45, 212, 191, 0.07);
+}
+
+.selected-assignment strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #f8fafc;
+}
+
+.selected-assignment p {
+  margin: 0 0 10px;
+  color: #aab4c4;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.selected-assignment a {
+  color: #99f6e4;
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
 .turn-in-head strong {
   border-radius: 999px;
   padding: 6px 10px;
@@ -2642,7 +2724,7 @@ a {
   font-size: 12px;
 }
 
-.classroom-form {
+.assignment-form {
   border: 0;
   padding: 0;
   background: transparent;
@@ -2710,7 +2792,7 @@ a {
 
 .admin-overview {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
   gap: 10px;
   margin-bottom: 16px;
 }
@@ -2764,12 +2846,243 @@ a {
   font-size: 25px;
 }
 
-@media (max-width: 1040px) {
-  .admin-overview {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
 
-  .classroom-layout {
+.admin-toolbar.split {
+  justify-content: space-between;
+}
+
+.admin-toolbar select,
+.admin-list-item select,
+.admin-form-grid input,
+.admin-form-grid textarea,
+.admin-form-grid select {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.055);
+  color: #f8fafc;
+  outline: none;
+  font-family: inherit;
+}
+
+.admin-form-grid {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.assignment-admin-form {
+  grid-template-columns: minmax(0, 1fr) 180px;
+}
+
+.assignment-admin-form textarea,
+.assignment-admin-form .admin-file-pick,
+.assignment-admin-form button {
+  grid-column: 1 / -1;
+}
+
+.admin-file-pick {
+  display: grid;
+  gap: 5px;
+  border: 1px dashed rgba(45, 212, 191, 0.34);
+  border-radius: 8px;
+  padding: 14px;
+  background: rgba(45, 212, 191, 0.06);
+  cursor: pointer;
+}
+
+.admin-file-pick strong {
+  color: #f8fafc;
+}
+
+.admin-file-pick span,
+.admin-list-item span,
+.admin-list-item small {
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.admin-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.admin-checkbox input {
+  accent-color: #2dd4bf;
+}
+
+.admin-list {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.admin-list-item > div:not(.team-dot) {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.admin-list-item strong {
+  color: #f8fafc;
+}
+
+.admin-list-item b {
+  color: #99f6e4;
+  font-size: 13px;
+}
+
+.team-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--team-color);
+  flex: 0 0 auto;
+}
+
+.status-button,
+.danger-button {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 8px 11px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.status-button.active {
+  border-color: rgba(45, 212, 191, 0.32);
+  background: rgba(45, 212, 191, 0.1);
+  color: #99f6e4;
+}
+
+.danger-button {
+  border-color: rgba(251, 113, 133, 0.24);
+  background: rgba(251, 113, 133, 0.08);
+  color: #fecdd3;
+}
+
+.assignment-admin-item {
+  align-items: start;
+}
+
+.admin-thumb {
+  width: 72px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.admin-split-view {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 16px;
+}
+
+.admin-side-list {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.admin-side-list button {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #f8fafc;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-side-list button.active {
+  border-color: rgba(45, 212, 191, 0.36);
+  background: rgba(45, 212, 191, 0.1);
+}
+
+.admin-side-list strong,
+.admin-side-list span {
+  display: block;
+}
+
+.admin-side-list span {
+  margin-top: 4px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.admin-preview {
+  min-height: 360px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.admin-preview-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.admin-preview-head img {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.admin-preview-head strong,
+.admin-preview-head span {
+  display: block;
+}
+
+.admin-preview section {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 14px 0;
+}
+
+.admin-preview section span {
+  color: #2dd4bf;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.admin-preview section p {
+  margin: 8px 0 0;
+  color: #dce4f2;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 1040px) {
+  .assignment-layout {
     grid-template-columns: 1fr;
   }
 
@@ -2779,16 +3092,19 @@ a {
 }
 
 @media (max-width: 720px) {
-  .classroom-switcher,
+  .assignment-switcher,
   .admin-overview {
     grid-template-columns: 1fr;
   }
 
-  .classroom-submission,
-  .classwork-card {
+  .assignment-submission,
+  .assignment-card,
+  .assignment-admin-form,
+  .admin-split-view {
     grid-template-columns: 1fr;
   }
 
+  .admin-list-item,
   .admin-hero,
   .stream-header {
     flex-direction: column;

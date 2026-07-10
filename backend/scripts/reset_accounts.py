@@ -1,6 +1,7 @@
 from backend.models.database import (
     AIUsage,
     ActivityLog,
+    Assignment,
     ChatMessage,
     PasswordResetCode,
     Portfolio,
@@ -17,6 +18,7 @@ def main():
             "chat_messages": db.query(ChatMessage).delete(),
             "activity_logs": db.query(ActivityLog).delete(),
             "ai_usage": db.query(AIUsage).delete(),
+            "assignments": db.query(Assignment).delete(),
             "submissions": db.query(Submission).delete(),
             "portfolios": db.query(Portfolio).delete(),
             "password_reset_codes": db.query(PasswordResetCode).delete(),

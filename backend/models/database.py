@@ -110,6 +110,19 @@ class Portfolio(Base):
     user = relationship("User", back_populates="portfolio")
 
 
+class Assignment(Base):
+    __tablename__ = "assignments"
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    team_id = Column(UUID(), ForeignKey("teams.id", ondelete="SET NULL"), nullable=True)
+    title = Column(String(255), nullable=False)
+    content = Column(Text, nullable=True)
+    file_url = Column(Text, nullable=True)
+    file_name = Column(String(255), nullable=True)
+    due_at = Column(String(50), nullable=True)
+    created_by = Column(UUID(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class Submission(Base):
     __tablename__ = "submissions"
     id = Column(UUID(), primary_key=True, default=uuid.uuid4)

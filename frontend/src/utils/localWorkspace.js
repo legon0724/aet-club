@@ -24,6 +24,7 @@ export const DEFAULT_TEAMS = [
 const LOCAL_PORTFOLIO_KEY = 'nc-local-portfolio-v2';
 const LOCAL_MESSAGES_KEY = 'nc-local-messages-v2';
 const LOCAL_SUBMISSIONS_KEY = 'nc-local-submissions-v2';
+const LOCAL_ASSIGNMENTS_KEY = 'nc-local-assignments-v2';
 const LOCAL_AI_USAGE_KEY = 'nc-local-ai-usage-v2';
 const LOCAL_NOTICES_KEY = 'nc-local-notices-v2';
 
@@ -129,11 +130,42 @@ export const getLocalSubmissions = (teamId) => {
   return all.filter((item) => item.team_id === teamId);
 };
 
+export const getLocalAssignments = (teamId) => {
+  const all = readJson(LOCAL_ASSIGNMENTS_KEY, []);
+  return all.filter((item) => !teamId || item.team_id === teamId);
+};
+
+export const addLocalAssignment = (teamId, user, data, fileName = '', fileData = '') => {
+  const all = readJson(LOCAL_ASSIGNMENTS_KEY, []);
+  const item = {
+    id: `local-assignment-${Date.now()}`,
+    team_id: teamId,
+    title: data.title,
+    content: data.content || '',
+    due_at: data.due_at || '',
+    file_name: fileName,
+    file_data: fileData,
+    created_by: user?.username || 'NC admin',
+    created_at: new Date().toISOString(),
+  };
+  const next = [item, ...all];
+  writeJson(LOCAL_ASSIGNMENTS_KEY, next);
+  return next.filter((entry) => !teamId || entry.team_id === teamId);
+};
+
+export const deleteLocalAssignment = (id) => {
+  const next = readJson(LOCAL_ASSIGNMENTS_KEY, []).filter((item) => item.id !== id);
+  writeJson(LOCAL_ASSIGNMENTS_KEY, next);
+  return next;
+};
+
 export const addLocalSubmission = (teamId, user, data, fileName = '') => {
   const all = readJson(LOCAL_SUBMISSIONS_KEY, []);
   const item = {
     id: `local-sub-${Date.now()}`,
     team_id: teamId,
+    assignment_id: data.assignment_id || null,
+    assignment_title: data.assignment_title || '',
     username: user?.username || 'NC member',
     title: data.title,
     content: data.content || '',

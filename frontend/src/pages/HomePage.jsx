@@ -9,7 +9,7 @@ const BACKEND = 'https://web-production-00104.up.railway.app';
 
 const quickLinks = [
   { to: '/portfolio', eyebrow: 'Portfolio', label: '포트폴리오', description: '활동 기록과 링크를 깔끔하게 정리합니다.' },
-  { to: '/team', eyebrow: 'Submit', label: '과제 제출', description: '팀별 과제, 링크, 첨부 파일을 한 번에 제출합니다.' },
+  { to: '/team', eyebrow: 'Classroom', label: '클래스룸', description: '팀별 과제와 제출물을 수업 피드처럼 확인합니다.' },
   { to: '/ai', eyebrow: 'Analysis', label: 'AI 분석', description: '생기부 문장과 진로 방향을 빠르게 점검합니다.' },
 ];
 
@@ -30,10 +30,10 @@ const BannerSlider = memo(({ banners }) => {
       {imgUrl && <img src={imgUrl} alt="" />}
       <div className="hero-copy">
         <span>NC Club</span>
-        <h1>{banner?.title || '오늘 할 일을 놓치지 않게, 동아리 활동을 한 화면에 모았습니다.'}</h1>
-        <p>{banner?.content || '공지 확인, 포트폴리오 정리, 과제 제출, 분석까지 필요한 흐름만 남겼습니다.'}</p>
+        <h1>{banner?.title || 'NC 클래스룸'}</h1>
+        <p>{banner?.content || '공지, 과제, 포트폴리오, 분석을 더 빠르게 들어갈 수 있게 정리했습니다.'}</p>
         <div className="hero-actions">
-          <Link to="/team">과제 제출</Link>
+          <Link to="/team">클래스룸 열기</Link>
           <Link to="/portfolio">포트폴리오 정리</Link>
         </div>
       </div>
@@ -88,11 +88,11 @@ export default function HomePage() {
 
         <section className="assignment-strip">
           <div>
-            <span>Assignment</span>
-            <h2>과제 제출 칸을 바로 열어둘게요.</h2>
-            <p>팀 공간에서 제목, 설명, 링크, 파일 첨부까지 제출할 수 있습니다.</p>
+            <span>Classroom</span>
+            <h2>과제는 클래스룸에서 확인하고 제출합니다.</h2>
+            <p>팀별 과제 피드, 제출물 목록, 새 제출 패널을 한 화면에서 관리합니다.</p>
           </div>
-          <Link to="/team">제출하러 가기</Link>
+          <Link to="/team">클래스룸 이동</Link>
         </section>
 
         <section className="notice-panel">

@@ -2468,3 +2468,334 @@ a {
     max-width: 86%;
   }
 }
+
+.classroom-hero {
+  background:
+    linear-gradient(135deg, rgba(45, 212, 191, 0.16), rgba(139, 92, 246, 0.08)),
+    rgba(16, 20, 30, 0.86);
+}
+
+.classroom-switcher {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.classroom-switcher button {
+  min-height: 126px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #f8fafc;
+  text-align: left;
+  cursor: pointer;
+}
+
+.classroom-switcher button.active {
+  border-color: var(--team-color);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--team-color) 22%, transparent), rgba(255, 255, 255, 0.04)),
+    rgba(255, 255, 255, 0.04);
+}
+
+.classroom-switcher small,
+.classwork-card span,
+.stream-header span,
+.turn-in-head span,
+.admin-hero span,
+.admin-content-head span {
+  display: block;
+  margin-bottom: 8px;
+  color: #2dd4bf;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.classroom-switcher strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 18px;
+}
+
+.classroom-switcher button > span {
+  color: #aab4c4;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.classroom-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 16px;
+}
+
+.classroom-stream,
+.turn-in-panel {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.classwork-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  border: 1px solid rgba(45, 212, 191, 0.2);
+  border-radius: 8px;
+  padding: 18px;
+  background:
+    linear-gradient(135deg, rgba(45, 212, 191, 0.12), rgba(139, 92, 246, 0.08)),
+    rgba(255, 255, 255, 0.04);
+}
+
+.classwork-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  background: #2dd4bf;
+  color: #062017;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.classwork-card h2,
+.stream-header h3 {
+  margin: 0;
+}
+
+.classwork-card p {
+  margin: 10px 0 0;
+  color: #aab4c4;
+  line-height: 1.65;
+}
+
+.classwork-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 7px 12px;
+  margin-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 14px;
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.classwork-meta strong {
+  color: #f8fafc;
+}
+
+.stream-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 12px;
+}
+
+.classroom-list {
+  gap: 12px;
+}
+
+.classroom-submission {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.submission-avatar {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(45, 212, 191, 0.16);
+  color: #99f6e4;
+  font-weight: 900;
+}
+
+.turn-in-panel {
+  position: sticky;
+  top: 98px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.turn-in-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.turn-in-head strong {
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(45, 212, 191, 0.12);
+  color: #99f6e4;
+  font-size: 12px;
+}
+
+.classroom-form {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.turn-in-button {
+  min-height: 48px;
+  border: 1px dashed rgba(45, 212, 191, 0.34);
+  border-radius: 8px;
+  background: rgba(45, 212, 191, 0.06);
+  color: #99f6e4;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.admin-page {
+  max-width: 1180px;
+}
+
+.admin-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: clamp(24px, 4vw, 40px);
+  background:
+    linear-gradient(135deg, rgba(45, 212, 191, 0.12), rgba(251, 113, 133, 0.08)),
+    rgba(16, 20, 30, 0.84);
+}
+
+.admin-hero h1 {
+  margin: 0;
+  font-size: clamp(30px, 5vw, 54px);
+  line-height: 1.02;
+}
+
+.admin-hero p {
+  max-width: 640px;
+  margin: 14px 0 0;
+  color: #aab4c4;
+  line-height: 1.65;
+}
+
+.admin-profile-chip {
+  min-width: 230px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.admin-profile-chip strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 18px;
+}
+
+.admin-profile-chip span {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.admin-overview {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.admin-overview button {
+  min-height: 92px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 13px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #f8fafc;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-overview button.active {
+  border-color: rgba(45, 212, 191, 0.42);
+  background: rgba(45, 212, 191, 0.12);
+}
+
+.admin-overview span {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 900;
+}
+
+.admin-overview small {
+  color: #94a3b8;
+  line-height: 1.45;
+}
+
+.admin-content {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 20px;
+  background: rgba(16, 20, 30, 0.78);
+}
+
+.admin-content-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 14px;
+}
+
+.admin-content-head h2 {
+  margin: 0;
+  font-size: 25px;
+}
+
+@media (max-width: 1040px) {
+  .admin-overview {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .classroom-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .turn-in-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .classroom-switcher,
+  .admin-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .classroom-submission,
+  .classwork-card {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-hero,
+  .stream-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-profile-chip {
+    min-width: 0;
+  }
+}

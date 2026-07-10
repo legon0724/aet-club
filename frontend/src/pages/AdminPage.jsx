@@ -8,7 +8,7 @@ import { DEFAULT_TEAMS, getAllLocalPortfolios, getFallbackNotices, getLocalAdmin
 const BACKEND = 'https://web-production-00104.up.railway.app';
 
 export default function AdminPage() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => getCurrentLocalUser());
   const [tab, setTab] = useState('users');
   const navigate = useNavigate();
 
@@ -30,37 +30,56 @@ export default function AdminPage() {
   }, [navigate]);
 
   const tabs = [
-    ['users', '회원 관리'],
-    ['teams', '팀 관리'],
-    ['notices', '공지 관리'],
-    ['banners', '배너 관리'],
-    ['portfolios', '포트폴리오'],
-    ['ai', 'AI 사용량'],
+    ['users', '회원 관리', '권한과 팀 배정'],
+    ['teams', '팀 관리', '팀 생성과 정리'],
+    ['notices', '공지 관리', '전체/팀 공지'],
+    ['banners', '배너 관리', '홈 배너 운영'],
+    ['portfolios', '포트폴리오', '회원 작업물 확인'],
+    ['ai', 'AI 사용량', '분석 사용 현황'],
   ];
+  const activeTab = tabs.find(([key]) => key === tab);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#080808', color: '#e0e0e0', fontFamily: "'DM Sans', sans-serif" }}>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+    <div className="app-shell workspace-shell admin-shell">
       <Navbar user={user} />
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '32px 20px' }}>
-        <h2 style={{ fontSize: 22, fontWeight: 600, color: '#f0f0f0', marginBottom: 20 }}>관리자 패널</h2>
+      <main className="workspace-page admin-page">
+        <section className="admin-hero">
+          <div>
+            <span>Admin Console</span>
+            <h1>관리자 화면</h1>
+            <p>회원, 팀, 공지, 배너, 포트폴리오, AI 사용량을 한 곳에서 빠르게 관리합니다.</p>
+          </div>
+          <div className="admin-profile-chip">
+            <strong>{user?.username || '관리자'}</strong>
+            <span>{user?.email || 'admin access'}</span>
+          </div>
+        </section>
 
-        <div style={{ display: 'flex', gap: 4, marginBottom: 24, flexWrap: 'wrap', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
+        <section className="admin-overview" aria-label="관리 요약">
           {tabs.map(([k, label]) => (
-            <button key={k} onClick={() => setTab(k)}
-              style={{ padding: '10px 16px', border: 'none', borderBottom: tab === k ? '2px solid #ffd43b' : '2px solid transparent', background: 'transparent', color: tab === k ? '#ffd43b' : 'rgba(255,255,255,.4)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
-              {label}
+            <button key={k} type="button" className={tab === k ? 'active' : ''} onClick={() => setTab(k)}>
+              <span>{label}</span>
+              <small>{tabs.find(([key]) => key === k)?.[2]}</small>
             </button>
           ))}
-        </div>
+        </section>
 
-        {tab === 'users' && <UsersTab />}
-        {tab === 'teams' && <TeamsTab />}
-        {tab === 'notices' && <NoticesTab />}
-        {tab === 'banners' && <BannersTab />}
-        {tab === 'portfolios' && <PortfoliosTab />}
-        {tab === 'ai' && <AITab />}
-      </div>
+        <section className="admin-content">
+          <div className="admin-content-head">
+            <div>
+              <span>{activeTab?.[2]}</span>
+              <h2>{activeTab?.[1]}</h2>
+            </div>
+          </div>
+
+          {tab === 'users' && <UsersTab />}
+          {tab === 'teams' && <TeamsTab />}
+          {tab === 'notices' && <NoticesTab />}
+          {tab === 'banners' && <BannersTab />}
+          {tab === 'portfolios' && <PortfoliosTab />}
+          {tab === 'ai' && <AITab />}
+        </section>
+      </main>
     </div>
   );
 }

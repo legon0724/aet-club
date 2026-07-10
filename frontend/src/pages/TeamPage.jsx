@@ -142,18 +142,18 @@ export default function TeamPage() {
     <div className="app-shell workspace-shell">
       <Navbar user={user} />
       <main className="workspace-page team-page">
-        <section className="page-hero compact">
+        <section className="page-hero compact classroom-hero">
           <div>
-            <span>Team Space</span>
-            <h1>팀 대화와 과제 제출을 같은 흐름으로 묶었습니다.</h1>
-            <p>과제 제출 칸을 기본으로 열어 두어 제출 위치가 바로 보입니다.</p>
+            <span>NC Classroom</span>
+            <h1>팀별 과제를 클래스룸처럼 확인하고 제출합니다.</h1>
+            <p>공지처럼 올라온 과제를 확인하고, 오른쪽 제출 패널에서 링크와 파일을 바로 첨부하세요.</p>
           </div>
           <button className="modern-btn primary" type="button" onClick={() => { setTab('submissions'); setShowSubForm(true); }}>
-            과제 제출
+            새 제출
           </button>
         </section>
 
-        <div className="team-switcher" aria-label="팀 선택">
+        <div className="classroom-switcher" aria-label="수업 선택">
           {teams.map((team) => (
             <button
               key={team.id}
@@ -162,6 +162,7 @@ export default function TeamPage() {
               onClick={() => setSelectedTeam(team)}
               style={{ '--team-color': team.color }}
             >
+              <small>CLASS</small>
               <strong>{team.name}</strong>
               <span>{team.description}</span>
             </button>
@@ -171,7 +172,7 @@ export default function TeamPage() {
         <section className="workspace-card team-board">
           <div className="workspace-tabs">
             {[
-              ['submissions', '과제 제출'],
+              ['submissions', '수업 과제'],
               ['chat', '팀 채팅'],
             ].map(([key, label]) => (
               <button key={key} type="button" className={tab === key ? 'active' : ''} onClick={() => setTab(key)}>
@@ -181,49 +182,74 @@ export default function TeamPage() {
           </div>
 
           {tab === 'submissions' && (
-            <div className="submission-layout">
-              <div className="submission-head">
-                <div>
-                  <span>{selectedTeam?.name}</span>
-                  <h2>과제 제출</h2>
-                </div>
-                <button className="modern-btn ghost" type="button" onClick={() => setShowSubForm((current) => !current)}>
-                  {showSubForm ? '접기' : '새 제출'}
-                </button>
-              </div>
-
-              {showSubForm && (
-                <div className="submission-form">
-                  <input value={newSub.title} onChange={(e) => setNewSub((current) => ({ ...current, title: e.target.value }))} placeholder="과제 제목" />
-                  <textarea value={newSub.content} onChange={(e) => setNewSub((current) => ({ ...current, content: e.target.value }))} placeholder="설명이나 제출 메모" rows={4} />
-                  <input value={newSub.link_url} onChange={(e) => setNewSub((current) => ({ ...current, link_url: e.target.value }))} placeholder="링크 URL" />
-                  <div className="file-picker" role="button" tabIndex={0} onClick={() => fileRef.current?.click()} onKeyDown={(e) => e.key === 'Enter' && fileRef.current?.click()}>
-                    <span>{subFile ? subFile.name : '파일 첨부'}</span>
-                    <small>PDF, 이미지, 문서 파일</small>
+            <div className="classroom-layout">
+              <section className="classroom-stream" aria-label="과제 스트림">
+                <article className="classwork-card current">
+                  <div className="classwork-icon">NC</div>
+                  <div>
+                    <span>{selectedTeam?.name}</span>
+                    <h2>이번 주 팀 과제</h2>
+                    <p>완성본 링크, 파일, 간단한 설명을 함께 제출하세요. 제출 후 목록에서 바로 확인할 수 있습니다.</p>
+                    <div className="classwork-meta">
+                      <strong>제출 방식</strong>
+                      <span>링크 + 파일 첨부</span>
+                      <strong>상태</strong>
+                      <span>{submissions.length > 0 ? `${submissions.length}개 제출됨` : '대기 중'}</span>
+                    </div>
                   </div>
-                  <input ref={fileRef} type="file" onChange={(e) => setSubFile(e.target.files[0])} hidden />
-                  <button className="modern-btn primary" type="button" onClick={submitSub}>제출하기</button>
-                </div>
-              )}
+                </article>
 
-              <div className="submission-list">
-                {submissions.length === 0 && <p className="empty-state">아직 제출된 과제가 없습니다.</p>}
-                {submissions.map((item) => (
-                  <article key={item.id} className="submission-item">
-                    <div>
-                      <span>{item.username}</span>
-                      <h3>{item.title}</h3>
-                      {item.content && <p>{item.content}</p>}
-                      {item.link_url && <a href={item.link_url} target="_blank" rel="noreferrer">{item.link_url}</a>}
-                      {item.file_name && <small>{item.file_name}</small>}
+                <div className="stream-header">
+                  <div>
+                    <span>Submitted work</span>
+                    <h3>제출물</h3>
+                  </div>
+                  <button className="modern-btn ghost" type="button" onClick={() => setShowSubForm(true)}>새 제출</button>
+                </div>
+
+                <div className="submission-list classroom-list">
+                  {submissions.length === 0 && <p className="empty-state">아직 제출된 과제가 없습니다. 오른쪽 패널에서 첫 제출을 올려보세요.</p>}
+                  {submissions.map((item) => (
+                    <article key={item.id} className="submission-item classroom-submission">
+                      <div className="submission-avatar">{(item.username || 'N')[0].toUpperCase()}</div>
+                      <div>
+                        <span>{item.username}</span>
+                        <h3>{item.title}</h3>
+                        {item.content && <p>{item.content}</p>}
+                        {item.link_url && <a href={item.link_url} target="_blank" rel="noreferrer">{item.link_url}</a>}
+                        {item.file_name && <small>{item.file_name}</small>}
+                      </div>
+                      <div className="submission-actions">
+                        <time>{new Date(item.created_at).toLocaleDateString()}</time>
+                        <button type="button" onClick={() => deleteSub(item.id)}>삭제</button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+
+              <aside className="turn-in-panel" aria-label="내 제출">
+                <div className="turn-in-head">
+                  <span>내 제출</span>
+                  <strong>{showSubForm ? '작성 중' : '준비됨'}</strong>
+                </div>
+                {showSubForm ? (
+                  <div className="submission-form classroom-form">
+                    <input value={newSub.title} onChange={(e) => setNewSub((current) => ({ ...current, title: e.target.value }))} placeholder="과제 제목" />
+                    <textarea value={newSub.content} onChange={(e) => setNewSub((current) => ({ ...current, content: e.target.value }))} placeholder="설명이나 제출 메모" rows={4} />
+                    <input value={newSub.link_url} onChange={(e) => setNewSub((current) => ({ ...current, link_url: e.target.value }))} placeholder="링크 URL" />
+                    <div className="file-picker" role="button" tabIndex={0} onClick={() => fileRef.current?.click()} onKeyDown={(e) => e.key === 'Enter' && fileRef.current?.click()}>
+                      <span>{subFile ? subFile.name : '파일 첨부'}</span>
+                      <small>PDF, 이미지, 문서 파일</small>
                     </div>
-                    <div className="submission-actions">
-                      <time>{new Date(item.created_at).toLocaleDateString()}</time>
-                      <button type="button" onClick={() => deleteSub(item.id)}>삭제</button>
-                    </div>
-                  </article>
-                ))}
-              </div>
+                    <input ref={fileRef} type="file" onChange={(e) => setSubFile(e.target.files[0])} hidden />
+                    <button className="modern-btn primary" type="button" onClick={submitSub}>제출하기</button>
+                    <button className="modern-btn ghost" type="button" onClick={() => setShowSubForm(false)}>닫기</button>
+                  </div>
+                ) : (
+                  <button className="turn-in-button" type="button" onClick={() => setShowSubForm(true)}>과제 제출 시작</button>
+                )}
+              </aside>
             </div>
           )}
 

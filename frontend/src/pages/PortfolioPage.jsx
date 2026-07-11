@@ -113,30 +113,43 @@ export default function PortfolioPage() {
     setProfilePreview(URL.createObjectURL(file));
   };
 
-  const save = async () => {
+  const persistPortfolio = async (nextForm, options = {}) => {
     setSaving(true);
     setMsg('');
     const activeUser = user || getCurrentLocalUser();
+    const { closeEditor = true, message = '저장되었습니다.' } = options;
 
     try {
       const formData = new FormData();
-      Object.entries(form).forEach(([key, value]) => formData.append(key, String(value ?? '')));
+      Object.entries(nextForm).forEach(([key, value]) => formData.append(key, String(value ?? '')));
       if (profileImage) formData.append('profile_image_file', profileImage);
       await api.put('/api/portfolio/me', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setMsg('저장되었습니다.');
-      setEditing(false);
+      setMsg(message);
+      if (closeEditor) setEditing(false);
       loadPortfolio(activeUser);
       loadPublicPortfolios(activeUser);
     } catch {
       const imageData = profileImage ? await fileToDataUrl(profileImage) : portfolio.profile_image;
-      const saved = saveLocalPortfolio(activeUser, { ...form, profile_image: imageData || '' });
+      const saved = saveLocalPortfolio(activeUser, { ...nextForm, profile_image: imageData || '' });
       hydratePortfolio(saved);
       loadPublicPortfolios(activeUser);
-      setMsg('저장되었습니다.');
-      setEditing(false);
+      setMsg(message);
+      if (closeEditor) setEditing(false);
     } finally {
       setSaving(false);
     }
+  };
+
+  const save = () => persistPortfolio(form);
+
+  const handleVisibilityChange = (e) => {
+    const isPublic = e.target.checked;
+    const nextForm = { ...form, is_public: isPublic };
+    setForm(nextForm);
+    persistPortfolio(nextForm, {
+      closeEditor: false,
+      message: isPublic ? '공개로 저장되었습니다.' : '비공개로 저장되었습니다.',
+    });
   };
 
   return (
@@ -223,9 +236,11 @@ export default function PortfolioPage() {
             <input
               type="checkbox"
               checked={form.is_public}
-              onChange={(e) => setForm((current) => ({ ...current, is_public: e.target.checked }))}
+              onChange={handleVisibilityChange}
+              disabled={saving}
             />
             공개
+            {saving && <small>저장 중...</small>}
           </label>
         </section>
 

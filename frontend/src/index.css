@@ -2030,6 +2030,12 @@ a {
   accent-color: #2dd4bf;
 }
 
+.public-toggle small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
 .inline-alert {
   margin-bottom: 16px;
   border-radius: 8px;

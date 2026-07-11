@@ -5,6 +5,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
+from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 
 from backend.core.deps import get_admin_user, get_current_user
@@ -14,6 +15,19 @@ router = APIRouter()
 
 UPLOAD_DIR = os.path.join("uploads", "assignments")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
+def ensure_assignment_columns(db: Session):
+    existing = {column["name"] for column in inspect(db.bind).get_columns("assignments")}
+    columns = {
+        "resource_url": "TEXT",
+        "copy_mode": "VARCHAR(30) DEFAULT 'site'",
+        "points": "INTEGER",
+    }
+    for name, definition in columns.items():
+        if name not in existing:
+            db.execute(text(f"ALTER TABLE assignments ADD COLUMN {name} {definition}"))
+    db.commit()
 
 
 def serialize_assignment(assignment: Assignment, db: Session) -> dict:
@@ -27,6 +41,9 @@ def serialize_assignment(assignment: Assignment, db: Session) -> dict:
         "content": assignment.content,
         "file_url": assignment.file_url,
         "file_name": assignment.file_name,
+        "resource_url": getattr(assignment, "resource_url", None),
+        "copy_mode": getattr(assignment, "copy_mode", None) or "site",
+        "points": getattr(assignment, "points", None),
         "due_at": assignment.due_at,
         "created_by": creator.username if creator else "관리자",
         "created_at": assignment.created_at,
@@ -39,6 +56,7 @@ def get_assignments(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
+    ensure_assignment_columns(db)
     query = db.query(Assignment)
     if team_id:
         query = query.filter(Assignment.team_id == team_id)
@@ -52,10 +70,18 @@ async def create_assignment(
     content: Optional[str] = Form(None),
     team_id: Optional[str] = Form(None),
     due_at: Optional[str] = Form(None),
+    resource_url: Optional[str] = Form(None),
+    copy_mode: str = Form("site"),
+    points: Optional[int] = Form(None),
     file: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_admin_user),
 ):
+    ensure_assignment_columns(db)
+    allowed_modes = {"site", "student_copy", "material"}
+    if copy_mode not in allowed_modes:
+        raise HTTPException(400, detail="지원하지 않는 과제 방식입니다.")
+
     file_url = None
     file_name = None
 
@@ -79,6 +105,9 @@ async def create_assignment(
         content=content,
         file_url=file_url,
         file_name=file_name,
+        resource_url=resource_url,
+        copy_mode=copy_mode,
+        points=points,
         due_at=due_at,
         created_by=str(current_user.id),
     )
@@ -102,6 +131,7 @@ def delete_assignment(
     db: Session = Depends(get_db),
     _: User = Depends(get_admin_user),
 ):
+    ensure_assignment_columns(db)
     assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
     if not assignment:
         raise HTTPException(404, detail="과제를 찾을 수 없습니다.")

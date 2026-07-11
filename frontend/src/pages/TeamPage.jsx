@@ -80,6 +80,42 @@ export default function TeamPage() {
     return assignment?.file_data || resolveFileUrl(assignment?.file_url);
   }
 
+  function assignmentResourceUrl(assignment) {
+    return assignment?.resource_url || '';
+  }
+
+  function toStudentCopyUrl(url) {
+    if (!url) return '';
+    const trimmed = url.trim();
+    if (!trimmed) return '';
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.hostname.includes('docs.google.com')) {
+        parsed.search = '';
+        parsed.hash = '';
+        parsed.pathname = parsed.pathname
+          .replace(/\/edit.*$/u, '/copy')
+          .replace(/\/view.*$/u, '/copy')
+          .replace(/\/preview.*$/u, '/copy');
+        if (!parsed.pathname.endsWith('/copy')) parsed.pathname = `${parsed.pathname.replace(/\/$/u, '')}/copy`;
+        return parsed.toString();
+      }
+    } catch {
+      return trimmed;
+    }
+    return trimmed;
+  }
+
+  function assignmentModeLabel(assignment) {
+    if (assignment?.copy_mode === 'student_copy') return '학생별 사본';
+    if (assignment?.copy_mode === 'material') return '자료 제공';
+    return '사이트 작업문서';
+  }
+
+  function isStudentCopyAssignment(assignment) {
+    return assignment?.copy_mode === 'student_copy';
+  }
+
   function connectWs(teamId) {
     if (wsRef.current) wsRef.current.close();
     wsRef.current = null;
@@ -214,6 +250,10 @@ export default function TeamPage() {
 
     const title = (newSub.title || selectedAssignment?.title || '').trim();
     if (!title) return;
+    if (isStudentCopyAssignment(selectedAssignment) && !newSub.link_url.trim()) {
+      window.alert('개인 사본 링크를 붙여넣어야 제출할 수 있습니다.');
+      return;
+    }
 
     const payload = {
       ...newSub,
@@ -287,8 +327,8 @@ export default function TeamPage() {
         <section className="page-hero compact assignment-hero">
           <div>
             <span>Team Assignments</span>
-            <h1>각자 자기 작업본에서 과제를 작성합니다.</h1>
-            <p>관리자가 올린 자료를 열고, 내 작업 문서에 쓰면 자동저장됩니다. 제출 결과는 본인과 관리자만 볼 수 있습니다.</p>
+            <h1>원본 자료와 개인 작업본을 분리합니다.</h1>
+            <p>관리자가 올린 템플릿은 원본으로만 두고, 학생은 자기 사본이나 사이트 작업문서로 제출합니다.</p>
           </div>
           <button className="modern-btn primary" type="button" onClick={() => openTurnIn()}>
             내 작업 열기
@@ -347,6 +387,8 @@ export default function TeamPage() {
                   <div className="assignment-list-grid">
                     {assignments.map((assignment) => {
                       const fileUrl = assignmentFileUrl(assignment);
+                      const resourceUrl = assignmentResourceUrl(assignment);
+                      const copyUrl = toStudentCopyUrl(resourceUrl);
                       const active = selectedAssignment?.id === assignment.id;
                       const assignmentSubmission = submissions.find((item) => item.assignment_id === assignment.id);
                       return (
@@ -359,12 +401,25 @@ export default function TeamPage() {
                             <div className="assignment-meta">
                               <strong>마감</strong>
                               <span>{formatDate(assignment.due_at) || '별도 안내'}</span>
-                              <strong>첨부</strong>
-                              <span>{assignment.file_name || '없음'}</span>
+                              <strong>방식</strong>
+                              <span>{assignmentModeLabel(assignment)}</span>
+                              <strong>자료</strong>
+                              <span>{(assignment.file_name || resourceUrl) ? '있음' : '없음'}</span>
+                              {assignment.points ? (
+                                <>
+                                  <strong>배점</strong>
+                                  <span>{assignment.points}점</span>
+                                </>
+                              ) : null}
                               <strong>내 상태</strong>
                               <span>{assignmentSubmission?.status === 'submitted' ? '제출됨' : assignmentSubmission ? '작성 중' : '시작 전'}</span>
                             </div>
                             <div className="assignment-card-actions">
+                              {isStudentCopyAssignment(assignment) && copyUrl && (
+                                <a className="assignment-download copy" href={copyUrl} target="_blank" rel="noreferrer">
+                                  개인 사본 만들기
+                                </a>
+                              )}
                               {fileUrl && (
                                 <a className="assignment-download" href={fileUrl} download={assignment.file_name || undefined} target="_blank" rel="noreferrer">
                                   파일 다운로드
@@ -402,7 +457,7 @@ export default function TeamPage() {
                           </small>
                           {item.work_content && <p className="submitted-work">{item.work_content}</p>}
                           {item.content && <p>{item.content}</p>}
-                          {item.link_url && <a href={item.link_url} target="_blank" rel="noreferrer">{item.link_url}</a>}
+                          {item.link_url && <a href={item.link_url} target="_blank" rel="noreferrer">{item.assignment_id ? '제출 링크 열기' : item.link_url}</a>}
                           {item.file_name && (
                             submittedFileUrl
                               ? <a href={submittedFileUrl} target="_blank" rel="noreferrer">{item.file_name}</a>
@@ -430,6 +485,24 @@ export default function TeamPage() {
                     <span>선택된 과제</span>
                     <strong>{selectedAssignment.title}</strong>
                     {selectedAssignment.content && <p>{selectedAssignment.content}</p>}
+                    <div className="assignment-source-row">
+                      <b>{assignmentModeLabel(selectedAssignment)}</b>
+                      {selectedAssignment.points ? <small>{selectedAssignment.points}점</small> : null}
+                    </div>
+                    {isStudentCopyAssignment(selectedAssignment) && assignmentResourceUrl(selectedAssignment) && (
+                      <div className="copy-warning">
+                        <strong>원본은 수정하지 마세요.</strong>
+                        <p>아래 버튼으로 개인 사본을 만든 뒤, 내 사본 링크를 제출 칸에 저장하세요.</p>
+                        <a href={toStudentCopyUrl(assignmentResourceUrl(selectedAssignment))} target="_blank" rel="noreferrer">
+                          개인 사본 만들기
+                        </a>
+                      </div>
+                    )}
+                    {!isStudentCopyAssignment(selectedAssignment) && assignmentResourceUrl(selectedAssignment) && (
+                      <a href={assignmentResourceUrl(selectedAssignment)} target="_blank" rel="noreferrer">
+                        참고 링크 열기
+                      </a>
+                    )}
                     {assignmentFileUrl(selectedAssignment) && (
                       <a href={assignmentFileUrl(selectedAssignment)} download={selectedAssignment.file_name || undefined} target="_blank" rel="noreferrer">
                         첨부 파일 다운로드
@@ -442,25 +515,62 @@ export default function TeamPage() {
                   <div className="submission-form assignment-form">
                     <div className="work-doc-head">
                       <div>
-                        <span>내 작업 문서</span>
+                        <span>{isStudentCopyAssignment(selectedAssignment) ? '내 개인 사본' : '내 작업 문서'}</span>
                         <strong>{newSub.title || selectedAssignment?.title || '과제 작업'}</strong>
                       </div>
                       <small className={draftStatus === 'submitted' ? 'autosave-state submitted' : 'autosave-state'}>{draftStatusText()}</small>
                     </div>
-                    <textarea
-                      className="work-doc-editor"
-                      value={newSub.work_content}
-                      onChange={(e) => updateDraftField('work_content', e.target.value)}
-                      placeholder="여기에 답안을 작성하세요. 쓰는 동안 자동저장됩니다."
-                      rows={12}
-                    />
+                    {isStudentCopyAssignment(selectedAssignment) ? (
+                      <>
+                        <div className="copy-flow">
+                          <div>
+                            <span>1</span>
+                            <strong>원본 확인</strong>
+                            <p>관리자 템플릿은 수정하지 않습니다.</p>
+                          </div>
+                          <div>
+                            <span>2</span>
+                            <strong>개인 사본 생성</strong>
+                            <p>내 Google 계정에 사본을 만듭니다.</p>
+                          </div>
+                          <div>
+                            <span>3</span>
+                            <strong>링크 제출</strong>
+                            <p>내 사본 링크만 저장하고 제출합니다.</p>
+                          </div>
+                        </div>
+                        <input
+                          className="copy-url-input"
+                          value={newSub.link_url}
+                          onChange={(e) => updateDraftField('link_url', e.target.value)}
+                          placeholder="내 개인 사본 Google Docs 링크"
+                        />
+                        <textarea
+                          className="work-doc-editor compact"
+                          value={newSub.work_content}
+                          onChange={(e) => updateDraftField('work_content', e.target.value)}
+                          placeholder="필요하면 제출 요약이나 선생님이 볼 메모를 남기세요."
+                          rows={7}
+                        />
+                      </>
+                    ) : (
+                      <textarea
+                        className="work-doc-editor"
+                        value={newSub.work_content}
+                        onChange={(e) => updateDraftField('work_content', e.target.value)}
+                        placeholder="여기에 답안을 작성하세요. 쓰는 동안 자동저장됩니다."
+                        rows={12}
+                      />
+                    )}
                     <textarea
                       value={newSub.content}
                       onChange={(e) => updateDraftField('content', e.target.value)}
                       placeholder="제출 메모"
                       rows={3}
                     />
-                    <input value={newSub.link_url} onChange={(e) => updateDraftField('link_url', e.target.value)} placeholder="추가 링크 URL" />
+                    {!isStudentCopyAssignment(selectedAssignment) && (
+                      <input value={newSub.link_url} onChange={(e) => updateDraftField('link_url', e.target.value)} placeholder="추가 링크 URL" />
+                    )}
                     <div className="file-picker" role="button" tabIndex={0} onClick={() => fileRef.current?.click()} onKeyDown={(e) => e.key === 'Enter' && fileRef.current?.click()}>
                       <span>{subFile ? subFile.name : '파일 첨부'}</span>
                       <small>PDF, 이미지, 문서 파일</small>

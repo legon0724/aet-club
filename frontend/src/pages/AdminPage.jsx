@@ -18,7 +18,7 @@ import {
 
 const BACKEND = 'https://web-production-00104.up.railway.app';
 
-const emptyAssignment = { title: '', content: '', due_at: '' };
+const emptyAssignment = { title: '', content: '', due_at: '', resource_url: '', copy_mode: 'site', points: '' };
 
 export default function AdminPage() {
   const [user, setUser] = useState(() => getCurrentLocalUser());
@@ -44,7 +44,7 @@ export default function AdminPage() {
   const tabs = [
     ['users', '회원 관리', '권한과 팀 배정'],
     ['teams', '팀 관리', '팀 생성과 정리'],
-    ['assignments', '과제 관리', '파일 등록과 제출 흐름'],
+    ['assignments', '과제 관리', '학생별 작업본과 제출 흐름'],
     ['notices', '공지 관리', '전체와 팀별 안내'],
     ['banners', '배너 관리', '홈 배너 운영'],
     ['portfolios', '포트폴리오', '회원 작업물 확인'],
@@ -267,7 +267,11 @@ function AssignmentsTab({ user }) {
 
   const create = async () => {
     if (!form.title.trim() || !teamId) return;
-    const payload = { ...form, title: form.title.trim() };
+    const payload = {
+      ...form,
+      title: form.title.trim(),
+      points: form.points ? Number(form.points) : '',
+    };
 
     try {
       const formData = new FormData();
@@ -275,6 +279,9 @@ function AssignmentsTab({ user }) {
       formData.append('title', payload.title);
       if (payload.content) formData.append('content', payload.content);
       if (payload.due_at) formData.append('due_at', payload.due_at);
+      if (payload.resource_url) formData.append('resource_url', payload.resource_url);
+      if (payload.copy_mode) formData.append('copy_mode', payload.copy_mode);
+      if (payload.points) formData.append('points', String(payload.points));
       if (file) formData.append('file', file);
 
       await api.post('/api/assignments/', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
@@ -318,10 +325,27 @@ function AssignmentsTab({ user }) {
         <div className="admin-form-grid assignment-admin-form">
           <input value={form.title} onChange={(e) => setForm((current) => ({ ...current, title: e.target.value }))} placeholder="과제 제목" />
           <input type="date" value={form.due_at} onChange={(e) => setForm((current) => ({ ...current, due_at: e.target.value }))} />
+          <select value={form.copy_mode} onChange={(e) => setForm((current) => ({ ...current, copy_mode: e.target.value }))}>
+            <option value="site">사이트 작업 문서</option>
+            <option value="student_copy">학생별 사본 링크</option>
+            <option value="material">자료만 제공</option>
+          </select>
+          <input value={form.points} type="number" min="0" onChange={(e) => setForm((current) => ({ ...current, points: e.target.value }))} placeholder="점수 / 배점" />
           <textarea value={form.content} onChange={(e) => setForm((current) => ({ ...current, content: e.target.value }))} placeholder="과제 설명" rows={4} />
+          <input
+            className="assignment-resource-input"
+            value={form.resource_url}
+            onChange={(e) => setForm((current) => ({ ...current, resource_url: e.target.value }))}
+            placeholder="Google Docs 원본 링크 또는 참고 링크"
+          />
+          {form.copy_mode === 'student_copy' && (
+            <p className="assignment-admin-note">
+              원본 문서는 보기 권한으로 공유하고, 학생은 개인 사본을 만들어 자기 링크로 제출합니다.
+            </p>
+          )}
           <div className="admin-file-pick" role="button" tabIndex={0} onClick={() => fileRef.current?.click()} onKeyDown={(e) => e.key === 'Enter' && fileRef.current?.click()}>
             <strong>{file ? file.name : '첨부 파일 선택'}</strong>
-            <span>학생들이 다운로드할 자료를 올립니다.</span>
+            <span>안내문, PDF, docx 같은 자료를 함께 올릴 수 있습니다.</span>
           </div>
           <input ref={fileRef} type="file" onChange={(e) => setFile(e.target.files[0])} hidden />
           <button className="modern-btn primary" type="button" onClick={create}>등록 완료</button>
@@ -337,8 +361,15 @@ function AssignmentsTab({ user }) {
               <div>
                 <strong>{assignment.title}</strong>
                 {assignment.content && <span>{assignment.content}</span>}
+                <span>{assignment.copy_mode === 'student_copy' ? '학생별 사본 과제' : assignment.copy_mode === 'material' ? '자료 제공' : '사이트 작업 문서'}</span>
                 <small>{assignment.due_at ? `마감 ${assignment.due_at}` : '마감일 없음'}</small>
+                {assignment.points ? <small>{assignment.points}점</small> : null}
               </div>
+              {assignment.resource_url && (
+                <a className="assignment-download" href={assignment.resource_url} target="_blank" rel="noreferrer">
+                  원본 링크
+                </a>
+              )}
               {fileUrl && (
                 <a className="assignment-download" href={fileUrl} download={assignment.file_name || undefined} target="_blank" rel="noreferrer">
                   다운로드

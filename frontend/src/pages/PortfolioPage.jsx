@@ -32,6 +32,12 @@ const sections = [
   { key: 'goals', label: '목표 / 진로', placeholder: '앞으로 만들고 싶은 것과 진로 방향을 작성하세요.' },
 ];
 
+const portfolioLine = [
+  { step: '01', label: '프로필', detail: '기본 정보 정리' },
+  { step: '02', label: '활동', detail: '프로젝트와 역량 기록' },
+  { step: '03', label: '제출', detail: '공개 여부와 링크 점검' },
+];
+
 export default function PortfolioPage() {
   const [user, setUser] = useState(() => getCurrentLocalUser());
   const [portfolio, setPortfolio] = useState({});
@@ -126,6 +132,16 @@ export default function PortfolioPage() {
           </button>
         </section>
 
+        <section className="portfolio-line" aria-label="포트폴리오 작성 흐름">
+          {portfolioLine.map((item) => (
+            <div key={item.step} className="portfolio-line-item">
+              <span>{item.step}</span>
+              <strong>{item.label}</strong>
+              <small>{item.detail}</small>
+            </div>
+          ))}
+        </section>
+
         <section className="profile-card">
           <button className="profile-avatar" type="button" onClick={() => editing && imgRef.current?.click()} disabled={!editing}>
             {profilePreview ? <img src={profilePreview} alt="프로필" /> : <span>{(user?.username || 'N')[0]}</span>}
@@ -170,8 +186,9 @@ export default function PortfolioPage() {
         {msg && <div className="inline-alert success">{msg}</div>}
 
         <section className="portfolio-grid">
-          {sections.map((section) => (
-            <article key={section.key} className="workspace-card">
+          {sections.map((section, index) => (
+            <article key={section.key} className="workspace-card portfolio-entry">
+              <span className="portfolio-entry-index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
               <div className="card-head">
                 <span>{section.label}</span>
               </div>

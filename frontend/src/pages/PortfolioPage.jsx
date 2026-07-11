@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
 import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
-import { fileToDataUrl, getLocalPortfolio, saveLocalPortfolio } from '../utils/localWorkspace';
+import { fileToDataUrl, getLocalPortfolio, getPublicLocalPortfolios, saveLocalPortfolio } from '../utils/localWorkspace';
 
 const BACKEND = 'https://web-production-00104.up.railway.app';
 
@@ -38,9 +38,18 @@ const portfolioLine = [
   { step: '03', label: '제출', detail: '공개 여부와 링크 점검' },
 ];
 
+const resolveFileUrl = (value = '') => (value?.startsWith('/api') ? `${BACKEND}${value}` : value);
+
+const isOwnPortfolio = (item, activeUser) => {
+  const sameEmail = item.email?.toLowerCase() === activeUser?.email?.toLowerCase();
+  const sameId = String(item.user_id || '') === String(activeUser?.id || '');
+  return sameEmail || sameId;
+};
+
 export default function PortfolioPage() {
   const [user, setUser] = useState(() => getCurrentLocalUser());
   const [portfolio, setPortfolio] = useState({});
+  const [publicPortfolios, setPublicPortfolios] = useState([]);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [profileImage, setProfileImage] = useState(null);
@@ -64,7 +73,7 @@ export default function PortfolioPage() {
       notion_url: next.notion_url || '',
     });
     if (next.profile_image) {
-      setProfilePreview(next.profile_image.startsWith('/api') ? `${BACKEND}${next.profile_image}` : next.profile_image);
+      setProfilePreview(resolveFileUrl(next.profile_image));
     }
   }, []);
 
@@ -75,16 +84,27 @@ export default function PortfolioPage() {
     });
   }, [hydratePortfolio]);
 
+  const loadPublicPortfolios = useCallback((activeUser) => {
+    const resolvedUser = activeUser || getCurrentLocalUser();
+    api.get('/api/portfolio/public').then((r) => {
+      setPublicPortfolios((r.data || []).filter((item) => !isOwnPortfolio(item, resolvedUser)));
+    }).catch(() => {
+      setPublicPortfolios(getPublicLocalPortfolios(resolvedUser));
+    });
+  }, []);
+
   useEffect(() => {
     const localUser = getCurrentLocalUser();
     api.get('/api/auth/me').then((r) => {
       const remembered = rememberCurrentUser(r.data);
       setUser(remembered);
       loadPortfolio(remembered);
+      loadPublicPortfolios(remembered);
     }).catch(() => {
       loadPortfolio(localUser);
+      loadPublicPortfolios(localUser);
     });
-  }, [loadPortfolio]);
+  }, [loadPortfolio, loadPublicPortfolios]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -106,10 +126,12 @@ export default function PortfolioPage() {
       setMsg('저장되었습니다.');
       setEditing(false);
       loadPortfolio(activeUser);
+      loadPublicPortfolios(activeUser);
     } catch {
       const imageData = profileImage ? await fileToDataUrl(profileImage) : portfolio.profile_image;
       const saved = saveLocalPortfolio(activeUser, { ...form, profile_image: imageData || '' });
       hydratePortfolio(saved);
+      loadPublicPortfolios(activeUser);
       setMsg('저장되었습니다.');
       setEditing(false);
     } finally {
@@ -127,9 +149,33 @@ export default function PortfolioPage() {
             <h1>활동 기록을 대학 제출용으로 정리합니다.</h1>
             <p>프로젝트, 기술, 수상, 진로를 한 화면에서 관리하세요.</p>
           </div>
-          <button className="modern-btn primary" type="button" onClick={() => setEditing((current) => !current)}>
-            {editing ? '보기로 전환' : '편집'}
-          </button>
+          <div className="portfolio-hero-side">
+            <button className="modern-btn primary" type="button" onClick={() => setEditing((current) => !current)}>
+              {editing ? '보기로 전환' : '편집'}
+            </button>
+            <div className="peer-portfolio-panel" aria-label="공개된 다른 포트폴리오">
+              <span>다른 애들</span>
+              {publicPortfolios.length ? (
+                <div className="peer-portfolio-list">
+                  {publicPortfolios.map((item) => (
+                    <article key={item.user_id || item.email} className="peer-portfolio-card">
+                      {item.profile_image ? (
+                        <img src={resolveFileUrl(item.profile_image)} alt="" />
+                      ) : (
+                        <strong>{(item.username || item.email || 'N')[0]}</strong>
+                      )}
+                      <div>
+                        <b>{item.username || 'NC member'}</b>
+                        <small>{item.intro || item.projects || item.skills || '공개된 포트폴리오입니다.'}</small>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p>아직 공개된 친구 포트폴리오가 없습니다.</p>
+              )}
+            </div>
+          </div>
         </section>
 
         <section className="portfolio-line" aria-label="포트폴리오 작성 흐름">

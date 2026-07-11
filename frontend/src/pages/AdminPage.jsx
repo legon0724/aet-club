@@ -538,20 +538,28 @@ function PortfoliosTab() {
     });
   }, []);
 
-  const selectedUser = users.find((item) => item.id === selected);
-  const portfolio = portfolios.find((item) => (
-    item.user_id === selected || item.email === selectedUser?.email || item.email === selected
+  const findPortfolio = (item) => portfolios.find((entry) => (
+    entry.user_id === item?.id || entry.email === item?.email || entry.email === item?.id
   ));
+
+  const selectedUser = users.find((item) => item.id === selected);
+  const portfolio = findPortfolio(selectedUser || { id: selected, email: selected });
 
   return (
     <div className="admin-split-view">
       <div className="admin-side-list">
-        {users.map((item) => (
-          <button key={item.id} type="button" className={selected === item.id ? 'active' : ''} onClick={() => setSelected(item.id)}>
-            <strong>{item.username}</strong>
-            <span>{item.email}</span>
-          </button>
-        ))}
+        {users.map((item) => {
+          const itemPortfolio = findPortfolio(item);
+          return (
+            <button key={item.id} type="button" className={selected === item.id ? 'active' : ''} onClick={() => setSelected(item.id)}>
+              <strong>{item.username}</strong>
+              <span>{item.email}</span>
+              <small className={itemPortfolio?.is_public ? 'visibility-pill public' : 'visibility-pill'}>
+                {itemPortfolio ? (itemPortfolio.is_public ? '공개' : '비공개') : '미작성'}
+              </small>
+            </button>
+          );
+        })}
       </div>
       <div className="admin-preview">
         {!selected && <p className="empty-state">왼쪽에서 회원을 선택하세요.</p>}
@@ -564,6 +572,9 @@ function PortfoliosTab() {
                 <strong>{portfolio.username || selectedUser?.username}</strong>
                 <span>{portfolio.email || selectedUser?.email}</span>
               </div>
+              <small className={portfolio.is_public ? 'visibility-pill public' : 'visibility-pill'}>
+                {portfolio.is_public ? '공개' : '비공개 · 관리자 열람'}
+              </small>
             </div>
             {[
               ['intro', '자기소개'],

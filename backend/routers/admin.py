@@ -77,6 +77,11 @@ def get_all_portfolios(db: Session = Depends(get_db), _: User = Depends(get_admi
             "skills": p.skills,
             "awards": p.awards,
             "goals": p.goals,
+            "is_public": p.is_public,
+            "github_url": p.github_url,
+            "blog_url": p.blog_url,
+            "notion_url": p.notion_url,
+            "profile_image": p.profile_image,
         })
     return result
 

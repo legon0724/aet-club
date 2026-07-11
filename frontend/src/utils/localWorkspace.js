@@ -123,6 +123,15 @@ export const saveLocalPortfolio = (user, data) => {
 
 export const getAllLocalPortfolios = () => readJson(LOCAL_PORTFOLIO_KEY, {});
 
+export const getPublicLocalPortfolios = (viewer) => (
+  Object.entries(readJson(LOCAL_PORTFOLIO_KEY, {}))
+    .map(([email, portfolio]) => ({ ...portfolio, user_id: email, email: portfolio.email || email }))
+    .filter((portfolio) => {
+      const sameEmail = portfolio.email?.toLowerCase() === viewer?.email?.toLowerCase();
+      return portfolio.is_public && !sameEmail;
+    })
+);
+
 export const fileToDataUrl = (file) => (
   new Promise((resolve, reject) => {
     if (!file) {

@@ -12,12 +12,11 @@ UPLOAD_DIR = "uploads/portfolio"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
-@router.get("/me")
-def get_my_portfolio(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    portfolio = db.query(Portfolio).filter(Portfolio.user_id == str(current_user.id)).first()
-    if not portfolio:
-        return {}
+def serialize_portfolio(portfolio: Portfolio, user: Optional[User] = None):
     return {
+        "user_id": str(portfolio.user_id),
+        "username": user.username if user else None,
+        "email": user.email if user else None,
         "intro": portfolio.intro,
         "projects": portfolio.projects,
         "skills": portfolio.skills,
@@ -29,6 +28,14 @@ def get_my_portfolio(current_user: User = Depends(get_current_user), db: Session
         "notion_url": portfolio.notion_url,
         "profile_image": portfolio.profile_image,
     }
+
+
+@router.get("/me")
+def get_my_portfolio(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    portfolio = db.query(Portfolio).filter(Portfolio.user_id == str(current_user.id)).first()
+    if not portfolio:
+        return {}
+    return serialize_portfolio(portfolio, current_user)
 
 
 @router.put("/me")
@@ -82,6 +89,16 @@ def get_image(filename: str):
     return FileResponse(path)
 
 
+@router.get("/public")
+def get_public_portfolios(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    portfolios = db.query(Portfolio).filter(Portfolio.is_public == True).order_by(Portfolio.updated_at.desc()).all()
+    result = []
+    for portfolio in portfolios:
+        user = db.query(User).filter(User.id == str(portfolio.user_id)).first()
+        result.append(serialize_portfolio(portfolio, user))
+    return result
+
+
 @router.get("/{user_id}")
 def get_portfolio(user_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     portfolio = db.query(Portfolio).filter(Portfolio.user_id == user_id).first()
@@ -90,15 +107,4 @@ def get_portfolio(user_id: str, current_user: User = Depends(get_current_user), 
     if not portfolio.is_public and not current_user.is_admin and str(current_user.id) != user_id:
         raise HTTPException(403, detail="비공개 포트폴리오입니다.")
     user = db.query(User).filter(User.id == user_id).first()
-    return {
-        "username": user.username if user else None,
-        "intro": portfolio.intro,
-        "projects": portfolio.projects,
-        "skills": portfolio.skills,
-        "awards": portfolio.awards,
-        "goals": portfolio.goals,
-        "github_url": portfolio.github_url,
-        "blog_url": portfolio.blog_url,
-        "notion_url": portfolio.notion_url,
-        "profile_image": portfolio.profile_image,
-    }
+    return serialize_portfolio(portfolio, user)

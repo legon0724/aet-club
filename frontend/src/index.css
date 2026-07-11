@@ -5451,6 +5451,22 @@ body,
   background: #fffdf9;
 }
 
+.portfolio-page .portfolio-text {
+  position: relative;
+  padding-bottom: 18px;
+}
+
+.portfolio-page .portfolio-text::after {
+  content: "";
+  position: absolute;
+  right: 74px;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(23, 25, 29, 0.82);
+}
+
 @media (max-width: 760px) {
   .portfolio-line {
     grid-template-columns: 1fr;
@@ -5484,5 +5500,9 @@ body,
     top: 18px;
     right: 16px;
     font-size: 34px;
+  }
+
+  .portfolio-page .portfolio-text::after {
+    right: 54px;
   }
 }

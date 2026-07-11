@@ -2736,6 +2736,64 @@ a {
   background: transparent;
 }
 
+.work-doc-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(45, 212, 191, 0.18);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(45, 212, 191, 0.07);
+}
+
+.work-doc-head span,
+.work-doc-head strong {
+  display: block;
+}
+
+.work-doc-head span {
+  color: #2dd4bf;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.work-doc-head strong {
+  margin-top: 4px;
+  color: #f8fafc;
+}
+
+.autosave-state,
+.submission-status {
+  border: 1px solid rgba(45, 212, 191, 0.22);
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: rgba(45, 212, 191, 0.1);
+  color: #99f6e4;
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.autosave-state.submitted,
+.submission-status.submitted {
+  border-color: rgba(52, 211, 153, 0.24);
+  background: rgba(52, 211, 153, 0.12);
+}
+
+.work-doc-editor {
+  min-height: 280px;
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.submitted-work {
+  max-height: 120px;
+  overflow: hidden;
+  white-space: pre-wrap;
+}
+
 .turn-in-button {
   min-height: 48px;
   border: 1px dashed rgba(45, 212, 191, 0.34);
@@ -3667,6 +3725,30 @@ select {
 
 .assignment-form {
   background: transparent;
+}
+
+.work-doc-head {
+  border-color: rgba(88, 114, 90, 0.22);
+  background: var(--surface-tint);
+}
+
+.work-doc-head span {
+  color: var(--moss);
+}
+
+.work-doc-head strong {
+  color: var(--ink);
+}
+
+.autosave-state,
+.submission-status {
+  border-color: rgba(88, 114, 90, 0.26);
+  background: var(--surface-tint);
+  color: var(--moss-dark);
+}
+
+.work-doc-editor {
+  background: #fffdf9;
 }
 
 .turn-in-button {

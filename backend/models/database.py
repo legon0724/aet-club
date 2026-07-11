@@ -128,12 +128,17 @@ class Submission(Base):
     id = Column(UUID(), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     team_id = Column(UUID(), ForeignKey("teams.id", ondelete="SET NULL"), nullable=True)
+    assignment_id = Column(UUID(), ForeignKey("assignments.id", ondelete="SET NULL"), nullable=True)
+    assignment_title = Column(String(255), nullable=True)
     title = Column(String(255), nullable=False)
     content = Column(Text, nullable=True)
+    work_content = Column(Text, nullable=True)
     file_url = Column(Text, nullable=True)
     file_name = Column(String(255), nullable=True)
     link_url = Column(Text, nullable=True)
+    status = Column(String(20), default="submitted")
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = relationship("User", back_populates="submissions")
 

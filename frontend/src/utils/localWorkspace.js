@@ -24,6 +24,7 @@ export const DEFAULT_TEAMS = [
 const LOCAL_PORTFOLIO_KEY = 'nc-local-portfolio-v2';
 const LOCAL_MESSAGES_KEY = 'nc-local-messages-v2';
 const LOCAL_SUBMISSIONS_KEY = 'nc-local-submissions-v2';
+const LOCAL_ASSIGNMENT_WORK_KEY = 'nc-local-assignment-work-v1';
 const LOCAL_ASSIGNMENTS_KEY = 'nc-local-assignments-v2';
 const LOCAL_TEAMS_KEY = 'nc-local-teams-v2';
 const LOCAL_AI_USAGE_KEY = 'nc-local-ai-usage-v2';
@@ -43,6 +44,7 @@ export const writeJson = (key, value) => {
 };
 
 const userKey = (user) => (user?.email || 'guest').trim().toLowerCase();
+const assignmentWorkKey = (assignmentId, user) => `${assignmentId}:${userKey(user)}`;
 
 export const getLocalTeams = () => readJson(LOCAL_TEAMS_KEY, DEFAULT_TEAMS);
 
@@ -165,9 +167,14 @@ export const addLocalMessage = (teamId, user, content) => {
   return next;
 };
 
-export const getLocalSubmissions = (teamId) => {
+export const getLocalSubmissions = (teamId, user) => {
   const all = readJson(LOCAL_SUBMISSIONS_KEY, []);
-  return all.filter((item) => item.team_id === teamId);
+  return all.filter((item) => {
+    const sameTeam = item.team_id === teamId;
+    const isMine = item.email === user?.email || item.user_id === userKey(user) || item.username === user?.username;
+    const canSee = user?.is_admin ? item.status !== 'draft' : isMine;
+    return sameTeam && canSee;
+  });
 };
 
 export const getLocalAssignments = (teamId) => {
@@ -199,23 +206,77 @@ export const deleteLocalAssignment = (id) => {
   return next;
 };
 
+export const getLocalAssignmentWork = (assignmentId, user) => (
+  readJson(LOCAL_ASSIGNMENT_WORK_KEY, {})[assignmentWorkKey(assignmentId, user)] || null
+);
+
+export const saveLocalAssignmentWork = (assignment, user, data = {}, status = 'draft') => {
+  const all = readJson(LOCAL_ASSIGNMENT_WORK_KEY, {});
+  const key = assignmentWorkKey(assignment.id, user);
+  const existing = all[key] || {};
+  const saved = {
+    ...existing,
+    id: existing.id || `local-work-${assignment.id}-${userKey(user)}`,
+    user_id: userKey(user),
+    email: user?.email || '',
+    username: user?.username || 'NC member',
+    team_id: assignment.team_id,
+    assignment_id: assignment.id,
+    assignment_title: assignment.title,
+    title: data.title || assignment.title,
+    content: data.content || '',
+    link_url: data.link_url || '',
+    work_content: data.work_content || '',
+    status,
+    created_at: existing.created_at || new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  all[key] = saved;
+  writeJson(LOCAL_ASSIGNMENT_WORK_KEY, all);
+  const submissions = readJson(LOCAL_SUBMISSIONS_KEY, []);
+  writeJson(LOCAL_SUBMISSIONS_KEY, [
+    saved,
+    ...submissions.filter((item) => !(item.assignment_id === assignment.id && item.user_id === userKey(user))),
+  ]);
+  return saved;
+};
+
+export const submitLocalAssignmentWork = (teamId, user, assignment, data, fileName = '') => {
+  const submitted = {
+    ...saveLocalAssignmentWork(assignment, user, data, 'submitted'),
+    file_name: fileName,
+  };
+  const all = readJson(LOCAL_SUBMISSIONS_KEY, []);
+  const next = [
+    submitted,
+    ...all.filter((item) => !(item.assignment_id === assignment.id && item.user_id === userKey(user))),
+  ];
+  writeJson(LOCAL_SUBMISSIONS_KEY, next);
+  return getLocalSubmissions(teamId, user);
+};
+
 export const addLocalSubmission = (teamId, user, data, fileName = '') => {
   const all = readJson(LOCAL_SUBMISSIONS_KEY, []);
   const item = {
     id: `local-sub-${Date.now()}`,
+    user_id: userKey(user),
+    email: user?.email || '',
     team_id: teamId,
     assignment_id: data.assignment_id || null,
     assignment_title: data.assignment_title || '',
     username: user?.username || 'NC member',
     title: data.title,
     content: data.content || '',
+    work_content: data.work_content || '',
     link_url: data.link_url || '',
     file_name: fileName,
+    status: 'submitted',
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
   const next = [item, ...all];
   writeJson(LOCAL_SUBMISSIONS_KEY, next);
-  return next.filter((entry) => entry.team_id === teamId);
+  return getLocalSubmissions(teamId, user);
 };
 
 export const deleteLocalSubmission = (id) => {

@@ -6,16 +6,19 @@ import {
   addLocalMessage,
   addLocalSubmission,
   deleteLocalSubmission,
+  getLocalAssignmentWork,
   getLocalAssignments,
   getLocalMessages,
   getLocalSubmissions,
   getLocalTeams,
+  saveLocalAssignmentWork,
+  submitLocalAssignmentWork,
 } from '../utils/localWorkspace';
 
 const BACKEND = 'https://web-production-00104.up.railway.app';
 const socketUrl = `${BACKEND.replace('https://', 'wss://')}/api/chat/ws`;
 
-const blankSubmission = { title: '', content: '', link_url: '' };
+const blankSubmission = { title: '', content: '', link_url: '', work_content: '' };
 
 export default function TeamPage() {
   const [user, setUser] = useState(() => getCurrentLocalUser());
@@ -30,9 +33,12 @@ export default function TeamPage() {
   const [newSub, setNewSub] = useState(blankSubmission);
   const [subFile, setSubFile] = useState(null);
   const [showSubForm, setShowSubForm] = useState(false);
+  const [draftStatus, setDraftStatus] = useState('ready');
+  const [draftSavedAt, setDraftSavedAt] = useState(null);
   const wsRef = useRef(null);
   const bottomRef = useRef(null);
   const fileRef = useRef(null);
+  const saveTimerRef = useRef(null);
 
   useEffect(() => {
     api.get('/api/auth/me').then((r) => setUser(rememberCurrentUser(r.data))).catch(() => {});
@@ -51,15 +57,19 @@ export default function TeamPage() {
     if (!selectedTeam) return undefined;
     connectWs(selectedTeam.id);
     loadAssignments(selectedTeam.id);
-    loadSubmissions(selectedTeam.id);
+    loadSubmissions(selectedTeam.id, user);
     return () => {
       if (wsRef.current) wsRef.current.close();
     };
-  }, [selectedTeam]);
+  }, [selectedTeam, user]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => () => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+  }, []);
 
   function resolveFileUrl(url) {
     if (!url) return '';
@@ -106,16 +116,71 @@ export default function TeamPage() {
     });
   }
 
-  function loadSubmissions(teamId) {
+  function loadSubmissions(teamId, activeUser) {
     api.get(`/api/submissions/?team_id=${teamId}`).then((r) => setSubmissions(r.data)).catch(() => {
-      setSubmissions(getLocalSubmissions(teamId));
+      setSubmissions(getLocalSubmissions(teamId, activeUser));
     });
   }
+
+  async function loadAssignmentWork(assignment) {
+    if (!assignment) return;
+    setDraftStatus('loading');
+    try {
+      const r = await api.get(`/api/submissions/work/${assignment.id}`);
+      const work = r.data || {};
+      setNewSub({
+        title: work.title || assignment.title,
+        content: work.content || '',
+        link_url: work.link_url || '',
+        work_content: work.work_content || '',
+      });
+      setDraftSavedAt(work.updated_at || null);
+      setDraftStatus(work.status === 'submitted' ? 'submitted' : 'saved');
+    } catch {
+      const work = getLocalAssignmentWork(assignment.id, user);
+      setNewSub({
+        title: work?.title || assignment.title,
+        content: work?.content || '',
+        link_url: work?.link_url || '',
+        work_content: work?.work_content || '',
+      });
+      setDraftSavedAt(work?.updated_at || null);
+      setDraftStatus(work?.status === 'submitted' ? 'submitted' : 'ready');
+    }
+  }
+
+  const saveDraft = async (nextData) => {
+    if (!selectedAssignment || !selectedTeam) return;
+    try {
+      const r = await api.put(`/api/submissions/work/${selectedAssignment.id}`, nextData);
+      setDraftSavedAt(r.data?.updated_at || new Date().toISOString());
+      setDraftStatus(r.data?.status === 'submitted' ? 'submitted' : 'saved');
+      loadSubmissions(selectedTeam.id, user);
+    } catch {
+      const saved = saveLocalAssignmentWork(selectedAssignment, user, nextData, 'draft');
+      setDraftSavedAt(saved.updated_at);
+      setDraftStatus('saved');
+      setSubmissions(getLocalSubmissions(selectedTeam.id, user));
+    }
+  };
+
+  const queueDraftSave = (nextData) => {
+    if (!selectedAssignment) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    setDraftStatus('saving');
+    saveTimerRef.current = setTimeout(() => saveDraft(nextData), 650);
+  };
+
+  const updateDraftField = (key, value, shouldAutosave = true) => {
+    const next = { ...newSub, [key]: value };
+    setNewSub(next);
+    if (shouldAutosave) queueDraftSave(next);
+  };
 
   const openTurnIn = (assignment = selectedAssignment) => {
     if (assignment) {
       setSelectedAssignment(assignment);
-      setNewSub((current) => ({ ...current, title: assignment.title }));
+      loadAssignmentWork(assignment);
     }
     setTab('assignments');
     setShowSubForm(true);
@@ -142,6 +207,10 @@ export default function TeamPage() {
 
   const submitSub = async () => {
     if (!selectedTeam) return;
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
 
     const title = (newSub.title || selectedAssignment?.title || '').trim();
     if (!title) return;
@@ -158,15 +227,22 @@ export default function TeamPage() {
       formData.append('title', payload.title);
       if (payload.content) formData.append('content', payload.content);
       if (payload.link_url) formData.append('link_url', payload.link_url);
+      if (payload.work_content) formData.append('work_content', payload.work_content);
       if (payload.assignment_id) formData.append('assignment_id', String(payload.assignment_id));
       if (payload.assignment_title) formData.append('assignment_title', payload.assignment_title);
       formData.append('team_id', selectedTeam.id);
       if (subFile) formData.append('file', subFile);
 
       await api.post('/api/submissions/', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      loadSubmissions(selectedTeam.id);
+      setDraftStatus('submitted');
+      loadSubmissions(selectedTeam.id, user);
     } catch {
-      setSubmissions(addLocalSubmission(selectedTeam.id, user, payload, subFile?.name || ''));
+      if (selectedAssignment) {
+        setSubmissions(submitLocalAssignmentWork(selectedTeam.id, user, selectedAssignment, payload, subFile?.name || ''));
+        setDraftStatus('submitted');
+      } else {
+        setSubmissions(addLocalSubmission(selectedTeam.id, user, payload, subFile?.name || ''));
+      }
     } finally {
       setNewSub(blankSubmission);
       setSubFile(null);
@@ -196,6 +272,14 @@ export default function TeamPage() {
 
   const formatTime = (iso) => new Date(iso).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
+  const draftStatusText = () => {
+    if (draftStatus === 'loading') return '불러오는 중';
+    if (draftStatus === 'saving') return '자동저장 중';
+    if (draftStatus === 'submitted') return '제출됨';
+    if (draftSavedAt) return `자동저장 ${formatTime(draftSavedAt)}`;
+    return '자동저장 준비';
+  };
+
   return (
     <div className="app-shell workspace-shell">
       <Navbar user={user} />
@@ -203,11 +287,11 @@ export default function TeamPage() {
         <section className="page-hero compact assignment-hero">
           <div>
             <span>Team Assignments</span>
-            <h1>올라온 과제를 확인하고 바로 제출합니다.</h1>
-            <p>관리자가 올린 파일을 내려받고, 완성한 링크나 파일을 같은 화면에서 제출하세요.</p>
+            <h1>각자 자기 작업본에서 과제를 작성합니다.</h1>
+            <p>관리자가 올린 자료를 열고, 내 작업 문서에 쓰면 자동저장됩니다. 제출 결과는 본인과 관리자만 볼 수 있습니다.</p>
           </div>
           <button className="modern-btn primary" type="button" onClick={() => openTurnIn()}>
-            과제 제출
+            내 작업 열기
           </button>
         </section>
 
@@ -247,7 +331,7 @@ export default function TeamPage() {
                     <span>Assigned work</span>
                     <h3>{selectedTeam?.name} 과제</h3>
                   </div>
-                  <button className="modern-btn ghost" type="button" onClick={() => openTurnIn()}>제출하기</button>
+                  <button className="modern-btn ghost" type="button" onClick={() => openTurnIn()}>내 작업 열기</button>
                 </div>
 
                 {assignments.length === 0 ? (
@@ -264,6 +348,7 @@ export default function TeamPage() {
                     {assignments.map((assignment) => {
                       const fileUrl = assignmentFileUrl(assignment);
                       const active = selectedAssignment?.id === assignment.id;
+                      const assignmentSubmission = submissions.find((item) => item.assignment_id === assignment.id);
                       return (
                         <article key={assignment.id} className={`assignment-card ${active ? 'active' : ''}`}>
                           <div className="assignment-icon">NC</div>
@@ -276,6 +361,8 @@ export default function TeamPage() {
                               <span>{formatDate(assignment.due_at) || '별도 안내'}</span>
                               <strong>첨부</strong>
                               <span>{assignment.file_name || '없음'}</span>
+                              <strong>내 상태</strong>
+                              <span>{assignmentSubmission?.status === 'submitted' ? '제출됨' : assignmentSubmission ? '작성 중' : '시작 전'}</span>
                             </div>
                             <div className="assignment-card-actions">
                               {fileUrl && (
@@ -283,7 +370,7 @@ export default function TeamPage() {
                                   파일 다운로드
                                 </a>
                               )}
-                              <button type="button" onClick={() => openTurnIn(assignment)}>이 과제 제출</button>
+                              <button type="button" onClick={() => openTurnIn(assignment)}>내 작업 열기</button>
                             </div>
                           </div>
                         </article>
@@ -295,13 +382,13 @@ export default function TeamPage() {
                 <div className="stream-header compact">
                   <div>
                     <span>Submitted work</span>
-                    <h3>제출물</h3>
+                    <h3>{user?.is_admin ? '제출물' : '내 작업물'}</h3>
                   </div>
-                  <small>{submissions.length}개 제출됨</small>
+                  <small>{user?.is_admin ? `${submissions.length}개 제출됨` : `${submissions.length}개 작업`}</small>
                 </div>
 
                 <div className="submission-list assignment-list">
-                  {submissions.length === 0 && <p className="empty-state">아직 제출된 과제가 없습니다. 오른쪽 패널에서 첫 제출을 올려보세요.</p>}
+                  {submissions.length === 0 && <p className="empty-state">아직 작업 중인 과제가 없습니다. 오른쪽 패널에서 내 작업 문서를 열어보세요.</p>}
                   {submissions.map((item) => {
                     const submittedFileUrl = resolveFileUrl(item.file_url);
                     return (
@@ -310,6 +397,10 @@ export default function TeamPage() {
                         <div>
                           <span>{item.assignment_title || item.username}</span>
                           <h3>{item.title}</h3>
+                          <small className={item.status === 'submitted' ? 'submission-status submitted' : 'submission-status'}>
+                            {item.status === 'submitted' ? '제출됨' : '자동저장됨'}
+                          </small>
+                          {item.work_content && <p className="submitted-work">{item.work_content}</p>}
                           {item.content && <p>{item.content}</p>}
                           {item.link_url && <a href={item.link_url} target="_blank" rel="noreferrer">{item.link_url}</a>}
                           {item.file_name && (
@@ -349,9 +440,27 @@ export default function TeamPage() {
 
                 {showSubForm ? (
                   <div className="submission-form assignment-form">
-                    <input value={newSub.title} onChange={(e) => setNewSub((current) => ({ ...current, title: e.target.value }))} placeholder="과제 제목" />
-                    <textarea value={newSub.content} onChange={(e) => setNewSub((current) => ({ ...current, content: e.target.value }))} placeholder="설명이나 제출 메모" rows={4} />
-                    <input value={newSub.link_url} onChange={(e) => setNewSub((current) => ({ ...current, link_url: e.target.value }))} placeholder="링크 URL" />
+                    <div className="work-doc-head">
+                      <div>
+                        <span>내 작업 문서</span>
+                        <strong>{newSub.title || selectedAssignment?.title || '과제 작업'}</strong>
+                      </div>
+                      <small className={draftStatus === 'submitted' ? 'autosave-state submitted' : 'autosave-state'}>{draftStatusText()}</small>
+                    </div>
+                    <textarea
+                      className="work-doc-editor"
+                      value={newSub.work_content}
+                      onChange={(e) => updateDraftField('work_content', e.target.value)}
+                      placeholder="여기에 답안을 작성하세요. 쓰는 동안 자동저장됩니다."
+                      rows={12}
+                    />
+                    <textarea
+                      value={newSub.content}
+                      onChange={(e) => updateDraftField('content', e.target.value)}
+                      placeholder="제출 메모"
+                      rows={3}
+                    />
+                    <input value={newSub.link_url} onChange={(e) => updateDraftField('link_url', e.target.value)} placeholder="추가 링크 URL" />
                     <div className="file-picker" role="button" tabIndex={0} onClick={() => fileRef.current?.click()} onKeyDown={(e) => e.key === 'Enter' && fileRef.current?.click()}>
                       <span>{subFile ? subFile.name : '파일 첨부'}</span>
                       <small>PDF, 이미지, 문서 파일</small>
@@ -362,7 +471,7 @@ export default function TeamPage() {
                   </div>
                 ) : (
                   <button className="turn-in-button" type="button" onClick={() => openTurnIn()}>
-                    {selectedAssignment ? '선택한 과제 제출 시작' : '과제 선택 후 제출'}
+                    {selectedAssignment ? '선택한 과제 작업 시작' : '과제 선택 후 작업 시작'}
                   </button>
                 )}
               </aside>

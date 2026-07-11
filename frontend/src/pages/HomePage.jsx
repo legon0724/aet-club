@@ -1,19 +1,30 @@
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
 import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
-import { getFallbackNotices } from '../utils/localWorkspace';
+import {
+  getAllLocalPortfolios,
+  getFallbackNotices,
+  getLocalAssignments,
+  getLocalTeams,
+} from '../utils/localWorkspace';
 
 const BACKEND = 'https://web-production-00104.up.railway.app';
 
 const quickLinks = [
-  { to: '/portfolio', eyebrow: 'Portfolio', label: '포트폴리오', description: '활동 기록과 링크를 깔끔하게 정리합니다.' },
-  { to: '/team', eyebrow: 'Assignment', label: '과제 제출', description: '팀별 과제와 제출물을 한곳에서 확인합니다.' },
-  { to: '/ai', eyebrow: 'Analysis', label: 'AI 분석', description: '생기부 문장과 진로 방향을 빠르게 점검합니다.' },
+  { to: '/team', eyebrow: 'Assignment', label: '과제 제출', description: '관리자가 올린 파일을 받고 제출물을 올립니다.', meta: 'Submit' },
+  { to: '/portfolio', eyebrow: 'Portfolio', label: '포트폴리오', description: '활동 기록과 외부 링크를 정리합니다.', meta: 'Archive' },
+  { to: '/ai', eyebrow: 'Analysis', label: 'AI 분석', description: '생기부 문장과 진로 방향을 점검합니다.', meta: 'Review' },
 ];
 
-const BannerSlider = memo(({ banners }) => {
+const todayRows = [
+  ['01', '공지 확인', '고정된 안내와 최근 공지를 먼저 봅니다.'],
+  ['02', '과제 제출', '팀 공간에서 첨부 파일과 제출 상태를 확인합니다.'],
+  ['03', '기록 정리', '포트폴리오에 활동 링크와 결과를 남깁니다.'],
+];
+
+const BannerSlider = memo(({ banners, assignments, notices, teams, user }) => {
   const [idx, setIdx] = useState(0);
 
   useEffect(() => {
@@ -24,24 +35,38 @@ const BannerSlider = memo(({ banners }) => {
 
   const banner = banners[idx];
   const imgUrl = banner?.image_url?.startsWith('/api') ? `${BACKEND}${banner.image_url}` : banner?.image_url;
+  const latestNotice = notices[0];
+  const latestAssignment = assignments[0];
 
   return (
-    <section className={`workspace-hero ${imgUrl ? 'has-image' : ''}`}>
-      {imgUrl && <img src={imgUrl} alt="" />}
-      <div className="hero-copy">
-        <span>NC Club</span>
-        <h1>{banner?.title || 'NC 팀 공간'}</h1>
-        <p>{banner?.content || '공지, 과제, 포트폴리오, 분석을 더 빠르게 들어갈 수 있게 정리했습니다.'}</p>
-        <div className="hero-actions">
+    <section className={`home-command ${imgUrl ? 'has-image' : ''}`}>
+      {imgUrl && <img className="home-command-image" src={imgUrl} alt="" />}
+      <div className="command-copy">
+        <span>NC Club Dashboard</span>
+        <h1>{banner?.title || 'NC 활동 보드'}</h1>
+        <p>{banner?.content || '오늘 확인할 공지, 팀 과제, 포트폴리오 기록을 한 화면에서 바로 이어갑니다.'}</p>
+        <div className="command-actions">
           <Link to="/team">과제 제출</Link>
-          <Link to="/portfolio">포트폴리오 정리</Link>
+          <Link to="/portfolio">기록 정리</Link>
         </div>
       </div>
-      <div className="hero-status" aria-label="NC 현황">
-        <strong>NC</strong>
-        <span>Portfolio ready</span>
-        <span>Team workspace</span>
-        <span>Assignment submit</span>
+
+      <div className="command-board" aria-label="활동 요약">
+        <div className="board-header">
+          <span>Live room</span>
+          <strong>{teams.length || 0} teams</strong>
+        </div>
+        <div className="board-row">
+          <span>최근 공지</span>
+          <p>{latestNotice?.title || '새 공지를 기다리고 있습니다.'}</p>
+        </div>
+        <div className="board-row">
+          <span>팀 과제</span>
+          <p>{latestAssignment?.title || '등록된 과제가 없습니다.'}</p>
+        </div>
+        <Link to={user?.is_admin ? '/admin' : '/team'} className="board-link">
+          {user?.is_admin ? '관리자 콘솔' : '팀 공간'}
+        </Link>
       </div>
       {banner?.link_url && <a className="hero-link" href={banner.link_url} target="_blank" rel="noreferrer" aria-label={`${banner.title} 자세히 보기`} />}
       {banners.length > 1 && (
@@ -59,6 +84,9 @@ export default function HomePage() {
   const [user, setUser] = useState(() => getCurrentLocalUser());
   const [banners, setBanners] = useState([]);
   const [notices, setNotices] = useState(() => getFallbackNotices());
+  const [teams, setTeams] = useState(() => getLocalTeams());
+  const [assignments, setAssignments] = useState(() => getLocalAssignments());
+  const [portfolioCount] = useState(() => Object.keys(getAllLocalPortfolios()).length);
 
   useEffect(() => {
     api.get('/api/auth/me').then((r) => {
@@ -68,55 +96,118 @@ export default function HomePage() {
     api.get('/api/notices/').then((r) => setNotices(r.data)).catch(() => {
       setNotices(getFallbackNotices());
     });
+    api.get('/api/teams/').then((r) => setTeams(r.data)).catch(() => setTeams(getLocalTeams()));
+    api.get('/api/assignments/').then((r) => setAssignments(r.data || [])).catch(() => {
+      setAssignments(getLocalAssignments());
+    });
   }, []);
+
+  const orderedNotices = useMemo(() => notices.slice(-6).reverse(), [notices]);
+  const dashboardStats = useMemo(() => [
+    ['팀', `${teams.length}`, '활동 공간'],
+    ['과제', `${assignments.length}`, '등록됨'],
+    ['공지', `${notices.length}`, '확인 대기'],
+    ['기록', `${portfolioCount}`, '포트폴리오'],
+  ], [assignments.length, notices.length, portfolioCount, teams.length]);
+  const recentAssignments = assignments.slice(0, 4);
 
   return (
     <div className="app-shell workspace-shell">
       <Navbar user={user} />
-      <main className="home-layout">
-        <BannerSlider banners={banners} />
+      <main className="home-layout home-dashboard">
+        <BannerSlider banners={banners} assignments={assignments} notices={orderedNotices} teams={teams} user={user} />
 
-        <section className="quick-grid" aria-label="주요 메뉴">
-          {quickLinks.map((link) => (
-            <Link key={link.to} to={link.to} className="quick-card">
-              <small>{link.eyebrow}</small>
-              <span>{link.label}</span>
-              <p>{link.description}</p>
-            </Link>
+        <section className="home-signal-grid" aria-label="활동 요약">
+          {dashboardStats.map(([label, value, helper]) => (
+            <article key={label} className="signal-card">
+              <span>{label}</span>
+              <strong>{value}</strong>
+              <p>{helper}</p>
+            </article>
           ))}
         </section>
 
-        <section className="assignment-strip">
-          <div>
-            <span>Assignment</span>
-            <h2>과제는 팀 공간에서 확인하고 제출합니다.</h2>
-            <p>팀별 과제 피드, 제출물 목록, 새 제출 패널을 한 화면에서 관리합니다.</p>
-          </div>
-          <Link to="/team">팀 공간 이동</Link>
-        </section>
-
-        <section className="notice-panel">
-          <div className="section-head">
-            <p>Notice</p>
-            <h2>공지사항</h2>
-          </div>
-
-          {notices.length > 0 ? (
-            <div className="notice-list">
-              {notices.slice(-10).reverse().map((notice) => (
-                <article key={notice.id} className="notice-item">
+        <section className="home-control-grid" aria-label="오늘 작업">
+          <div className="today-panel">
+            <div className="section-head">
+              <p>Today</p>
+              <h2>오늘 이어갈 일</h2>
+            </div>
+            <div className="today-list">
+              {todayRows.map(([step, title, body]) => (
+                <div key={step} className="today-row">
+                  <span>{step}</span>
                   <div>
-                    {notice.is_pinned && <span className="pin-label">고정</span>}
-                    <h3>{notice.title}</h3>
+                    <strong>{title}</strong>
+                    <p>{body}</p>
                   </div>
-                  <time>{new Date(notice.created_at).toLocaleDateString()}</time>
-                  {notice.content && <p>{notice.content}</p>}
-                </article>
+                </div>
               ))}
             </div>
-          ) : (
-            <p className="empty-state">아직 등록된 공지사항이 없습니다.</p>
-          )}
+          </div>
+
+          <div className="module-panel">
+            {quickLinks.map((link) => (
+              <Link key={link.to} to={link.to} className="module-card">
+                <small>{link.eyebrow}</small>
+                <strong>{link.label}</strong>
+                <p>{link.description}</p>
+                <span>{link.meta}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="home-work-grid" aria-label="공지와 과제">
+          <section className="notice-panel">
+            <div className="section-head">
+              <p>Notice</p>
+              <h2>공지사항</h2>
+            </div>
+
+            {orderedNotices.length > 0 ? (
+              <div className="notice-list">
+                {orderedNotices.map((notice) => (
+                  <article key={notice.id} className="notice-item">
+                    <div>
+                      {notice.is_pinned && <span className="pin-label">고정</span>}
+                      <h3>{notice.title}</h3>
+                    </div>
+                    <time>{new Date(notice.created_at).toLocaleDateString()}</time>
+                    {notice.content && <p>{notice.content}</p>}
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="empty-state">아직 등록된 공지사항이 없습니다.</p>
+            )}
+          </section>
+
+          <section className="deadline-panel">
+            <div className="section-head">
+              <p>Assignments</p>
+              <h2>팀 과제</h2>
+            </div>
+            {recentAssignments.length > 0 ? (
+              <div className="deadline-list">
+                {recentAssignments.map((assignment) => (
+                  <Link key={assignment.id} to="/team" className="deadline-item">
+                    <div>
+                      <strong>{assignment.title}</strong>
+                      <p>{assignment.content || '팀 공간에서 파일과 제출 상태를 확인하세요.'}</p>
+                    </div>
+                    <span>{assignment.due_at ? new Date(assignment.due_at).toLocaleDateString() : '열림'}</span>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="deadline-empty">
+                <strong>등록된 과제가 없습니다.</strong>
+                <p>관리자가 과제를 올리면 이 영역에 바로 표시됩니다.</p>
+                <Link to="/team">팀 공간 보기</Link>
+              </div>
+            )}
+          </section>
         </section>
       </main>
     </div>

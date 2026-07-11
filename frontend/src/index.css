@@ -3115,3 +3115,1130 @@ a {
     min-width: 0;
   }
 }
+
+/* Premium editorial refresh */
+:root {
+  color-scheme: light;
+  --paper: #f5f5f1;
+  --surface: #fffdfa;
+  --surface-soft: #efeee8;
+  --surface-tint: #e8efe6;
+  --ink: #181a1d;
+  --ink-soft: #3a3d42;
+  --muted: #6e746d;
+  --line: rgba(24, 26, 29, 0.12);
+  --line-strong: rgba(24, 26, 29, 0.22);
+  --moss: #58725a;
+  --moss-dark: #2f4734;
+  --clay: #c9634f;
+  --blue: #315a87;
+  --gold: #b88746;
+  --danger: #bb4a4a;
+  --shadow-soft: 0 18px 48px rgba(33, 33, 28, 0.08);
+  --shadow-tight: 0 8px 22px rgba(33, 33, 28, 0.08);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+body,
+button,
+input,
+textarea,
+select {
+  letter-spacing: 0;
+}
+
+.workspace-shell,
+.app-shell {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.site-nav {
+  top: 0;
+  width: min(1180px, calc(100% - 32px));
+  min-height: 70px;
+  margin: 0 auto;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: 0;
+  background: rgba(245, 245, 241, 0.94);
+  box-shadow: none;
+  backdrop-filter: blur(18px);
+}
+
+.site-logo {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--ink);
+  border-radius: 8px;
+  background: var(--ink);
+  color: #fffdfa;
+  box-shadow: none;
+}
+
+.site-links {
+  gap: 2px;
+}
+
+.site-links a,
+.site-account button {
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.site-links a.active,
+.site-links a:hover {
+  background: var(--ink);
+  color: #fffdfa;
+  box-shadow: none;
+}
+
+.site-account {
+  color: var(--muted);
+}
+
+.site-account button:hover {
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+
+.workspace-page,
+.home-layout {
+  width: min(1180px, calc(100% - 32px));
+  padding: 28px 0 72px;
+}
+
+.home-layout {
+  margin: 0 auto;
+}
+
+.page-hero,
+.workspace-hero,
+.workspace-card,
+.profile-card,
+.assignment-strip,
+.admin-hero,
+.admin-content,
+.turn-in-panel,
+.analysis-result,
+.analysis-form,
+.usage-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-soft);
+}
+
+.page-hero,
+.workspace-hero,
+.admin-hero {
+  padding: 34px;
+}
+
+.workspace-hero {
+  min-height: 276px;
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  background: var(--surface);
+}
+
+.workspace-hero::before,
+.workspace-hero::after,
+.workspace-hero.has-image::after,
+.page-hero::before,
+.page-hero::after,
+.admin-hero::before,
+.admin-hero::after {
+  display: none;
+}
+
+.workspace-hero img {
+  opacity: 0.12;
+  filter: grayscale(1);
+}
+
+.hero-copy,
+.hero-status,
+.banner-dots {
+  color: var(--ink);
+}
+
+.hero-copy {
+  align-self: center;
+}
+
+.hero-copy span,
+.page-hero span,
+.quick-card small,
+.assignment-strip span,
+.submission-head span,
+.option-group > span,
+.record-field > span,
+.analysis-form label > span,
+.assignment-switcher small,
+.assignment-card > div > span,
+.stream-header span,
+.turn-in-head span,
+.selected-assignment span,
+.admin-hero span,
+.admin-content-head span,
+.card-head span {
+  color: var(--moss);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.hero-copy h1 {
+  max-width: 720px;
+  color: var(--ink);
+  font-size: 54px;
+  line-height: 1.02;
+}
+
+.page-hero h1,
+.admin-hero h1 {
+  color: var(--ink);
+  font-size: 42px;
+  line-height: 1.06;
+}
+
+.page-hero.compact h1 {
+  font-size: 36px;
+}
+
+.hero-copy p,
+.page-hero p,
+.admin-hero p,
+.assignment-strip p,
+.quick-card p,
+.assignment-card p,
+.selected-assignment p,
+.portfolio-text.muted,
+.empty-copy,
+.empty-state {
+  color: var(--muted);
+}
+
+.hero-actions a,
+.assignment-strip a,
+.modern-btn,
+.primary-button,
+.turn-in-button,
+.assignment-card-actions button,
+.assignment-download,
+.status-button,
+.danger-button {
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.hero-actions a:first-child,
+.assignment-strip a,
+.modern-btn.primary,
+.primary-button {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fffdfa;
+}
+
+.hero-actions a:last-child,
+.modern-btn.ghost,
+.workspace-tabs button,
+.option-group button {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-soft);
+}
+
+.hero-actions a:hover,
+.assignment-strip a:hover,
+.modern-btn:hover:not(:disabled),
+.primary-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-tight);
+}
+
+.hero-status {
+  border: 1px solid var(--line);
+  background: var(--surface-tint);
+  backdrop-filter: none;
+}
+
+.hero-status strong,
+.hero-status span {
+  color: var(--ink);
+}
+
+.quick-grid {
+  gap: 12px;
+}
+
+.quick-card {
+  min-height: 148px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.quick-card:hover,
+.admin-overview button:hover,
+.assignment-switcher button:hover,
+.admin-side-list button:hover {
+  transform: translateY(-2px);
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-tight);
+}
+
+.quick-card span {
+  color: var(--ink);
+  font-size: 22px;
+}
+
+.assignment-strip {
+  align-items: center;
+  background: var(--surface-tint);
+}
+
+.assignment-strip h2 {
+  color: var(--ink);
+  font-size: 28px;
+}
+
+.notice-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 26px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-soft);
+}
+
+.section-head p {
+  color: var(--moss);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.section-head h2,
+.notice-item h3 {
+  color: var(--ink);
+}
+
+.notice-item {
+  border-top-color: var(--line);
+}
+
+.notice-item time,
+.notice-item p {
+  color: var(--muted);
+}
+
+.pin-label {
+  background: var(--surface-tint);
+  color: var(--moss-dark);
+}
+
+.workspace-card,
+.profile-card,
+.team-board,
+.portfolio-grid .workspace-card {
+  padding: 22px;
+}
+
+.profile-avatar {
+  border-color: var(--line);
+  border-radius: 8px;
+  background: var(--ink);
+  color: #fffdfa;
+}
+
+.profile-avatar small {
+  background: rgba(24, 26, 29, 0.82);
+}
+
+.profile-meta strong,
+.card-head strong,
+.admin-content-head h2,
+.stream-header h3,
+.assignment-card h2,
+.submission-item h3,
+.admin-list-item strong,
+.selected-assignment strong {
+  color: var(--ink);
+}
+
+.profile-meta > span,
+.pill-row span,
+.pill-row a,
+.admin-profile-chip span,
+.admin-overview small,
+.admin-list-item span,
+.admin-list-item small,
+.submission-actions time,
+.stream-header small {
+  color: var(--muted);
+}
+
+.pill-row a,
+.pill-row span {
+  border-color: var(--line);
+  background: var(--surface-soft);
+  color: var(--ink-soft);
+}
+
+.link-editor input,
+.submission-form input,
+.submission-form textarea,
+.analysis-form input,
+.analysis-form textarea,
+.chat-input textarea,
+.workspace-textarea,
+.admin-toolbar select,
+.admin-list-item select,
+.admin-form-grid input,
+.admin-form-grid textarea,
+.admin-form-grid select,
+.nc-login-stage .field input {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.link-editor input:focus,
+.submission-form input:focus,
+.submission-form textarea:focus,
+.analysis-form input:focus,
+.analysis-form textarea:focus,
+.chat-input textarea:focus,
+.workspace-textarea:focus,
+.admin-form-grid input:focus,
+.admin-form-grid textarea:focus,
+.admin-form-grid select:focus,
+.nc-login-stage .field input:focus {
+  border-color: var(--moss);
+  box-shadow: 0 0 0 3px rgba(88, 114, 90, 0.14);
+}
+
+.workspace-tabs button.active,
+.option-group button.active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fffdfa;
+}
+
+.file-picker,
+.upload-zone,
+.admin-file-pick {
+  border: 1px dashed var(--line-strong);
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+
+.file-picker small,
+.upload-zone span,
+.admin-file-pick span {
+  color: var(--muted);
+}
+
+.assignment-hero {
+  background: var(--surface);
+}
+
+.assignment-switcher {
+  gap: 10px;
+}
+
+.assignment-switcher button,
+.admin-overview button,
+.admin-side-list button {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.assignment-switcher button.active,
+.admin-overview button.active,
+.admin-side-list button.active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fffdfa;
+}
+
+.assignment-switcher button.active small,
+.assignment-switcher button.active span,
+.admin-overview button.active small {
+  color: rgba(255, 253, 250, 0.72);
+}
+
+.assignment-switcher button > span {
+  color: var(--muted);
+}
+
+.assignment-card,
+.submission-item,
+.admin-list-item,
+.selected-assignment {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: none;
+}
+
+.assignment-card.active {
+  border-color: var(--moss);
+  box-shadow: 0 0 0 3px rgba(88, 114, 90, 0.1);
+}
+
+.assignment-icon,
+.submission-avatar,
+.team-dot {
+  background: var(--ink);
+  color: #fffdfa;
+}
+
+.assignment-meta {
+  border-top-color: var(--line);
+  color: var(--muted);
+}
+
+.assignment-meta strong {
+  color: var(--ink);
+}
+
+.assignment-card-actions button {
+  border-color: var(--line);
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+
+.assignment-download {
+  border-color: rgba(88, 114, 90, 0.32);
+  background: var(--surface-tint);
+  color: var(--moss-dark);
+}
+
+.submission-item span,
+.submission-item a,
+.chat-message strong {
+  color: var(--blue);
+}
+
+.submission-actions button,
+.danger-button {
+  border-color: rgba(187, 74, 74, 0.28);
+  background: rgba(187, 74, 74, 0.08);
+  color: var(--danger);
+}
+
+.turn-in-panel {
+  background: var(--surface);
+}
+
+.turn-in-head strong,
+.status-button.active {
+  border-color: rgba(88, 114, 90, 0.28);
+  background: var(--surface-tint);
+  color: var(--moss-dark);
+}
+
+.assignment-form {
+  background: transparent;
+}
+
+.turn-in-button {
+  border-color: rgba(88, 114, 90, 0.34);
+  background: var(--surface-tint);
+  color: var(--moss-dark);
+}
+
+.chat-message > div {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.chat-message.mine > div {
+  border-color: rgba(88, 114, 90, 0.28);
+  background: var(--surface-tint);
+}
+
+.usage-card {
+  min-width: 150px;
+  background: var(--ink);
+  color: #fffdfa;
+  text-align: left;
+}
+
+.usage-card strong,
+.usage-card span {
+  color: #fffdfa;
+}
+
+.analysis-result pre,
+.portfolio-text {
+  color: var(--ink-soft);
+}
+
+.admin-hero {
+  background: var(--ink);
+  color: #fffdfa;
+}
+
+.admin-hero h1,
+.admin-hero p,
+.admin-hero span {
+  color: #fffdfa;
+}
+
+.admin-profile-chip {
+  border-color: rgba(255, 253, 250, 0.18);
+  background: rgba(255, 253, 250, 0.08);
+}
+
+.admin-profile-chip strong,
+.admin-profile-chip span {
+  color: #fffdfa;
+}
+
+.admin-overview {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.admin-content,
+.admin-form-grid,
+.admin-preview {
+  background: var(--surface);
+}
+
+.admin-content-head {
+  border-bottom-color: var(--line);
+}
+
+.admin-list-item select,
+.admin-toolbar select {
+  min-height: 40px;
+}
+
+.status-button {
+  border-color: var(--line);
+  background: var(--surface-soft);
+  color: var(--ink-soft);
+}
+
+.admin-thumb,
+.admin-preview-head img {
+  border-radius: 8px;
+}
+
+.nc-login-stage {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.95fr) minmax(380px, 1.05fr);
+  place-items: stretch;
+  overflow: auto;
+  background: var(--paper);
+}
+
+.nc-login-stage::before,
+.nc-login-stage::after,
+.nc-login-stage .editorial-scene::before,
+.nc-login-stage .editorial-scene::after,
+.nc-login-stage .motion-pixel,
+.nc-login-stage .poster-eyes,
+.nc-login-stage .editorial-form::before {
+  display: none;
+}
+
+.nc-login-stage .editorial-scene {
+  position: relative;
+  inset: auto;
+  z-index: 1;
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  justify-content: space-between;
+  border-right: 1px solid var(--line);
+  padding: 42px;
+  background: var(--ink);
+  color: #fffdfa;
+  pointer-events: auto;
+}
+
+.nc-login-stage .editorial-nav {
+  position: static;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255, 253, 250, 0.74);
+  font-weight: 700;
+}
+
+.nc-login-stage .editorial-logo {
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgba(255, 253, 250, 0.18);
+  border-radius: 8px;
+  background: #fffdfa;
+  color: var(--ink);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.nc-login-stage .poster-stack {
+  position: static;
+  width: 100%;
+  max-width: 420px;
+  margin: auto 0 0;
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
+
+.nc-login-stage .poster-card {
+  border: 1px solid rgba(255, 253, 250, 0.16);
+  border-radius: 8px;
+  background: #fffdfa;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.nc-login-stage .poster-card-main {
+  min-height: 280px;
+  display: grid;
+  align-items: end;
+  background: #fffdfa;
+}
+
+.nc-login-stage .poster-card-main img {
+  width: 112px;
+  justify-self: end;
+  align-self: start;
+  margin: 22px;
+  filter: grayscale(1);
+  opacity: 0.82;
+}
+
+.nc-login-stage .poster-card-main > .poster-title {
+  padding: 28px;
+  color: var(--ink);
+  font-size: 72px;
+  line-height: 0.9;
+}
+
+.nc-login-stage .editorial-form-wrap {
+  min-height: 100vh;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  padding: 42px;
+  background: var(--paper);
+}
+
+.nc-login-stage .editorial-form {
+  width: min(100%, 460px);
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 32px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: none;
+  animation: none;
+}
+
+.nc-login-stage .form-title strong {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+
+.nc-login-stage .form-title span {
+  color: var(--moss);
+}
+
+.nc-login-stage .form-title h2 {
+  color: var(--ink);
+  font-size: 44px;
+  line-height: 1.04;
+}
+
+.nc-login-stage .form-title p,
+.nc-login-stage .field,
+.nc-login-stage .term-row label,
+.nc-login-stage .term-body {
+  color: var(--muted);
+}
+
+.nc-login-stage .editorial-tabs,
+.nc-login-stage .terms-box {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.nc-login-stage .editorial-tabs button {
+  border-radius: 6px;
+  color: var(--muted);
+}
+
+.nc-login-stage .editorial-tabs button.active {
+  background: var(--ink);
+  color: #fffdfa;
+  box-shadow: none;
+}
+
+.nc-login-stage .terms-all {
+  border-bottom-color: var(--line);
+  color: var(--ink);
+}
+
+.nc-login-stage .term-row button,
+.nc-login-stage .text-button {
+  color: var(--moss-dark);
+}
+
+.form-alert.success,
+.inline-alert.success {
+  border-color: rgba(88, 114, 90, 0.22);
+  background: var(--surface-tint);
+  color: var(--moss-dark);
+}
+
+.form-alert.error,
+.inline-alert.error {
+  border-color: rgba(187, 74, 74, 0.24);
+  background: rgba(187, 74, 74, 0.08);
+  color: var(--danger);
+}
+
+@media (max-width: 900px) {
+  .nc-login-stage {
+    grid-template-columns: 1fr;
+  }
+
+  .nc-login-stage .editorial-scene {
+    min-height: 340px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .nc-login-stage .poster-stack {
+    max-width: 320px;
+  }
+
+  .workspace-hero,
+  .ai-layout,
+  .profile-card,
+  .assignment-layout,
+  .admin-split-view {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-result,
+  .turn-in-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 560px) {
+  .site-nav {
+    width: min(100% - 20px, 1180px);
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 10px 0;
+  }
+
+  .site-logo {
+    justify-self: center;
+  }
+
+  .site-links,
+  .site-account {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .workspace-page,
+  .home-layout {
+    width: min(100% - 24px, 1180px);
+    padding-top: 22px;
+  }
+
+  .workspace-hero,
+  .page-hero,
+  .admin-hero,
+  .assignment-strip,
+  .profile-card,
+  .admin-list-item,
+  .stream-header {
+    padding: 20px;
+  }
+
+  .hero-copy h1 {
+    font-size: 38px;
+  }
+
+  .page-hero h1,
+  .admin-hero h1,
+  .page-hero.compact h1 {
+    font-size: 30px;
+  }
+
+  .nc-login-stage .editorial-scene,
+  .nc-login-stage .editorial-form-wrap {
+    padding: 22px;
+  }
+
+  .nc-login-stage .editorial-form {
+    padding: 22px;
+  }
+
+  .nc-login-stage .form-title h2 {
+    font-size: 34px;
+  }
+}
+
+/* Final polish: remove the template-like shine and make the auth surface feel intentional. */
+.nc-login-stage {
+  background:
+    linear-gradient(90deg, var(--ink) 0 47.5%, var(--paper) 47.5% 100%);
+}
+
+.nc-login-stage .editorial-scene {
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.nc-login-stage .editorial-scene::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  display: block;
+  background-image:
+    linear-gradient(rgba(255, 253, 250, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 253, 250, 0.035) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.45), transparent 78%);
+}
+
+.nc-login-stage .editorial-scene::after {
+  content: none;
+  position: absolute;
+  inset: auto 42px 34px auto;
+  width: auto;
+  height: auto;
+  right: 42px;
+  bottom: 34px;
+  display: block;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: rgba(255, 253, 250, 0.34);
+  display: none;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  opacity: 1;
+  pointer-events: none;
+  transform: none;
+  animation: none;
+}
+
+.nc-login-stage .poster-stack {
+  max-width: 448px;
+  animation: ncPosterIn 680ms cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.nc-login-stage .poster-card {
+  border-color: rgba(255, 253, 250, 0.22);
+  box-shadow: 0 34px 72px rgba(0, 0, 0, 0.28);
+}
+
+.nc-login-stage .poster-card-main {
+  min-height: 330px;
+  overflow: hidden;
+}
+
+.nc-login-stage .poster-card-main::before {
+  content: "";
+  position: absolute;
+  inset: 22px;
+  border: 1px solid rgba(24, 26, 29, 0.12);
+  border-radius: 4px;
+}
+
+.nc-login-stage .poster-card-main::after {
+  content: "CAM HIGH";
+  position: absolute;
+  right: 28px;
+  bottom: 28px;
+  color: rgba(24, 26, 29, 0.48);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.nc-login-stage .poster-card-main img {
+  width: 128px;
+  margin: 34px;
+  opacity: 0.58;
+}
+
+.nc-login-stage .poster-card-main > .poster-title {
+  position: relative;
+  z-index: 1;
+  padding: 42px 34px;
+  font-size: 86px;
+  font-weight: 950;
+  letter-spacing: 0;
+}
+
+.nc-login-stage .editorial-form-wrap {
+  background:
+    linear-gradient(rgba(24, 26, 29, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(24, 26, 29, 0.028) 1px, transparent 1px),
+    var(--paper);
+  background-size: 56px 56px;
+}
+
+.nc-login-stage .editorial-form {
+  border-color: rgba(24, 26, 29, 0.16);
+  box-shadow: 0 32px 72px rgba(24, 26, 29, 0.12);
+  animation: ncAuthIn 520ms cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.nc-login-stage .form-title strong {
+  background: #fffdfa;
+  box-shadow: inset 0 -1px 0 rgba(24, 26, 29, 0.08);
+}
+
+.nc-login-stage .form-title span {
+  color: #4f6650;
+  font-weight: 900;
+}
+
+.nc-login-stage .editorial-tabs {
+  padding: 4px;
+  background: #ededeb;
+}
+
+.nc-login-stage .editorial-tabs button.active {
+  background: #17191d;
+}
+
+.nc-login-stage .field input {
+  min-height: 56px;
+  border-color: rgba(24, 26, 29, 0.12);
+  background: #fff;
+  box-shadow: inset 0 1px 0 rgba(24, 26, 29, 0.04);
+}
+
+.nc-login-stage .field input:focus {
+  border-color: rgba(24, 26, 29, 0.46);
+  box-shadow:
+    0 0 0 4px rgba(24, 26, 29, 0.08),
+    inset 0 1px 0 rgba(24, 26, 29, 0.04);
+}
+
+.nc-login-stage .primary-button {
+  min-height: 58px;
+  border: 1px solid #15171a;
+  background: #15171a;
+  color: #fffdfa;
+  box-shadow: 0 16px 32px rgba(24, 26, 29, 0.18);
+}
+
+.nc-login-stage .primary-button:hover:not(:disabled) {
+  background: #000;
+  box-shadow: 0 20px 38px rgba(24, 26, 29, 0.22);
+  transform: translateY(-1px);
+}
+
+.nc-login-stage .text-button {
+  width: fit-content;
+  margin: 0 auto;
+  border-bottom: 1px solid rgba(47, 71, 52, 0.25);
+  border-radius: 0;
+  padding: 0 0 3px;
+}
+
+.site-links a,
+.site-account button,
+.hero-actions a,
+.quick-card,
+.assignment-strip a,
+.primary-button,
+.secondary-button,
+.danger-button,
+.admin-tabs button {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+@keyframes ncAuthIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes ncPosterIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 900px) {
+  .nc-login-stage {
+    background: var(--paper);
+  }
+
+  .nc-login-stage .editorial-scene::after {
+    right: 22px;
+    bottom: 22px;
+  }
+
+  .nc-login-stage .poster-card-main {
+    min-height: 220px;
+  }
+
+  .nc-login-stage .poster-card-main > .poster-title {
+    font-size: 64px;
+  }
+}

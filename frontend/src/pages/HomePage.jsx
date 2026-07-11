@@ -20,7 +20,7 @@ const quickLinks = [
 
 const todayRows = [
   ['01', '공지 확인', '고정된 안내와 최근 공지를 먼저 봅니다.'],
-  ['02', '과제 제출', '팀 공간에서 첨부 파일과 제출 상태를 확인합니다.'],
+  ['02', '과제 제출', '과제 화면에서 첨부 파일과 제출 상태를 확인합니다.'],
   ['03', '기록 정리', '포트폴리오에 활동 링크와 결과를 남깁니다.'],
 ];
 
@@ -40,7 +40,7 @@ const BannerSlider = memo(({ banners, assignments, notices, teams, user }) => {
 
   return (
     <section className={`home-command ${imgUrl ? 'has-image' : ''}`}>
-      {imgUrl && <img className="home-command-image" src={imgUrl} alt="" />}
+      {imgUrl && <img className="home-command-image" src={imgUrl} alt="" loading="lazy" decoding="async" />}
       <div className="command-copy">
         <span>NC Club Dashboard</span>
         <h1>{banner?.title || 'NC 활동 보드'}</h1>
@@ -65,7 +65,7 @@ const BannerSlider = memo(({ banners, assignments, notices, teams, user }) => {
           <p>{latestAssignment?.title || '등록된 과제가 없습니다.'}</p>
         </div>
         <Link to={user?.is_admin ? '/admin' : '/team'} className="board-link">
-          {user?.is_admin ? '관리자 콘솔' : '팀 공간'}
+          {user?.is_admin ? '관리자 콘솔' : '과제'}
         </Link>
       </div>
       {banner?.link_url && <a className="hero-link" href={banner.link_url} target="_blank" rel="noreferrer" aria-label={`${banner.title} 자세히 보기`} />}
@@ -194,7 +194,7 @@ export default function HomePage() {
                   <Link key={assignment.id} to="/team" className="deadline-item">
                     <div>
                       <strong>{assignment.title}</strong>
-                      <p>{assignment.content || '팀 공간에서 파일과 제출 상태를 확인하세요.'}</p>
+                      <p>{assignment.content || '과제 화면에서 파일과 제출 상태를 확인하세요.'}</p>
                     </div>
                     <span>{assignment.due_at ? new Date(assignment.due_at).toLocaleDateString() : '열림'}</span>
                   </Link>
@@ -204,7 +204,7 @@ export default function HomePage() {
               <div className="deadline-empty">
                 <strong>등록된 과제가 없습니다.</strong>
                 <p>관리자가 과제를 올리면 이 영역에 바로 표시됩니다.</p>
-                <Link to="/team">팀 공간 보기</Link>
+                <Link to="/team">과제 보기</Link>
               </div>
             )}
           </section>

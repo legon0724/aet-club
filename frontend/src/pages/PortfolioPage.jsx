@@ -173,7 +173,7 @@ export default function PortfolioPage() {
                   {publicPortfolios.map((item) => (
                     <article key={item.user_id || item.email} className="peer-portfolio-card">
                       {item.profile_image ? (
-                        <img src={resolveFileUrl(item.profile_image)} alt="" />
+                        <img src={resolveFileUrl(item.profile_image)} alt="" loading="lazy" decoding="async" />
                       ) : (
                         <strong>{(item.username || item.email || 'N')[0]}</strong>
                       )}
@@ -203,7 +203,7 @@ export default function PortfolioPage() {
 
         <section className="profile-card">
           <button className="profile-avatar" type="button" onClick={() => editing && imgRef.current?.click()} disabled={!editing}>
-            {profilePreview ? <img src={profilePreview} alt="프로필" /> : <span>{(user?.username || 'N')[0]}</span>}
+            {profilePreview ? <img src={profilePreview} alt="프로필" loading="lazy" decoding="async" /> : <span>{(user?.username || 'N')[0]}</span>}
             {editing && <small>변경</small>}
           </button>
           <input ref={imgRef} type="file" accept=".jpg,.jpeg,.png,.webp" onChange={handleImageChange} hidden />

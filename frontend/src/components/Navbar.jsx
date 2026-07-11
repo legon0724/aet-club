@@ -4,7 +4,7 @@ import { clearLocalSession, getCurrentLocalUser } from '../utils/localAuth';
 const navItems = [
   ['/', '홈'],
   ['/portfolio', '포트폴리오'],
-  ['/team', '팀 공간'],
+  ['/team', '과제'],
   ['/ai', 'AI 분석'],
 ];
 

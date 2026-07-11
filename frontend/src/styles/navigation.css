@@ -1,0 +1,80 @@
+/* Navigation is kept separate so the header can be tuned without touching page layouts. */
+
+.site-nav {
+  top: 12px;
+  width: min(1180px, calc(100% - 42px));
+  min-height: 68px;
+  margin: 0 auto;
+  padding: 8px 18px 8px 26px;
+  border: 1px solid rgba(23, 25, 29, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 253, 249, 0.92);
+  box-shadow: 0 18px 42px rgba(62, 45, 34, 0.12);
+  backdrop-filter: blur(18px);
+}
+
+.site-logo {
+  width: 46px;
+  height: 46px;
+  margin-left: 2px;
+  border-radius: 11px;
+  box-shadow: 0 10px 22px rgba(23, 25, 29, 0.16);
+}
+
+.site-links {
+  gap: 6px;
+}
+
+.site-links a,
+.site-account button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border-radius: 999px;
+  padding: 0 16px;
+}
+
+.site-links a.active,
+.site-links a:hover {
+  background: #17191d;
+  color: #fffdf9;
+  box-shadow: 0 12px 24px rgba(23, 25, 29, 0.16);
+}
+
+.site-account {
+  padding-right: 2px;
+}
+
+.site-account span {
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.route-loader {
+  min-height: 100vh;
+  background: var(--paper, #faf4ee);
+}
+
+@media (max-width: 760px) {
+  .site-nav {
+    top: 8px;
+    width: min(100% - 20px, 1180px);
+    grid-template-columns: auto 1fr;
+    border-radius: 24px;
+    padding: 10px 12px 12px 16px;
+  }
+
+  .site-links {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .site-account {
+    grid-column: 1 / -1;
+    justify-content: center;
+    padding-right: 0;
+  }
+}

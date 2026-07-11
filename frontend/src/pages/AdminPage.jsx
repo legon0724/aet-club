@@ -538,7 +538,7 @@ function BannersTab() {
           const imgUrl = resolveFileUrl(banner.image_url);
           return (
             <article key={banner.id} className="admin-list-item">
-              {imgUrl && <img className="admin-thumb" src={imgUrl} alt="" />}
+              {imgUrl && <img className="admin-thumb" src={imgUrl} alt="" loading="lazy" decoding="async" />}
               <div>
                 <strong>{banner.title || '제목 없음'}</strong>
                 {banner.link_url && <span>{banner.link_url}</span>}
@@ -598,7 +598,7 @@ function PortfoliosTab() {
         {portfolio && (
           <>
             <div className="admin-preview-head">
-              {portfolio.profile_image && <img src={resolveFileUrl(portfolio.profile_image)} alt="" />}
+              {portfolio.profile_image && <img src={resolveFileUrl(portfolio.profile_image)} alt="" loading="lazy" decoding="async" />}
               <div>
                 <strong>{portfolio.username || selectedUser?.username}</strong>
                 <span>{portfolio.email || selectedUser?.email}</span>

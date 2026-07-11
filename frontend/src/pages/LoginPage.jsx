@@ -324,7 +324,7 @@ export default function LoginPage() {
               <span />
               <span />
             </div>
-            <img src={heroImage} alt="" />
+            <img src={heroImage} alt="" decoding="async" />
             <div className="paper-character">
               <span className="character-head" />
               <span className="character-body" />

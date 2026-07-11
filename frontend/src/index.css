@@ -4979,3 +4979,316 @@ select {
     margin-top: 6px;
   }
 }
+
+/* Color comeback: keep the cleaner layout, bring back warmth and add the paper character. */
+:root {
+  --paper: #fff7f1;
+  --surface: #fffdf9;
+  --surface-soft: #f4efe7;
+  --surface-tint: #e8f3e7;
+  --ink: #17191d;
+  --ink-soft: #343a40;
+  --muted: #747165;
+  --moss: #4f7a5b;
+  --coral: #f06f5f;
+  --sky: #4f8ecb;
+  --sun: #f2bd57;
+  --line: rgba(23, 25, 29, 0.12);
+  --line-strong: rgba(23, 25, 29, 0.22);
+  --shadow-soft: 0 22px 58px rgba(63, 45, 34, 0.12);
+  --shadow-tight: 0 10px 26px rgba(63, 45, 34, 0.1);
+}
+
+body,
+.workspace-shell,
+.app-shell {
+  background:
+    linear-gradient(135deg, rgba(240, 111, 95, 0.06), transparent 34%),
+    linear-gradient(315deg, rgba(79, 142, 203, 0.06), transparent 34%),
+    var(--paper);
+}
+
+.site-nav {
+  background: rgba(255, 253, 249, 0.9);
+}
+
+.site-links a.active,
+.site-links a:hover {
+  background: #17191d;
+  color: #fffdf9;
+  box-shadow: 0 14px 30px rgba(23, 25, 29, 0.16);
+}
+
+.nc-login-stage {
+  grid-template-columns: minmax(360px, 0.95fr) minmax(420px, 1.05fr);
+  background:
+    linear-gradient(90deg, #16191f 0 47%, #fff7f1 47% 100%);
+}
+
+.nc-login-stage .editorial-scene {
+  border-right: 0;
+  background:
+    linear-gradient(140deg, rgba(79, 142, 203, 0.16), transparent 36%),
+    linear-gradient(320deg, rgba(240, 111, 95, 0.14), transparent 44%),
+    #16191f;
+}
+
+.nc-login-stage .editorial-scene::before {
+  background-image:
+    linear-gradient(rgba(255, 253, 249, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 253, 249, 0.04) 1px, transparent 1px);
+}
+
+.nc-login-stage .editorial-logo {
+  border-radius: 14px;
+  color: #16191f;
+}
+
+.nc-login-stage .poster-card {
+  border: 1px solid rgba(255, 253, 249, 0.26);
+  border-radius: 18px;
+  background: #fffdf9;
+  box-shadow: 0 36px 80px rgba(0, 0, 0, 0.28);
+}
+
+.nc-login-stage .poster-card-main {
+  min-height: 360px;
+  background:
+    linear-gradient(180deg, rgba(255, 247, 241, 0.92), rgba(255, 253, 249, 0.98)),
+    #fffdf9;
+}
+
+.nc-login-stage .poster-card-main::before {
+  border-color: rgba(23, 25, 29, 0.1);
+  border-radius: 12px;
+}
+
+.nc-login-stage .poster-card-main::after {
+  color: rgba(23, 25, 29, 0.45);
+}
+
+.nc-login-stage .poster-card-main img {
+  width: 92px;
+  margin: 30px;
+  opacity: 0.36;
+}
+
+.nc-login-stage .poster-card-main > .poster-title {
+  padding: 42px 34px;
+  color: #17191d;
+  font-size: 88px;
+}
+
+.paper-character {
+  position: absolute;
+  right: 38px;
+  bottom: 88px;
+  width: 142px;
+  height: 160px;
+  transform: scale(0.92);
+  transform-origin: right bottom;
+}
+
+.paper-character span {
+  position: absolute;
+  display: block;
+}
+
+.character-head {
+  left: 38px;
+  top: 4px;
+  width: 72px;
+  height: 66px;
+  border: 3px solid #17191d;
+  border-radius: 24px 24px 26px 26px;
+  background:
+    radial-gradient(circle at 26px 30px, #17191d 0 4px, transparent 5px),
+    radial-gradient(circle at 48px 30px, #17191d 0 4px, transparent 5px),
+    linear-gradient(#fffdf9, #fff7f1);
+  box-shadow: inset 0 -10px 0 rgba(242, 189, 87, 0.26);
+}
+
+.character-head::after {
+  content: "";
+  position: absolute;
+  left: 25px;
+  top: 43px;
+  width: 24px;
+  height: 10px;
+  border-bottom: 3px solid #17191d;
+  border-radius: 0 0 999px 999px;
+}
+
+.character-body {
+  left: 28px;
+  top: 70px;
+  width: 92px;
+  height: 70px;
+  border: 3px solid #17191d;
+  border-radius: 26px 26px 22px 22px;
+  background:
+    linear-gradient(135deg, rgba(79, 142, 203, 0.92), rgba(79, 122, 91, 0.9)),
+    #4f8ecb;
+}
+
+.character-arm {
+  top: 88px;
+  width: 34px;
+  height: 14px;
+  border-radius: 999px;
+  background: #17191d;
+}
+
+.character-arm.left {
+  left: 6px;
+  transform: rotate(-24deg);
+}
+
+.character-arm.right {
+  right: 0;
+  transform: rotate(24deg);
+}
+
+.character-shadow {
+  left: 16px;
+  bottom: 0;
+  width: 118px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(23, 25, 29, 0.12);
+}
+
+.nc-login-stage .editorial-form-wrap {
+  background:
+    linear-gradient(rgba(23, 25, 29, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(23, 25, 29, 0.025) 1px, transparent 1px),
+    #fff7f1;
+}
+
+.nc-login-stage .editorial-form {
+  border-color: rgba(23, 25, 29, 0.13);
+  border-radius: 18px;
+  background: rgba(255, 253, 249, 0.96);
+  box-shadow: 0 34px 80px rgba(63, 45, 34, 0.16);
+}
+
+.nc-login-stage .form-title strong {
+  border-radius: 999px;
+  background: #fffdf9;
+}
+
+.nc-login-stage .form-title span,
+.nc-login-stage .term-row button,
+.nc-login-stage .text-button {
+  color: #4f7a5b;
+}
+
+.nc-login-stage .editorial-tabs {
+  border-color: rgba(23, 25, 29, 0.11);
+  background: #f4efe7;
+}
+
+.nc-login-stage .editorial-tabs button.active {
+  background: #17191d;
+  color: #fffdf9;
+}
+
+.nc-login-stage .primary-button {
+  border-color: #17191d;
+  background: #17191d;
+  box-shadow: 0 18px 34px rgba(23, 25, 29, 0.18);
+}
+
+.home-command,
+.signal-card,
+.today-panel,
+.module-card,
+.deadline-panel,
+.notice-panel,
+.quick-card,
+.assignment-strip {
+  border-color: rgba(23, 25, 29, 0.12);
+  background: rgba(255, 253, 249, 0.9);
+}
+
+.home-command {
+  background:
+    linear-gradient(135deg, rgba(240, 111, 95, 0.12), transparent 34%),
+    linear-gradient(315deg, rgba(79, 142, 203, 0.12), transparent 38%),
+    #fffdf9;
+}
+
+.command-board,
+.hero-status,
+.assignment-strip {
+  border-color: rgba(79, 122, 91, 0.2);
+  background: #eaf4e8;
+}
+
+.signal-card:nth-child(2),
+.module-card:nth-child(1) {
+  background: #fff1ea;
+}
+
+.signal-card:nth-child(3),
+.module-card:nth-child(3) {
+  background: #edf5ff;
+}
+
+.signal-card:nth-child(4),
+.module-card:nth-child(2) {
+  background: #fff8e8;
+}
+
+.command-copy span,
+.hero-copy span,
+.page-hero span,
+.quick-card small,
+.assignment-strip span,
+.section-head p,
+.signal-card span,
+.module-card small,
+.today-row span,
+.board-row span {
+  color: #4f7a5b;
+}
+
+.command-actions a,
+.hero-actions a:first-child,
+.assignment-strip a,
+.board-link,
+.deadline-empty a,
+.modern-btn.primary {
+  background: #17191d;
+  color: #fffdf9;
+}
+
+.command-actions a:last-child,
+.hero-actions a:last-child {
+  background: #fffdf9;
+  color: #17191d;
+}
+
+@media (max-width: 900px) {
+  .nc-login-stage {
+    grid-template-columns: 1fr;
+    background: #fff7f1;
+  }
+
+  .nc-login-stage .poster-card-main {
+    min-height: 260px;
+  }
+
+  .paper-character {
+    right: 30px;
+    bottom: 62px;
+    transform: scale(0.7);
+    transform-origin: right bottom;
+  }
+}
+
+@media (max-width: 560px) {
+  .paper-character {
+    display: none;
+  }
+}

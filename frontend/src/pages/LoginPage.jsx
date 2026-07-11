@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
+import heroImage from '../assets/hero.png';
 import {
   LOCAL_RESET_KEY,
   LOCAL_RESET_VERSION,
@@ -41,35 +42,23 @@ const terms = [
 const modeText = {
   login: {
     tab: '로그인',
-    eyebrow: 'Member access',
-    title: 'NC에 들어가기',
-    helper: '학교 이메일로 활동 공간에 접속하세요.',
+    eyebrow: 'NC access',
+    title: '로그인',
+    helper: '학교 이메일로만 접속할 수 있습니다.',
   },
   register: {
     tab: '가입',
-    eyebrow: 'New member',
-    title: '새 계정 만들기',
-    helper: '@cam.hs.kr 이메일로 NC 활동 기록을 시작하세요.',
+    eyebrow: 'Start now',
+    title: '회원가입',
+    helper: '@cam.hs.kr 학교 이메일로 가입할 수 있습니다.',
   },
   reset: {
     tab: '재설정',
-    eyebrow: 'Account recovery',
+    eyebrow: 'Email code',
     title: '비밀번호 재설정',
-    helper: '인증번호를 받고 새 비밀번호로 다시 접속하세요.',
+    helper: '가입한 이메일로 인증번호를 받고 새 비밀번호를 설정하세요.',
   },
 };
-
-const consoleMetrics = [
-  ['Teams', '03', '운영 중'],
-  ['Works', 'Live', '제출 흐름'],
-  ['Admin', 'Ready', '권한 확인'],
-];
-
-const activityPreview = [
-  ['과제', '팀 공간에서 제출 상태 확인'],
-  ['공지', '중요 안내 고정 표시'],
-  ['기록', '포트폴리오 링크 정리'],
-];
 
 export default function LoginPage() {
   const [mode, setMode] = useState('login');
@@ -319,68 +308,37 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="auth-page nc-auth-experience">
-      <section className="auth-showcase" aria-label="NC 활동 공간 미리보기">
-        <div className="showcase-nav">
-          <span className="showcase-logo">NC</span>
-          <div>
-            <strong>NC Club OS</strong>
-            <span>CAM High School</span>
-          </div>
+    <main className="auth-page nc-editorial nc-login-stage">
+      <section className="editorial-scene" aria-label="NC 소개">
+        <div className="editorial-nav">
+          <span className="editorial-logo">NC</span>
+          <span>CAM High Club</span>
         </div>
 
-        <div className="showcase-copy">
-          <span>Private club workspace</span>
-          <h1>동아리 활동을 정리하는 조용한 운영 공간.</h1>
-          <p>공지, 팀 과제, 제출 기록, 포트폴리오를 한 곳에 모아 대학 포트폴리오에 바로 쓸 수 있게 관리합니다.</p>
-        </div>
-
-        <div className="club-console" aria-hidden="true">
-          <div className="console-topbar">
-            <span />
-            <span />
-            <span />
-            <strong>NC workspace</strong>
-          </div>
-          <div className="console-metrics">
-            {consoleMetrics.map(([label, value, helper]) => (
-              <div key={label}>
-                <span>{label}</span>
-                <strong>{value}</strong>
-                <small>{helper}</small>
-              </div>
-            ))}
-          </div>
-          <div className="console-focus">
-            <div>
-              <span>Today</span>
-              <strong>과제 제출 마감 확인</strong>
+        <div className="poster-stack" aria-hidden="true">
+          <div className="motion-pixel pixel-a" />
+          <div className="motion-pixel pixel-b" />
+          <div className="poster-card poster-card-main">
+            <div className="poster-noise" />
+            <div className="poster-eyes">
+              <span />
+              <span />
             </div>
-            <button type="button" tabIndex={-1}>Open</button>
+            <img src={heroImage} alt="" />
+            <div className="paper-character">
+              <span className="character-head" />
+              <span className="character-body" />
+              <span className="character-arm left" />
+              <span className="character-arm right" />
+              <span className="character-shadow" />
+            </div>
+            <span className="poster-title">NC</span>
           </div>
-          <div className="console-activity">
-            {activityPreview.map(([label, text]) => (
-              <div key={label}>
-                <span>{label}</span>
-                <p>{text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="showcase-foot">
-          <span>School mail only</span>
-          <span>Password reset ready</span>
-          <span>Admin console</span>
         </div>
       </section>
 
-      <section className="auth-entry-panel" aria-label={copy.title}>
-        <div className="login-card-shell">
-          <div className="login-card-top">
-            <span>NC</span>
-            <p>Secure club access</p>
-          </div>
+      <section className="editorial-form-wrap" aria-label={copy.title}>
+        <div className="editorial-form">
           <div className="form-title">
             <strong>NC Portal</strong>
             <span>{copy.eyebrow}</span>

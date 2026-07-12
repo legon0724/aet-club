@@ -102,11 +102,6 @@
   white-space: nowrap;
 }
 
-.route-loader {
-  min-height: 100vh;
-  background: var(--paper, #faf4ee);
-}
-
 @media (max-width: 760px) {
   .site-nav {
     top: 8px;

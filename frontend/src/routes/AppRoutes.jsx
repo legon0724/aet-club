@@ -1,21 +1,11 @@
-import { createElement, lazy, Suspense } from 'react';
+import { createElement, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import PrivateRoute from '../components/PrivateRoute';
+import useIdleRoutePreload from '../hooks/useIdleRoutePreload';
+import { getCurrentLocalUser } from '../utils/localAuth';
+import { protectedRoutes, routePages } from './routeConfig';
 
-const LoginPage = lazy(() => import('../pages/LoginPage'));
-const HomePage = lazy(() => import('../pages/HomePage'));
-const PortfolioPage = lazy(() => import('../pages/PortfolioPage'));
-const TeamPage = lazy(() => import('../pages/TeamPage'));
-const AIPage = lazy(() => import('../pages/AIPage'));
-const AdminPage = lazy(() => import('../pages/AdminPage'));
-
-const protectedRoutes = [
-  { path: '/', Component: HomePage },
-  { path: '/portfolio', Component: PortfolioPage },
-  { path: '/team', Component: TeamPage },
-  { path: '/ai', Component: AIPage },
-  { path: '/admin', Component: AdminPage },
-];
+const LoginPage = routePages.LoginPage;
 
 function PageLoader() {
   return <div className="route-loader" aria-label="페이지 불러오는 중" />;
@@ -34,6 +24,8 @@ function getProtectedElement(Component) {
 }
 
 export default function AppRoutes() {
+  useIdleRoutePreload(Boolean(getCurrentLocalUser()?.is_admin));
+
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>

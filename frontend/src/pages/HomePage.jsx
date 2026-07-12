@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
+import PrefetchLink from '../components/PrefetchLink';
 import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
 import {
   getAllLocalPortfolios,
@@ -46,8 +46,8 @@ const BannerSlider = memo(({ banners, assignments, notices, teams, user }) => {
         <h1>{banner?.title || 'NC 활동 보드'}</h1>
         <p>{banner?.content || '오늘 확인할 공지, 팀 과제, 포트폴리오 기록을 한 화면에서 바로 이어갑니다.'}</p>
         <div className="command-actions">
-          <Link to="/team">과제 제출</Link>
-          <Link to="/portfolio">기록 정리</Link>
+          <PrefetchLink to="/team">과제 제출</PrefetchLink>
+          <PrefetchLink to="/portfolio">기록 정리</PrefetchLink>
         </div>
       </div>
 
@@ -64,9 +64,9 @@ const BannerSlider = memo(({ banners, assignments, notices, teams, user }) => {
           <span>팀 과제</span>
           <p>{latestAssignment?.title || '등록된 과제가 없습니다.'}</p>
         </div>
-        <Link to={user?.is_admin ? '/admin' : '/team'} className="board-link">
+        <PrefetchLink to={user?.is_admin ? '/admin' : '/team'} className="board-link">
           {user?.is_admin ? '관리자 콘솔' : '과제'}
-        </Link>
+        </PrefetchLink>
       </div>
       {banner?.link_url && <a className="hero-link" href={banner.link_url} target="_blank" rel="noreferrer" aria-label={`${banner.title} 자세히 보기`} />}
       {banners.length > 1 && (
@@ -148,12 +148,12 @@ export default function HomePage() {
 
           <div className="module-panel">
             {quickLinks.map((link) => (
-              <Link key={link.to} to={link.to} className="module-card">
+              <PrefetchLink key={link.to} to={link.to} className="module-card">
                 <small>{link.eyebrow}</small>
                 <strong>{link.label}</strong>
                 <p>{link.description}</p>
                 <span>{link.meta}</span>
-              </Link>
+              </PrefetchLink>
             ))}
           </div>
         </section>
@@ -191,20 +191,20 @@ export default function HomePage() {
             {recentAssignments.length > 0 ? (
               <div className="deadline-list">
                 {recentAssignments.map((assignment) => (
-                  <Link key={assignment.id} to="/team" className="deadline-item">
+                  <PrefetchLink key={assignment.id} to="/team" className="deadline-item">
                     <div>
                       <strong>{assignment.title}</strong>
                       <p>{assignment.content || '과제 화면에서 파일과 제출 상태를 확인하세요.'}</p>
                     </div>
                     <span>{assignment.due_at ? new Date(assignment.due_at).toLocaleDateString() : '열림'}</span>
-                  </Link>
+                  </PrefetchLink>
                 ))}
               </div>
             ) : (
               <div className="deadline-empty">
                 <strong>등록된 과제가 없습니다.</strong>
                 <p>관리자가 과제를 올리면 이 영역에 바로 표시됩니다.</p>
-                <Link to="/team">과제 보기</Link>
+                <PrefetchLink to="/team">과제 보기</PrefetchLink>
               </div>
             )}
           </section>

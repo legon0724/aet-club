@@ -1,6 +1,8 @@
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { mainNavItems } from '../config/navigation';
+import PrefetchLink from './PrefetchLink';
 import { clearLocalSession, getCurrentLocalUser } from '../utils/localAuth';
+import { getRoutePrefetchHandlers } from '../utils/routePrefetchHandlers';
 
 export default function Navbar({ user }) {
   const navigate = useNavigate();
@@ -13,17 +15,23 @@ export default function Navbar({ user }) {
 
   return (
     <nav className="site-nav">
-      <Link to="/" className="site-logo" aria-label="AET 홈">
+      <PrefetchLink to="/" className="site-logo" aria-label="AET 홈">
         <span>NC</span>
-      </Link>
+      </PrefetchLink>
 
       <div className="site-links">
         {mainNavItems.map((item) => (
-          <NavLink key={item.to} to={item.to} end={item.exact} className={({ isActive }) => (isActive ? 'active' : '')}>
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.exact}
+            className={({ isActive }) => (isActive ? 'active' : '')}
+            {...getRoutePrefetchHandlers(item.to)}
+          >
             {item.label}
           </NavLink>
         ))}
-        {resolvedUser?.is_admin && <NavLink to="/admin">관리자</NavLink>}
+        {resolvedUser?.is_admin && <NavLink to="/admin" {...getRoutePrefetchHandlers('/admin')}>관리자</NavLink>}
       </div>
 
       <div className="site-account">

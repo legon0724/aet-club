@@ -3,8 +3,13 @@ import api from '../api/client';
 import Navbar from '../components/Navbar';
 import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
 import { fileToDataUrl, getLocalPortfolio, getPublicLocalPortfolios, saveLocalPortfolio } from '../utils/localWorkspace';
-
-const BACKEND = 'https://web-production-00104.up.railway.app';
+import {
+  buildPortfolioShareUrl,
+  buildQrImageUrl,
+  portfolioLinks,
+  portfolioSections,
+  resolvePortfolioFileUrl,
+} from '../utils/portfolioDisplay';
 
 const emptyForm = {
   intro: '',
@@ -18,27 +23,11 @@ const emptyForm = {
   notion_url: '',
 };
 
-const links = [
-  { key: 'github_url', label: 'GitHub' },
-  { key: 'blog_url', label: 'Blog' },
-  { key: 'notion_url', label: 'Notion' },
-];
-
-const sections = [
-  { key: 'intro', label: '자기소개', placeholder: '관심 분야, 성격, 작업 방식이 드러나게 작성하세요.' },
-  { key: 'projects', label: '프로젝트', placeholder: '프로젝트명, 기간, 역할, 사용 기술, 결과를 정리하세요.' },
-  { key: 'skills', label: '역량 / 기술', placeholder: '언어, 프레임워크, 협업 도구, 강점을 나눠 적으세요.' },
-  { key: 'awards', label: '수상 / 활동', placeholder: '대회, 활동, 맡은 역할과 결과를 함께 기록하세요.' },
-  { key: 'goals', label: '목표 / 진로', placeholder: '앞으로 만들고 싶은 것과 진로 방향을 작성하세요.' },
-];
-
 const portfolioLine = [
   { step: '01', label: '프로필', detail: '기본 정보 정리' },
   { step: '02', label: '활동', detail: '프로젝트와 역량 기록' },
   { step: '03', label: '제출', detail: '공개 여부와 링크 점검' },
 ];
-
-const resolveFileUrl = (value = '') => (value?.startsWith('/api') ? `${BACKEND}${value}` : value);
 
 const isOwnPortfolio = (item, activeUser) => {
   const sameEmail = item.email?.toLowerCase() === activeUser?.email?.toLowerCase();
@@ -56,6 +45,7 @@ export default function PortfolioPage() {
   const [profilePreview, setProfilePreview] = useState('');
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
+  const [shareMsg, setShareMsg] = useState('');
   const imgRef = useRef(null);
 
   const hydratePortfolio = useCallback((data) => {
@@ -73,7 +63,7 @@ export default function PortfolioPage() {
       notion_url: next.notion_url || '',
     });
     if (next.profile_image) {
-      setProfilePreview(resolveFileUrl(next.profile_image));
+      setProfilePreview(resolvePortfolioFileUrl(next.profile_image));
     }
   }, []);
 
@@ -168,6 +158,17 @@ export default function PortfolioPage() {
   };
 
   const printPortfolioData = editing ? form : portfolio;
+  const shareId = portfolio.user_id || user?.id || user?.email;
+  const shareUrl = buildPortfolioShareUrl(shareId);
+  const qrUrl = buildQrImageUrl(shareUrl);
+  const canShare = Boolean(form.is_public && shareUrl);
+
+  const copyShareUrl = async () => {
+    if (!shareUrl) return;
+    await navigator.clipboard.writeText(shareUrl);
+    setShareMsg('공유 링크를 복사했습니다.');
+    window.setTimeout(() => setShareMsg(''), 1800);
+  };
 
   return (
     <div className="app-shell workspace-shell">
@@ -180,11 +181,11 @@ export default function PortfolioPage() {
             <p>{user?.email || 'school email'}</p>
           </header>
           <div className="portfolio-print-links">
-            {links.map((link) => printPortfolioData[link.key] && (
+            {portfolioLinks.map((link) => printPortfolioData[link.key] && (
               <p key={link.key}><strong>{link.label}</strong> {printPortfolioData[link.key]}</p>
             ))}
           </div>
-          {sections.map((section, index) => (
+          {portfolioSections.map((section, index) => (
             <article key={section.key}>
               <span>{String(index + 1).padStart(2, '0')}</span>
               <h2>{section.label}</h2>
@@ -213,7 +214,7 @@ export default function PortfolioPage() {
                   {publicPortfolios.map((item) => (
                     <article key={item.user_id || item.email} className="peer-portfolio-card">
                       {item.profile_image ? (
-                        <img src={resolveFileUrl(item.profile_image)} alt="" loading="lazy" decoding="async" />
+                        <img src={resolvePortfolioFileUrl(item.profile_image)} alt="" loading="lazy" decoding="async" />
                       ) : (
                         <strong>{(item.username || item.email || 'N')[0]}</strong>
                       )}
@@ -253,7 +254,7 @@ export default function PortfolioPage() {
             <span>{user?.email || 'school email'}</span>
             {editing ? (
               <div className="link-editor">
-                {links.map((link) => (
+                {portfolioLinks.map((link) => (
                   <input
                     key={link.key}
                     value={form[link.key]}
@@ -264,10 +265,10 @@ export default function PortfolioPage() {
               </div>
             ) : (
               <div className="pill-row">
-                {links.map((link) => portfolio[link.key] && (
+                {portfolioLinks.map((link) => portfolio[link.key] && (
                   <a key={link.key} href={portfolio[link.key]} target="_blank" rel="noreferrer">{link.label}</a>
                 ))}
-                {!links.some((link) => portfolio[link.key]) && <span>링크를 추가해 주세요</span>}
+                {!portfolioLinks.some((link) => portfolio[link.key]) && <span>링크를 추가해 주세요</span>}
               </div>
             )}
           </div>
@@ -284,10 +285,29 @@ export default function PortfolioPage() {
           </label>
         </section>
 
+        <section className={`portfolio-share-card ${canShare ? 'is-live' : ''}`}>
+          <div>
+            <span>Share</span>
+            <h2>공개 링크와 QR</h2>
+            <p>{canShare ? '이 주소를 보내면 다른 사람이 읽기 전용 포트폴리오를 볼 수 있습니다.' : '공개를 켜면 공유 링크와 QR이 만들어집니다.'}</p>
+            {canShare && <code>{shareUrl}</code>}
+            {shareMsg && <small>{shareMsg}</small>}
+          </div>
+          {canShare ? (
+            <div className="portfolio-share-tools">
+              <img src={qrUrl} alt="포트폴리오 공유 QR" loading="lazy" decoding="async" />
+              <button className="modern-btn ghost" type="button" onClick={copyShareUrl}>링크 복사</button>
+              <a className="modern-btn primary" href={shareUrl} target="_blank" rel="noreferrer">공유 화면</a>
+            </div>
+          ) : (
+            <div className="portfolio-qr-placeholder" aria-hidden="true">QR</div>
+          )}
+        </section>
+
         {msg && <div className="inline-alert success">{msg}</div>}
 
         <section className="portfolio-grid">
-          {sections.map((section, index) => (
+          {portfolioSections.map((section, index) => (
             <article key={section.key} className="workspace-card portfolio-entry">
               <span className="portfolio-entry-index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
               <div className="card-head">

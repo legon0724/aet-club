@@ -3,7 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import PrivateRoute from '../components/PrivateRoute';
 import useIdleRoutePreload from '../hooks/useIdleRoutePreload';
 import { getCurrentLocalUser } from '../utils/localAuth';
-import { protectedRoutes, routePages } from './routeConfig';
+import { protectedRoutes, publicRoutes, routePages } from './routeConfig';
 
 const LoginPage = routePages.LoginPage;
 
@@ -30,6 +30,13 @@ export default function AppRoutes() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        {publicRoutes.map((route) => (
+          <Route
+            key={route.path}
+            path={route.path}
+            element={createElement(route.Component)}
+          />
+        ))}
         {protectedRoutes.map((route) => (
           <Route
             key={route.path}

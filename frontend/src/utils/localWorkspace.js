@@ -176,6 +176,18 @@ export const saveLocalPortfolio = (user, data) => {
 
 export const getAllLocalPortfolios = () => readJson(LOCAL_PORTFOLIO_KEY, {});
 
+export const getLocalPortfolioById = (userId) => {
+  const target = decodeURIComponent(userId || '').toLowerCase();
+  const entry = Object.entries(readJson(LOCAL_PORTFOLIO_KEY, {})).find(([email, portfolio]) => {
+    const keys = [email, portfolio.email, portfolio.user_id].filter(Boolean).map((value) => String(value).toLowerCase());
+    return keys.includes(target);
+  });
+
+  if (!entry) return null;
+  const [email, portfolio] = entry;
+  return { ...portfolio, user_id: portfolio.user_id || email, email: portfolio.email || email };
+};
+
 export const getPublicLocalPortfolios = (viewer) => (
   Object.entries(readJson(LOCAL_PORTFOLIO_KEY, {}))
     .map(([email, portfolio]) => ({ ...portfolio, user_id: email, email: portfolio.email || email }))

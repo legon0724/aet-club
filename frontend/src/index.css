@@ -5559,6 +5559,88 @@ body,
   display: none;
 }
 
+.portfolio-share-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  margin: 0 0 16px;
+  border: 1px solid rgba(23, 25, 29, 0.12);
+  border-radius: 12px;
+  padding: 18px;
+  background:
+    linear-gradient(135deg, rgba(79, 122, 91, 0.1), transparent 42%),
+    rgba(255, 253, 249, 0.9);
+  box-shadow: var(--shadow-tight);
+}
+
+.portfolio-share-card > div > span,
+.shared-profile span,
+.shared-portfolio-empty > span {
+  color: var(--moss);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.portfolio-share-card h2 {
+  margin: 4px 0 6px;
+  color: var(--ink);
+  font-size: 18px;
+}
+
+.portfolio-share-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.portfolio-share-card code {
+  display: block;
+  width: min(100%, 620px);
+  margin-top: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(23, 25, 29, 0.1);
+  border-radius: 999px;
+  padding: 9px 12px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--ink);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portfolio-share-card small {
+  display: block;
+  margin-top: 8px;
+  color: var(--moss);
+  font-weight: 800;
+}
+
+.portfolio-share-tools {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+
+.portfolio-share-tools img,
+.portfolio-qr-placeholder {
+  width: 168px;
+  height: 168px;
+  border: 1px solid rgba(23, 25, 29, 0.12);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.portfolio-qr-placeholder {
+  display: grid;
+  place-items: center;
+  color: rgba(23, 25, 29, 0.22);
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
 .peer-portfolio-panel {
   width: min(320px, 34vw);
   border: 1px solid rgba(23, 25, 29, 0.12);
@@ -5829,6 +5911,146 @@ body,
   color: var(--moss-dark);
 }
 
+.shared-portfolio-page {
+  min-height: 100vh;
+  padding: 36px max(18px, calc((100vw - 1080px) / 2));
+  background:
+    linear-gradient(135deg, rgba(240, 111, 95, 0.08), transparent 30%),
+    linear-gradient(315deg, rgba(79, 142, 203, 0.08), transparent 36%),
+    var(--paper);
+}
+
+.shared-portfolio-hero,
+.shared-portfolio-empty {
+  border: 1px solid rgba(23, 25, 29, 0.12);
+  border-radius: 12px;
+  padding: 24px;
+  background: rgba(255, 253, 249, 0.94);
+  box-shadow: var(--shadow-tight);
+}
+
+.shared-portfolio-hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+}
+
+.shared-profile {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+}
+
+.shared-profile img,
+.shared-profile > strong {
+  width: 86px;
+  height: 86px;
+  border-radius: 18px;
+}
+
+.shared-profile img {
+  object-fit: cover;
+}
+
+.shared-profile > strong {
+  display: grid;
+  place-items: center;
+  background: #17191d;
+  color: #fffdf9;
+  font-size: 34px;
+}
+
+.shared-profile h1,
+.shared-portfolio-empty h1 {
+  margin: 4px 0;
+  color: var(--ink);
+  font-size: clamp(28px, 5vw, 54px);
+  line-height: 1;
+}
+
+.shared-profile p,
+.shared-portfolio-empty p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.shared-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.shared-link-row a {
+  border: 1px solid rgba(23, 25, 29, 0.12);
+  border-radius: 999px;
+  padding: 9px 12px;
+  background: #fffdf9;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.shared-portfolio-grid {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.shared-portfolio-entry {
+  position: relative;
+  border: 1px solid rgba(23, 25, 29, 0.12);
+  border-radius: 12px;
+  padding: 22px 24px;
+  background: rgba(255, 253, 249, 0.94);
+  box-shadow: var(--shadow-tight);
+}
+
+.shared-portfolio-entry::before {
+  content: "";
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  left: 0;
+  width: 3px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--coral), var(--moss), var(--sky));
+}
+
+.shared-portfolio-entry > span {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  color: rgba(23, 25, 29, 0.1);
+  font-size: 42px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.shared-portfolio-entry h2 {
+  margin: 0 0 12px;
+  color: var(--moss);
+  font-size: 13px;
+}
+
+.shared-portfolio-entry p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.shared-portfolio-empty {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  max-width: 680px;
+  margin: 12vh auto 0;
+}
+
 @media print {
   @page {
     size: A4;
@@ -5939,6 +6161,30 @@ body,
   }
 
   .portfolio-actions {
+    justify-content: flex-start;
+  }
+
+  .portfolio-share-card,
+  .shared-portfolio-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .portfolio-share-tools {
+    justify-items: start;
+  }
+
+  .shared-profile {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  .shared-profile img,
+  .shared-profile > strong {
+    width: 64px;
+    height: 64px;
+    border-radius: 14px;
+  }
+
+  .shared-link-row {
     justify-content: flex-start;
   }
 

@@ -1,10 +1,12 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
+from typing import Optional
 from backend.core.security import decode_token
 from backend.models.database import get_db, User
 
 bearer = HTTPBearer()
+optional_bearer = HTTPBearer(auto_error=False)
 
 
 def get_current_user(
@@ -20,6 +22,24 @@ def get_current_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="사용자를 찾을 수 없습니다.")
     return user
+
+
+def get_optional_user(
+    credentials: HTTPAuthorizationCredentials = Depends(optional_bearer),
+    db: Session = Depends(get_db),
+) -> Optional[User]:
+    if not credentials:
+        return None
+
+    payload = decode_token(credentials.credentials)
+    if not payload:
+        return None
+
+    user_id = payload.get("sub")
+    if not user_id:
+        return None
+
+    return db.query(User).filter(User.id == user_id).first()
 
 
 def get_admin_user(current_user: User = Depends(get_current_user)) -> User:

@@ -4,6 +4,7 @@ const pageLoaders = {
   login: () => import('../pages/LoginPage'),
   home: () => import('../pages/HomePage'),
   portfolio: () => import('../pages/PortfolioPage'),
+  sharedPortfolio: () => import('../pages/SharedPortfolioPage'),
   team: () => import('../pages/TeamPage'),
   ai: () => import('../pages/AIPage'),
   admin: () => import('../pages/AdminPage'),
@@ -26,6 +27,7 @@ function lazyPage(key) {
 const routePageKeys = {
   '/': 'home',
   '/portfolio': 'portfolio',
+  '/portfolio/share': 'sharedPortfolio',
   '/team': 'team',
   '/ai': 'ai',
   '/admin': 'admin',
@@ -36,6 +38,7 @@ export const routePages = {
   LoginPage: lazyPage('login'),
   HomePage: lazyPage('home'),
   PortfolioPage: lazyPage('portfolio'),
+  SharedPortfolioPage: lazyPage('sharedPortfolio'),
   TeamPage: lazyPage('team'),
   AIPage: lazyPage('ai'),
   AdminPage: lazyPage('admin'),
@@ -47,6 +50,10 @@ export const protectedRoutes = [
   { path: '/team', Component: routePages.TeamPage },
   { path: '/ai', Component: routePages.AIPage },
   { path: '/admin', Component: routePages.AdminPage },
+];
+
+export const publicRoutes = [
+  { path: '/portfolio/share/:userId', Component: routePages.SharedPortfolioPage },
 ];
 
 function normalizePath(to) {

@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import Optional
 import shutil, os, uuid
-from backend.core.deps import get_current_user
+from backend.core.deps import get_current_user, get_optional_user
 from backend.models.database import Portfolio, User, get_db
 
 router = APIRouter()
@@ -100,11 +100,12 @@ def get_public_portfolios(current_user: User = Depends(get_current_user), db: Se
 
 
 @router.get("/{user_id}")
-def get_portfolio(user_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_portfolio(user_id: str, current_user: Optional[User] = Depends(get_optional_user), db: Session = Depends(get_db)):
     portfolio = db.query(Portfolio).filter(Portfolio.user_id == user_id).first()
     if not portfolio:
         raise HTTPException(404, detail="포트폴리오를 찾을 수 없습니다.")
-    if not portfolio.is_public and not current_user.is_admin and str(current_user.id) != user_id:
+    can_read_private = current_user and (current_user.is_admin or str(current_user.id) == user_id)
+    if not portfolio.is_public and not can_read_private:
         raise HTTPException(403, detail="비공개 포트폴리오입니다.")
     user = db.query(User).filter(User.id == user_id).first()
     return serialize_portfolio(portfolio, user)

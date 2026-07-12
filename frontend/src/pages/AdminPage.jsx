@@ -13,6 +13,7 @@ import {
   getFallbackNotices,
   getLocalNoticeReadSummary,
   getLocalAdminUsers,
+  getLocalAssignmentStatus,
   getLocalAssignments,
   getLocalTeams,
 } from '../utils/localWorkspace';
@@ -236,6 +237,7 @@ function AssignmentsTab({ user }) {
   const [teams, setTeams] = useState(() => getLocalTeams());
   const [teamId, setTeamId] = useState(() => getLocalTeams()[0]?.id || '');
   const [assignments, setAssignments] = useState([]);
+  const [statusRows, setStatusRows] = useState([]);
   const [form, setForm] = useState(emptyAssignment);
   const [file, setFile] = useState(null);
   const [show, setShow] = useState(true);
@@ -261,8 +263,12 @@ function AssignmentsTab({ user }) {
     try {
       const r = await api.get(`/api/assignments/?team_id=${nextTeamId}`);
       setAssignments(r.data || []);
+      api.get(`/api/admin/assignment-status?team_id=${nextTeamId}`).then((status) => {
+        setStatusRows(status.data || []);
+      }).catch(() => setStatusRows(getLocalAssignmentStatus(nextTeamId)));
     } catch {
       setAssignments(getLocalAssignments(nextTeamId));
+      setStatusRows(getLocalAssignmentStatus(nextTeamId));
     }
   }
 
@@ -290,6 +296,7 @@ function AssignmentsTab({ user }) {
     } catch {
       const fileData = file ? await fileToDataUrl(file) : '';
       setAssignments(addLocalAssignment(teamId, user, payload, file?.name || '', fileData));
+      setStatusRows(getLocalAssignmentStatus(teamId));
     } finally {
       setForm(emptyAssignment);
       setFile(null);
@@ -309,6 +316,7 @@ function AssignmentsTab({ user }) {
     }
     deleteLocalAssignment(id);
     setAssignments((current) => current.filter((item) => item.id !== id));
+    setStatusRows(getLocalAssignmentStatus(teamId));
   };
 
   return (
@@ -352,6 +360,44 @@ function AssignmentsTab({ user }) {
           <button className="modern-btn primary" type="button" onClick={create}>등록 완료</button>
         </div>
       )}
+
+      <section className="assignment-status-board" aria-label="과제 제출 현황표">
+        <div className="assignment-status-head">
+          <div>
+            <span>Submission status</span>
+            <strong>제출 현황표</strong>
+          </div>
+          <small>{statusRows.length}개 과제</small>
+        </div>
+        {statusRows.length === 0 ? (
+          <p className="empty-state">현황을 집계할 과제가 없습니다.</p>
+        ) : (
+          <div className="assignment-status-list">
+            {statusRows.map((row) => (
+              <article key={row.assignment_id} className="assignment-status-card">
+                <div>
+                  <strong>{row.title}</strong>
+                  <small>{row.due_at ? `마감 ${row.due_at}` : '마감일 없음'}</small>
+                </div>
+                <div className="assignment-status-metrics">
+                  <span className="submitted">제출 {row.submitted_count}</span>
+                  <span className="draft">작성 중 {row.draft_count}</span>
+                  <span className="missing">미제출 {row.missing_count}</span>
+                  <span>전체 {row.total_count}</span>
+                </div>
+                <div className="assignment-student-status">
+                  {row.students.slice(0, 8).map((student) => (
+                    <small key={`${row.assignment_id}-${student.user_id}`} className={student.status}>
+                      {student.username}
+                    </small>
+                  ))}
+                  {row.students.length > 8 && <small>+{row.students.length - 8}</small>}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
 
       <div className="admin-list">
         {assignments.length === 0 && <p className="empty-state">아직 등록된 과제가 없습니다.</p>}

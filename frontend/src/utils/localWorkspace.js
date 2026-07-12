@@ -233,6 +233,55 @@ export const getLocalAssignments = (teamId) => {
   return all.filter((item) => !teamId || item.team_id === teamId);
 };
 
+export const getLocalAssignmentStatus = (teamId) => {
+  const assignments = getLocalAssignments(teamId);
+  const allUsers = readLocalUsers();
+  const teamUsers = allUsers.filter((user) => !teamId || !user.team_id || user.team_id === teamId);
+  const users = teamUsers.length ? teamUsers : allUsers;
+  const submissions = readJson(LOCAL_SUBMISSIONS_KEY, []);
+
+  return assignments.map((assignment) => {
+    const workByUser = {};
+    submissions
+      .filter((item) => item.assignment_id === assignment.id)
+      .forEach((item) => {
+        const key = item.user_id || item.email?.toLowerCase() || item.username;
+        const existing = workByUser[key];
+        const nextDate = new Date(item.updated_at || item.created_at || 0).getTime();
+        const currentDate = new Date(existing?.updated_at || existing?.created_at || 0).getTime();
+        if (!existing || item.status === 'submitted' || nextDate >= currentDate) {
+          workByUser[key] = item;
+        }
+      });
+
+    const counts = { submitted: 0, draft: 0, missing: 0 };
+    const students = users.map((user) => {
+      const work = workByUser[userKey(user)];
+      const status = work ? (work.status === 'submitted' ? 'submitted' : 'draft') : 'missing';
+      counts[status] += 1;
+
+      return {
+        user_id: userKey(user),
+        username: user.username,
+        email: user.email,
+        status,
+        updated_at: work?.updated_at || work?.created_at || null,
+      };
+    });
+
+    return {
+      assignment_id: assignment.id,
+      title: assignment.title,
+      due_at: assignment.due_at,
+      submitted_count: counts.submitted,
+      draft_count: counts.draft,
+      missing_count: counts.missing,
+      total_count: users.length,
+      students,
+    };
+  });
+};
+
 export const addLocalAssignment = (teamId, user, data, fileName = '', fileData = '') => {
   const all = readJson(LOCAL_ASSIGNMENTS_KEY, []);
   const item = {

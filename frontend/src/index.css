@@ -2985,6 +2985,99 @@ a {
   line-height: 1.55;
 }
 
+.assignment-status-board {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.assignment-status-head,
+.assignment-status-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.assignment-status-head span {
+  color: #99f6e4;
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.assignment-status-head strong,
+.assignment-status-card strong {
+  color: #f8fafc;
+}
+
+.assignment-status-list {
+  display: grid;
+  gap: 10px;
+}
+
+.assignment-status-card {
+  align-items: flex-start;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 14px;
+  background: rgba(15, 23, 42, 0.38);
+}
+
+.assignment-status-card > div:first-child {
+  display: grid;
+  gap: 4px;
+  min-width: 180px;
+}
+
+.assignment-status-card small,
+.assignment-status-head small {
+  color: #94a3b8;
+}
+
+.assignment-status-metrics,
+.assignment-student-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.assignment-status-metrics span,
+.assignment-student-status small {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.assignment-status-metrics .submitted,
+.assignment-student-status .submitted {
+  border-color: rgba(52, 211, 153, 0.26);
+  background: rgba(52, 211, 153, 0.1);
+  color: #99f6e4;
+}
+
+.assignment-status-metrics .draft,
+.assignment-student-status .draft {
+  border-color: rgba(251, 191, 36, 0.28);
+  background: rgba(251, 191, 36, 0.1);
+  color: #fde68a;
+}
+
+.assignment-status-metrics .missing,
+.assignment-student-status .missing {
+  border-color: rgba(251, 113, 133, 0.24);
+  background: rgba(251, 113, 133, 0.08);
+  color: #fecdd3;
+}
+
 .admin-file-pick {
   display: grid;
   gap: 5px;

@@ -152,10 +152,47 @@ export default function PortfolioPage() {
     });
   };
 
+  const printPortfolio = () => {
+    const previousTitle = document.title;
+    const fileName = `${user?.username || 'NC'}-portfolio`;
+
+    document.title = fileName;
+    const restoreTitle = () => {
+      document.title = previousTitle;
+      window.removeEventListener('afterprint', restoreTitle);
+    };
+
+    window.addEventListener('afterprint', restoreTitle);
+    window.print();
+    window.setTimeout(restoreTitle, 1000);
+  };
+
+  const printPortfolioData = editing ? form : portfolio;
+
   return (
     <div className="app-shell workspace-shell">
       <Navbar user={user} />
       <main className="workspace-page portfolio-page">
+        <section className="portfolio-print-document" aria-hidden="true">
+          <header>
+            <span>NC Portfolio</span>
+            <h1>{user?.username || 'NC member'}</h1>
+            <p>{user?.email || 'school email'}</p>
+          </header>
+          <div className="portfolio-print-links">
+            {links.map((link) => printPortfolioData[link.key] && (
+              <p key={link.key}><strong>{link.label}</strong> {printPortfolioData[link.key]}</p>
+            ))}
+          </div>
+          {sections.map((section, index) => (
+            <article key={section.key}>
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              <h2>{section.label}</h2>
+              <p>{printPortfolioData[section.key] || `${section.label} 내용을 추가해 주세요.`}</p>
+            </article>
+          ))}
+        </section>
+
         <section className="page-hero compact">
           <div>
             <span>Portfolio</span>
@@ -163,9 +200,12 @@ export default function PortfolioPage() {
             <p>프로젝트, 기술, 수상, 진로를 한 화면에서 관리하세요.</p>
           </div>
           <div className="portfolio-hero-side">
-            <button className="modern-btn primary" type="button" onClick={() => setEditing((current) => !current)}>
-              {editing ? '보기로 전환' : '편집'}
-            </button>
+            <div className="portfolio-actions">
+              <button className="modern-btn ghost" type="button" onClick={printPortfolio}>PDF 저장</button>
+              <button className="modern-btn primary" type="button" onClick={() => setEditing((current) => !current)}>
+                {editing ? '보기로 전환' : '편집'}
+              </button>
+            </div>
             <div className="peer-portfolio-panel" aria-label="공개된 다른 포트폴리오">
               <span>다른 애들</span>
               {publicPortfolios.length ? (

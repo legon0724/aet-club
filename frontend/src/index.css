@@ -5455,6 +5455,17 @@ body,
   min-width: 280px;
 }
 
+.portfolio-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.portfolio-print-document {
+  display: none;
+}
+
 .peer-portfolio-panel {
   width: min(320px, 34vw);
   border: 1px solid rgba(23, 25, 29, 0.12);
@@ -5725,6 +5736,100 @@ body,
   color: var(--moss-dark);
 }
 
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm;
+  }
+
+  body,
+  .workspace-shell,
+  .app-shell {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  .site-nav,
+  .portfolio-page > .page-hero,
+  .portfolio-line,
+  .profile-card,
+  .inline-alert,
+  .portfolio-grid,
+  .floating-save {
+    display: none !important;
+  }
+
+  .workspace-page.portfolio-page {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .portfolio-print-document {
+    display: block;
+    color: #111;
+    font-family: Arial, sans-serif;
+  }
+
+  .portfolio-print-document header {
+    border-bottom: 2px solid #111;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+  }
+
+  .portfolio-print-document header span {
+    color: #4f7a5b;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .portfolio-print-document h1 {
+    margin: 6px 0;
+    font-size: 28px;
+    letter-spacing: 0;
+  }
+
+  .portfolio-print-document header p,
+  .portfolio-print-links p {
+    margin: 0;
+    color: #555;
+    font-size: 12px;
+  }
+
+  .portfolio-print-links {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 16px;
+  }
+
+  .portfolio-print-document article {
+    break-inside: avoid;
+    border-bottom: 1px solid #ddd;
+    padding: 14px 0;
+  }
+
+  .portfolio-print-document article span {
+    color: #888;
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .portfolio-print-document article h2 {
+    margin: 4px 0 8px;
+    font-size: 17px;
+  }
+
+  .portfolio-print-document article p {
+    white-space: pre-wrap;
+    margin: 0;
+    color: #222;
+    font-size: 12.5px;
+    line-height: 1.75;
+  }
+}
+
 @media (max-width: 760px) {
   .portfolio-page .page-hero.compact {
     align-items: flex-start;
@@ -5738,6 +5843,10 @@ body,
 
   .portfolio-hero-side {
     justify-items: start;
+  }
+
+  .portfolio-actions {
+    justify-content: flex-start;
   }
 
   .portfolio-line {

@@ -101,11 +101,15 @@ def get_public_portfolios(current_user: User = Depends(get_current_user), db: Se
 
 @router.get("/{user_id}")
 def get_portfolio(user_id: str, current_user: Optional[User] = Depends(get_optional_user), db: Session = Depends(get_db)):
-    portfolio = db.query(Portfolio).filter(Portfolio.user_id == user_id).first()
+    owner = db.query(User).filter(User.id == user_id).first()
+    if not owner:
+        owner = db.query(User).filter(User.email == user_id.lower()).first()
+
+    lookup_id = str(owner.id) if owner else user_id
+    portfolio = db.query(Portfolio).filter(Portfolio.user_id == lookup_id).first()
     if not portfolio:
         raise HTTPException(404, detail="포트폴리오를 찾을 수 없습니다.")
-    can_read_private = current_user and (current_user.is_admin or str(current_user.id) == user_id)
+    can_read_private = current_user and (current_user.is_admin or str(current_user.id) == str(portfolio.user_id))
     if not portfolio.is_public and not can_read_private:
         raise HTTPException(403, detail="비공개 포트폴리오입니다.")
-    user = db.query(User).filter(User.id == user_id).first()
-    return serialize_portfolio(portfolio, user)
+    return serialize_portfolio(portfolio, owner)

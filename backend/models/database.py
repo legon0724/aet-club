@@ -178,6 +178,19 @@ class Banner(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class ActivityGalleryItem(Base):
+    __tablename__ = "activity_gallery"
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    image_url = Column(Text, nullable=True)
+    file_url = Column(Text, nullable=True)
+    file_name = Column(String(255), nullable=True)
+    link_url = Column(Text, nullable=True)
+    created_by = Column(UUID(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class Project(Base):
     __tablename__ = "projects"
     id = Column(UUID(), primary_key=True, default=uuid.uuid4)

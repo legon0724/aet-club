@@ -5,8 +5,10 @@ import Navbar from '../components/Navbar';
 import { getCurrentLocalUser, readLocalUsers, rememberCurrentUser, writeLocalUsers } from '../utils/localAuth';
 import {
   addLocalAssignment,
+  addLocalGalleryItem,
   addLocalTeam,
   deleteLocalAssignment,
+  deleteLocalGalleryItem,
   deleteLocalTeam,
   fileToDataUrl,
   getAllLocalPortfolios,
@@ -15,12 +17,14 @@ import {
   getLocalAdminUsers,
   getLocalAssignmentStatus,
   getLocalAssignments,
+  getLocalGallery,
   getLocalTeams,
 } from '../utils/localWorkspace';
 
 const BACKEND = 'https://web-production-00104.up.railway.app';
 
 const emptyAssignment = { title: '', content: '', due_at: '', resource_url: '', copy_mode: 'site', points: '' };
+const emptyGallery = { title: '', description: '', link_url: '' };
 
 export default function AdminPage() {
   const [user, setUser] = useState(() => getCurrentLocalUser());
@@ -47,6 +51,7 @@ export default function AdminPage() {
     ['users', '회원 관리', '권한과 팀 배정'],
     ['teams', '팀 관리', '팀 생성과 정리'],
     ['assignments', '과제 관리', '학생별 작업본과 제출 흐름'],
+    ['gallery', '활동 갤러리', '사진과 발표 자료'],
     ['notices', '공지 관리', '전체와 팀별 안내'],
     ['banners', '배너 관리', '홈 배너 운영'],
     ['portfolios', '포트폴리오', '회원 작업물 확인'],
@@ -90,6 +95,7 @@ export default function AdminPage() {
           {tab === 'users' && <UsersTab />}
           {tab === 'teams' && <TeamsTab />}
           {tab === 'assignments' && <AssignmentsTab user={user} />}
+          {tab === 'gallery' && <GalleryTab />}
           {tab === 'notices' && <NoticesTab />}
           {tab === 'banners' && <BannersTab />}
           {tab === 'portfolios' && <PortfoliosTab />}
@@ -423,6 +429,96 @@ function AssignmentsTab({ user }) {
                 </a>
               )}
               <button className="danger-button" type="button" onClick={() => del(assignment.id)}>삭제</button>
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function GalleryTab() {
+  const [items, setItems] = useState([]);
+  const [form, setForm] = useState(emptyGallery);
+  const [file, setFile] = useState(null);
+  const [show, setShow] = useState(false);
+  const fileRef = useRef(null);
+
+  useEffect(() => {
+    api.get('/api/gallery/').then((r) => setItems(r.data || [])).catch(() => setItems(getLocalGallery()));
+  }, []);
+
+  const create = async () => {
+    if (!form.title.trim()) return;
+    const payload = { ...form, title: form.title.trim() };
+
+    try {
+      const formData = new FormData();
+      formData.append('title', payload.title);
+      if (payload.description) formData.append('description', payload.description);
+      if (payload.link_url) formData.append('link_url', payload.link_url);
+      if (file) formData.append('file', file);
+      await api.post('/api/gallery/', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const r = await api.get('/api/gallery/');
+      setItems(r.data || []);
+    } catch {
+      const fileData = file ? await fileToDataUrl(file) : '';
+      setItems(addLocalGalleryItem(payload, file?.name || '', fileData));
+    } finally {
+      setForm(emptyGallery);
+      setFile(null);
+      setShow(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
+  const del = async (id) => {
+    if (!window.confirm('갤러리 항목을 삭제할까요?')) return;
+    try {
+      if (!String(id).startsWith('local-gallery-')) {
+        await api.delete(`/api/gallery/${id}`);
+      }
+    } catch {
+      // 로컬 미리보기에서는 화면에서만 제거합니다.
+    }
+    deleteLocalGalleryItem(id);
+    setItems((current) => current.filter((item) => item.id !== id));
+  };
+
+  return (
+    <div>
+      <div className="admin-toolbar">
+        <button className="modern-btn primary" type="button" onClick={() => setShow((current) => !current)}>갤러리 추가</button>
+      </div>
+      {show && (
+        <div className="admin-form-grid gallery-admin-form">
+          <input value={form.title} onChange={(e) => setForm((current) => ({ ...current, title: e.target.value }))} placeholder="활동 제목" />
+          <input value={form.link_url} onChange={(e) => setForm((current) => ({ ...current, link_url: e.target.value }))} placeholder="발표 자료, 영상, 결과물 링크" />
+          <textarea value={form.description} onChange={(e) => setForm((current) => ({ ...current, description: e.target.value }))} placeholder="활동 설명" rows={3} />
+          <div className="admin-file-pick" role="button" tabIndex={0} onClick={() => fileRef.current?.click()} onKeyDown={(e) => e.key === 'Enter' && fileRef.current?.click()}>
+            <strong>{file ? file.name : '사진 또는 자료 선택'}</strong>
+            <span>이미지, PDF, PPT, 문서, ZIP 자료를 올릴 수 있습니다.</span>
+          </div>
+          <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.ppt,.pptx,.doc,.docx,.hwp,.hwpx,.zip" onChange={(e) => setFile(e.target.files[0])} hidden />
+          <button className="modern-btn primary" type="button" onClick={create}>등록</button>
+        </div>
+      )}
+      <div className="admin-list gallery-admin-list">
+        {items.length === 0 && <p className="empty-state">아직 갤러리 항목이 없습니다.</p>}
+        {items.map((item) => {
+          const imageUrl = resolveFileUrl(item.image_url);
+          const fileUrl = resolveFileUrl(item.file_url);
+          return (
+            <article key={item.id} className="admin-list-item gallery-admin-item">
+              {imageUrl ? <img className="admin-thumb" src={imageUrl} alt="" loading="lazy" decoding="async" /> : <span className="gallery-file-mark">자료</span>}
+              <div>
+                <strong>{item.title}</strong>
+                {item.description && <span>{item.description}</span>}
+                <small>{new Date(item.created_at).toLocaleDateString()}</small>
+              </div>
+              {item.link_url && <a className="assignment-download" href={item.link_url} target="_blank" rel="noreferrer">링크</a>}
+              {fileUrl && <a className="assignment-download" href={fileUrl} target="_blank" rel="noreferrer" download={item.file_name || undefined}>파일</a>}
+              <button className="danger-button" type="button" onClick={() => del(item.id)}>삭제</button>
             </article>
           );
         })}

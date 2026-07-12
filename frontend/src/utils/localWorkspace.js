@@ -30,6 +30,7 @@ const LOCAL_TEAMS_KEY = 'nc-local-teams-v2';
 const LOCAL_AI_USAGE_KEY = 'nc-local-ai-usage-v2';
 const LOCAL_NOTICES_KEY = 'nc-local-notices-v2';
 const LOCAL_NOTICE_READS_KEY = 'nc-local-notice-reads-v1';
+const LOCAL_GALLERY_KEY = 'nc-local-gallery-v1';
 
 export const readJson = (key, fallback) => {
   try {
@@ -243,6 +244,30 @@ export const getLocalSubmissions = (teamId, user) => {
 export const getLocalAssignments = (teamId) => {
   const all = readJson(LOCAL_ASSIGNMENTS_KEY, []);
   return all.filter((item) => !teamId || item.team_id === teamId);
+};
+
+export const getLocalGallery = () => readJson(LOCAL_GALLERY_KEY, []);
+
+export const addLocalGalleryItem = (data, fileName = '', fileData = '') => {
+  const item = {
+    id: `local-gallery-${Date.now()}`,
+    title: data.title,
+    description: data.description || '',
+    image_url: fileData && fileData.startsWith('data:image') ? fileData : '',
+    file_url: fileData && !fileData.startsWith('data:image') ? fileData : '',
+    file_name: fileName,
+    link_url: data.link_url || '',
+    created_at: new Date().toISOString(),
+  };
+  const next = [item, ...getLocalGallery()];
+  writeJson(LOCAL_GALLERY_KEY, next);
+  return next;
+};
+
+export const deleteLocalGalleryItem = (id) => {
+  const next = getLocalGallery().filter((item) => item.id !== id);
+  writeJson(LOCAL_GALLERY_KEY, next);
+  return next;
 };
 
 export const getLocalAssignmentStatus = (teamId) => {

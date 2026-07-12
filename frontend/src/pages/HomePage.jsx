@@ -7,11 +7,14 @@ import {
   getAllLocalPortfolios,
   getFallbackNotices,
   getLocalAssignments,
+  getLocalGallery,
   getLocalTeams,
   markLocalNoticesRead,
 } from '../utils/localWorkspace';
 
 const BACKEND = 'https://web-production-00104.up.railway.app';
+
+const resolveFileUrl = (value = '') => (value?.startsWith('/api') ? `${BACKEND}${value}` : value);
 
 const quickLinks = [
   { to: '/team', eyebrow: 'Assignment', label: '과제 제출', description: '관리자가 올린 파일을 받고 제출물을 올립니다.', meta: 'Submit' },
@@ -87,6 +90,7 @@ export default function HomePage() {
   const [notices, setNotices] = useState(() => getFallbackNotices());
   const [teams, setTeams] = useState(() => getLocalTeams());
   const [assignments, setAssignments] = useState(() => getLocalAssignments());
+  const [gallery, setGallery] = useState(() => getLocalGallery());
   const [portfolioCount] = useState(() => Object.keys(getAllLocalPortfolios()).length);
 
   useEffect(() => {
@@ -101,6 +105,7 @@ export default function HomePage() {
     api.get('/api/assignments/').then((r) => setAssignments(r.data || [])).catch(() => {
       setAssignments(getLocalAssignments());
     });
+    api.get('/api/gallery/').then((r) => setGallery(r.data || [])).catch(() => setGallery(getLocalGallery()));
   }, []);
 
   const orderedNotices = useMemo(() => notices.slice(-6).reverse(), [notices]);
@@ -167,6 +172,43 @@ export default function HomePage() {
               </PrefetchLink>
             ))}
           </div>
+        </section>
+
+        <section className="home-gallery-section" aria-label="활동 갤러리">
+          <div className="section-head">
+            <p>Gallery</p>
+            <h2>활동 갤러리</h2>
+          </div>
+          {gallery.length > 0 ? (
+            <div className="home-gallery-grid">
+              {gallery.slice(0, 4).map((item) => {
+                const imageUrl = resolveFileUrl(item.image_url);
+                const fileUrl = resolveFileUrl(item.file_url);
+                return (
+                  <article key={item.id} className="home-gallery-card">
+                    {imageUrl ? (
+                      <img src={imageUrl} alt="" loading="lazy" decoding="async" />
+                    ) : (
+                      <div className="home-gallery-file">자료</div>
+                    )}
+                    <div>
+                      <strong>{item.title}</strong>
+                      {item.description && <p>{item.description}</p>}
+                      <div className="home-gallery-actions">
+                        {item.link_url && <a href={item.link_url} target="_blank" rel="noreferrer">링크</a>}
+                        {fileUrl && <a href={fileUrl} target="_blank" rel="noreferrer">파일</a>}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="gallery-empty">
+              <strong>아직 올라온 활동 자료가 없습니다.</strong>
+              <p>관리자가 사진이나 발표 자료를 올리면 여기에 모입니다.</p>
+            </div>
+          )}
         </section>
 
         <section className="home-work-grid" aria-label="공지와 과제">

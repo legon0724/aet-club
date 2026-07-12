@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
@@ -11,6 +11,7 @@ import {
   fileToDataUrl,
   getAllLocalPortfolios,
   getFallbackNotices,
+  getLocalNoticeReadSummary,
   getLocalAdminUsers,
   getLocalAssignments,
   getLocalTeams,
@@ -386,28 +387,49 @@ function AssignmentsTab({ user }) {
 
 function NoticesTab() {
   const [notices, setNotices] = useState([]);
+  const [readSummary, setReadSummary] = useState([]);
   const [teams, setTeams] = useState([]);
   const [form, setForm] = useState({ title: '', content: '', is_pinned: false, team_id: '' });
   const [show, setShow] = useState(false);
 
-  useEffect(() => {
-    api.get('/api/notices/').then((r) => setNotices(r.data)).catch(() => setNotices(getFallbackNotices()));
-    api.get('/api/teams/').then((r) => setTeams(r.data)).catch(() => setTeams(getLocalTeams()));
+  const loadReadSummary = useCallback((nextNotices) => {
+    api.get('/api/notices/read-status').then((r) => {
+      setReadSummary(r.data || []);
+    }).catch(() => {
+      setReadSummary(getLocalNoticeReadSummary(nextNotices));
+    });
   }, []);
+
+  const loadNotices = useCallback(() => {
+    api.get('/api/notices/').then((r) => {
+      setNotices(r.data);
+      loadReadSummary(r.data);
+    }).catch(() => {
+      const fallback = getFallbackNotices();
+      setNotices(fallback);
+      setReadSummary(getLocalNoticeReadSummary(fallback));
+    });
+  }, [loadReadSummary]);
+
+  useEffect(() => {
+    loadNotices();
+    api.get('/api/teams/').then((r) => setTeams(r.data)).catch(() => setTeams(getLocalTeams()));
+  }, [loadNotices]);
 
   const create = async () => {
     if (!form.title.trim()) return;
     try {
       await api.post('/api/notices/', { ...form, team_id: form.team_id || null });
-      const r = await api.get('/api/notices/');
-      setNotices(r.data);
+      loadNotices();
     } catch {
-      setNotices((current) => [{
+      const next = [{
         ...form,
         id: `local-notice-${Date.now()}`,
         team_id: form.team_id || null,
         created_at: new Date().toISOString(),
-      }, ...current]);
+      }, ...notices];
+      setNotices(next);
+      setReadSummary(getLocalNoticeReadSummary(next));
     }
     setForm({ title: '', content: '', is_pinned: false, team_id: '' });
     setShow(false);
@@ -420,8 +442,22 @@ function NoticesTab() {
     } catch {
       // 로컬 미리보기에서는 화면에서만 제거합니다.
     }
-    setNotices((current) => current.filter((item) => item.id !== id));
+    setNotices((current) => {
+      const next = current.filter((item) => item.id !== id);
+      setReadSummary(getLocalNoticeReadSummary(next));
+      return next;
+    });
   };
+
+  const getReceipt = (noticeId) => (
+    readSummary.find((item) => String(item.notice_id) === String(noticeId)) || {
+      read_count: 0,
+      unread_count: 0,
+      total_users: 0,
+      readers: [],
+      unread_users: [],
+    }
+  );
 
   return (
     <div>
@@ -445,16 +481,41 @@ function NoticesTab() {
       )}
       <div className="admin-list">
         {notices.length === 0 && <p className="empty-state">공지사항이 없습니다.</p>}
-        {notices.map((notice) => (
-          <article key={notice.id} className="admin-list-item">
-            <div>
-              <strong>{notice.is_pinned ? '고정 · ' : ''}{notice.title}</strong>
-              {notice.content && <span>{notice.content}</span>}
-            </div>
-            <small>{new Date(notice.created_at).toLocaleDateString()}</small>
-            <button className="danger-button" type="button" onClick={() => del(notice.id)}>삭제</button>
-          </article>
-        ))}
+        {notices.map((notice) => {
+          const receipt = getReceipt(notice.id);
+          return (
+            <article key={notice.id} className="admin-list-item notice-admin-item">
+              <div>
+                <strong>{notice.is_pinned ? '고정 · ' : ''}{notice.title}</strong>
+                {notice.content && <span>{notice.content}</span>}
+                <div className="notice-read-summary">
+                  <b>읽음 {receipt.read_count}/{receipt.total_users}</b>
+                  <small>미확인 {receipt.unread_count}</small>
+                </div>
+                <div className="notice-reader-grid">
+                  <div>
+                    <span>읽은 사람</span>
+                    {receipt.readers.length ? receipt.readers.slice(0, 4).map((reader) => (
+                      <small key={`${notice.id}-${reader.user_id}`}>
+                        {reader.username}
+                      </small>
+                    )) : <small>아직 없음</small>}
+                  </div>
+                  <div>
+                    <span>미확인</span>
+                    {receipt.unread_users.length ? receipt.unread_users.slice(0, 4).map((reader) => (
+                      <small key={`${notice.id}-unread-${reader.user_id}`}>
+                        {reader.username}
+                      </small>
+                    )) : <small>전원 확인</small>}
+                  </div>
+                </div>
+              </div>
+              <small>{new Date(notice.created_at).toLocaleDateString()}</small>
+              <button className="danger-button" type="button" onClick={() => del(notice.id)}>삭제</button>
+            </article>
+          );
+        })}
       </div>
     </div>
   );

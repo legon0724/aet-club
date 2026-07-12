@@ -116,6 +116,24 @@ class NoticeResponse(BaseModel):
         from_attributes = True
 
 
+class NoticeReaderResponse(BaseModel):
+    user_id: str
+    username: str
+    email: str
+    read_at: Optional[datetime] = None
+
+
+class NoticeReadStatusResponse(BaseModel):
+    notice_id: str
+    title: str
+    created_at: datetime
+    read_count: int
+    unread_count: int
+    total_users: int
+    readers: list[NoticeReaderResponse]
+    unread_users: list[NoticeReaderResponse]
+
+
 class BannerCreate(BaseModel):
     title: Optional[str] = None
     image_url: Optional[str] = None

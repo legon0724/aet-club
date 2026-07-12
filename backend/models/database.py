@@ -4,7 +4,7 @@ from typing import Any
 from urllib.parse import quote_plus
 from sqlalchemy import (
     Boolean, Column, DateTime, ForeignKey,
-    Integer, String, Text, TypeDecorator, create_engine
+    Integer, String, Text, TypeDecorator, UniqueConstraint, create_engine
 )
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from backend.core.config import settings
@@ -155,6 +155,16 @@ class Notice(Base):
     team_id = Column(UUID(), ForeignKey("teams.id", ondelete="SET NULL"), nullable=True)
     created_by = Column(UUID(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class NoticeRead(Base):
+    __tablename__ = "notice_reads"
+    __table_args__ = (UniqueConstraint("notice_id", "user_id", name="uq_notice_reads_notice_user"),)
+
+    id = Column(UUID(), primary_key=True, default=uuid.uuid4)
+    notice_id = Column(UUID(), ForeignKey("notices.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(UUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    read_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class Banner(Base):

@@ -8,6 +8,7 @@ import {
   getFallbackNotices,
   getLocalAssignments,
   getLocalTeams,
+  markLocalNoticesRead,
 } from '../utils/localWorkspace';
 
 const BACKEND = 'https://web-production-00104.up.railway.app';
@@ -110,6 +111,16 @@ export default function HomePage() {
     ['기록', `${portfolioCount}`, '포트폴리오'],
   ], [assignments.length, notices.length, portfolioCount, teams.length]);
   const recentAssignments = assignments.slice(0, 4);
+
+  useEffect(() => {
+    if (!user || orderedNotices.length === 0) return;
+
+    markLocalNoticesRead(orderedNotices, user);
+    orderedNotices.forEach((notice) => {
+      if (!notice.id || String(notice.id).startsWith('local-') || notice.id === 'welcome') return;
+      api.post(`/api/notices/${notice.id}/read`).catch(() => {});
+    });
+  }, [orderedNotices, user]);
 
   return (
     <div className="app-shell workspace-shell">

@@ -29,6 +29,7 @@ const LOCAL_ASSIGNMENTS_KEY = 'nc-local-assignments-v2';
 const LOCAL_TEAMS_KEY = 'nc-local-teams-v2';
 const LOCAL_AI_USAGE_KEY = 'nc-local-ai-usage-v2';
 const LOCAL_NOTICES_KEY = 'nc-local-notices-v2';
+const LOCAL_NOTICE_READS_KEY = 'nc-local-notice-reads-v1';
 
 export const readJson = (key, fallback) => {
   try {
@@ -45,6 +46,7 @@ export const writeJson = (key, value) => {
 
 const userKey = (user) => (user?.email || 'guest').trim().toLowerCase();
 const assignmentWorkKey = (assignmentId, user) => `${assignmentId}:${userKey(user)}`;
+const noticeKey = (notice) => String(notice?.id || notice || '');
 
 export const getLocalTeams = () => readJson(LOCAL_TEAMS_KEY, DEFAULT_TEAMS);
 
@@ -88,6 +90,55 @@ export const getFallbackNotices = () => {
       created_at: new Date().toISOString(),
     },
   ];
+};
+
+export const markLocalNoticesRead = (notices, user) => {
+  const activeUser = {
+    user_id: userKey(user),
+    username: user?.username || 'NC member',
+    email: user?.email || '',
+    read_at: new Date().toISOString(),
+  };
+  const reads = readJson(LOCAL_NOTICE_READS_KEY, {});
+
+  notices.forEach((notice) => {
+    const key = noticeKey(notice);
+    if (!key) return;
+    reads[key] = {
+      ...(reads[key] || {}),
+      [activeUser.user_id]: activeUser,
+    };
+  });
+
+  writeJson(LOCAL_NOTICE_READS_KEY, reads);
+  return reads;
+};
+
+export const getLocalNoticeReadSummary = (notices = getFallbackNotices()) => {
+  const reads = readJson(LOCAL_NOTICE_READS_KEY, {});
+  const users = readLocalUsers().map((user) => ({
+    user_id: userKey(user),
+    username: user.username,
+    email: user.email,
+    read_at: null,
+  }));
+
+  return notices.map((notice) => {
+    const noticeReads = Object.values(reads[noticeKey(notice)] || {});
+    const readIds = new Set(noticeReads.map((read) => read.user_id));
+    const unreadUsers = users.filter((user) => !readIds.has(user.user_id));
+
+    return {
+      notice_id: noticeKey(notice),
+      title: notice.title,
+      created_at: notice.created_at,
+      read_count: noticeReads.length,
+      unread_count: unreadUsers.length,
+      total_users: users.length,
+      readers: noticeReads,
+      unread_users: unreadUsers,
+    };
+  });
 };
 
 export const getLocalPortfolio = (user) => {

@@ -419,6 +419,52 @@ export const addLocalSubmission = (teamId, user, data, fileName = '') => {
   return getLocalSubmissions(teamId, user);
 };
 
+const buildActivityBadges = (metrics) => ([
+  ['starter', '시작 배지', '첫 활동 기록을 남겼습니다.', metrics.score >= 10],
+  ['submitter', '제출 루틴', '과제를 제출했습니다.', metrics.submitted_count >= 1],
+  ['portfolio', '포트폴리오 공개', '공개 포트폴리오를 열었습니다.', metrics.portfolio_public],
+  ['project', '프로젝트 기록', '프로젝트 내용을 정리했습니다.', metrics.project_ready],
+  ['presenter', '발표 기록', '발표나 활동 자료를 공유했습니다.', metrics.gallery_count >= 1 || metrics.award_ready],
+].map(([key, label, description, earned]) => ({ key, label, description, earned })));
+
+export const getLocalActivitySummary = (user) => {
+  const submissions = readJson(LOCAL_SUBMISSIONS_KEY, []).filter((item) => (
+    item.email === user?.email || item.user_id === userKey(user) || item.username === user?.username
+  ));
+  const submittedCount = submissions.filter((item) => item.status === 'submitted').length;
+  const draftCount = submissions.filter((item) => item.status === 'draft').length;
+  const portfolio = getLocalPortfolio(user);
+  const portfolioSections = ['intro', 'projects', 'skills', 'awards', 'goals']
+    .filter((key) => String(portfolio[key] || '').trim()).length;
+  const projectReady = Boolean(String(portfolio.projects || '').trim());
+  const awardReady = Boolean(String(portfolio.awards || '').trim());
+  const galleryCount = user?.is_admin ? getLocalGallery().length : 0;
+  const score = (
+    submittedCount * 15
+    + draftCount * 5
+    + portfolioSections * 4
+    + (portfolio.is_public ? 10 : 0)
+    + (projectReady ? 8 : 0)
+    + (awardReady ? 8 : 0)
+    + galleryCount * 12
+  );
+  const metrics = {
+    score,
+    submitted_count: submittedCount,
+    draft_count: draftCount,
+    portfolio_sections: portfolioSections,
+    portfolio_public: Boolean(portfolio.is_public),
+    project_ready: projectReady,
+    award_ready: awardReady,
+    gallery_count: galleryCount,
+  };
+
+  return {
+    ...metrics,
+    badges: buildActivityBadges(metrics),
+  };
+};
+
 export const deleteLocalSubmission = (id) => {
   const next = readJson(LOCAL_SUBMISSIONS_KEY, []).filter((item) => item.id !== id);
   writeJson(LOCAL_SUBMISSIONS_KEY, next);

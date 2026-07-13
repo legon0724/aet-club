@@ -6,6 +6,7 @@ import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
 import {
   getAllLocalPortfolios,
   getFallbackNotices,
+  getLocalActivitySummary,
   getLocalAssignments,
   getLocalGallery,
   getLocalTeams,
@@ -86,6 +87,7 @@ const BannerSlider = memo(({ banners, assignments, notices, teams, user }) => {
 
 export default function HomePage() {
   const [user, setUser] = useState(() => getCurrentLocalUser());
+  const [activity, setActivity] = useState(() => getLocalActivitySummary(getCurrentLocalUser()));
   const [banners, setBanners] = useState([]);
   const [notices, setNotices] = useState(() => getFallbackNotices());
   const [teams, setTeams] = useState(() => getLocalTeams());
@@ -94,9 +96,14 @@ export default function HomePage() {
   const [portfolioCount] = useState(() => Object.keys(getAllLocalPortfolios()).length);
 
   useEffect(() => {
+    const localUser = getCurrentLocalUser();
     api.get('/api/auth/me').then((r) => {
-      setUser(rememberCurrentUser(r.data));
+      const remembered = rememberCurrentUser(r.data);
+      setUser(remembered);
     }).catch(() => {});
+    api.get('/api/activity/me').then((r) => setActivity(r.data)).catch(() => {
+      setActivity(getLocalActivitySummary(localUser));
+    });
     api.get('/api/banners/').then((r) => setBanners(r.data.filter((b) => b.is_active))).catch(() => {});
     api.get('/api/notices/').then((r) => setNotices(r.data)).catch(() => {
       setNotices(getFallbackNotices());
@@ -141,6 +148,27 @@ export default function HomePage() {
               <p>{helper}</p>
             </article>
           ))}
+        </section>
+
+        <section className="home-activity-score" aria-label="활동 점수와 배지">
+          <div className="activity-score-main">
+            <span>Activity score</span>
+            <strong>{activity.score}</strong>
+            <p>과제 제출, 포트폴리오 정리, 프로젝트와 발표 기록을 기준으로 계산합니다.</p>
+          </div>
+          <div className="activity-score-metrics">
+            <small>제출 {activity.submitted_count}</small>
+            <small>작성 중 {activity.draft_count}</small>
+            <small>포트폴리오 {activity.portfolio_sections}/5</small>
+            <small>자료 {activity.gallery_count}</small>
+          </div>
+          <div className="activity-badge-row">
+            {(activity.badges || []).map((badge) => (
+              <span key={badge.key} className={badge.earned ? 'earned' : ''} title={badge.description}>
+                {badge.label}
+              </span>
+            ))}
+          </div>
         </section>
 
         <section className="home-control-grid" aria-label="오늘 작업">

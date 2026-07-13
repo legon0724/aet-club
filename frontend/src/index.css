@@ -3281,6 +3281,45 @@ a {
   white-space: pre-wrap;
 }
 
+.backup-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.backup-panel section {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.backup-panel section > span {
+  color: #99f6e4;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.backup-panel h3 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 18px;
+}
+
+.backup-panel p {
+  margin: 0;
+  color: #94a3b8;
+  line-height: 1.65;
+}
+
+.backup-panel .inline-alert {
+  grid-column: 1 / -1;
+}
+
 @media (max-width: 1040px) {
   .assignment-layout {
     grid-template-columns: 1fr;
@@ -3300,7 +3339,8 @@ a {
   .assignment-submission,
   .assignment-card,
   .assignment-admin-form,
-  .admin-split-view {
+  .admin-split-view,
+  .backup-panel {
     grid-template-columns: 1fr;
   }
 

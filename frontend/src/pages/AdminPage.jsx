@@ -61,6 +61,7 @@ export default function AdminPage() {
     ['banners', '배너 관리', '홈 배너 운영'],
     ['portfolios', '포트폴리오', '회원 작업물 확인'],
     ['ai', 'AI 사용량', '분석 사용 현황'],
+    ['backup', '백업/복원', '운영 데이터 저장'],
   ];
   const activeTab = tabs.find(([key]) => key === tab);
 
@@ -106,6 +107,7 @@ export default function AdminPage() {
           {tab === 'banners' && <BannersTab />}
           {tab === 'portfolios' && <PortfoliosTab />}
           {tab === 'ai' && <AITab />}
+          {tab === 'backup' && <BackupTab />}
         </section>
       </main>
     </div>
@@ -934,6 +936,94 @@ function AITab() {
           <b>{item.count}회 사용</b>
         </article>
       ))}
+    </div>
+  );
+}
+
+function BackupTab() {
+  const [file, setFile] = useState(null);
+  const [message, setMessage] = useState('');
+  const fileRef = useRef(null);
+
+  const buildLocalBackup = () => {
+    const local_storage = {};
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith('nc-')) local_storage[key] = localStorage.getItem(key);
+    });
+    return {
+      version: 1,
+      exported_at: new Date().toISOString(),
+      local_storage,
+    };
+  };
+
+  const downloadJson = (data) => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `nc-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportBackup = async () => {
+    setMessage('');
+    try {
+      const response = await api.get('/api/admin/backup');
+      downloadJson(response.data);
+      setMessage('서버 백업 파일을 만들었습니다.');
+    } catch {
+      downloadJson(buildLocalBackup());
+      setMessage('로컬 백업 파일을 만들었습니다.');
+    }
+  };
+
+  const restoreBackup = async () => {
+    if (!file) return;
+    setMessage('');
+    const text = await file.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      setMessage('JSON 파일을 확인해 주세요.');
+      return;
+    }
+    try {
+      await api.post('/api/admin/backup', data);
+      setMessage('서버 데이터 복원이 완료되었습니다.');
+    } catch {
+      Object.entries(data.local_storage || {}).forEach(([key, value]) => {
+        localStorage.setItem(key, value);
+      });
+      setMessage('로컬 데이터 복원이 완료되었습니다.');
+    } finally {
+      setFile(null);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
+  return (
+    <div className="backup-panel">
+      <section>
+        <span>Export</span>
+        <h3>데이터 내보내기</h3>
+        <p>팀, 과제, 공지, 포트폴리오, 갤러리, 캘린더 운영 데이터를 JSON 파일로 저장합니다.</p>
+        <button className="modern-btn primary" type="button" onClick={exportBackup}>백업 파일 만들기</button>
+      </section>
+      <section>
+        <span>Restore</span>
+        <h3>데이터 복원</h3>
+        <p>이전에 저장한 NC 백업 JSON을 선택한 뒤 복원합니다. 같은 ID의 데이터는 갱신됩니다.</p>
+        <div className="admin-file-pick" role="button" tabIndex={0} onClick={() => fileRef.current?.click()} onKeyDown={(e) => e.key === 'Enter' && fileRef.current?.click()}>
+          <strong>{file ? file.name : '백업 파일 선택'}</strong>
+          <span>JSON 파일만 사용하세요.</span>
+        </div>
+        <input ref={fileRef} type="file" accept=".json,application/json" onChange={(e) => setFile(e.target.files[0])} hidden />
+        <button className="modern-btn ghost" type="button" onClick={restoreBackup} disabled={!file}>복원 실행</button>
+      </section>
+      {message && <div className="inline-alert success">{message}</div>}
     </div>
   );
 }

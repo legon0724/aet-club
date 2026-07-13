@@ -490,6 +490,58 @@ export const getLocalActivitySummary = (user) => {
   };
 };
 
+const includesQuery = (value, query) => String(value || '').toLowerCase().includes(query);
+const firstText = (...values) => values.find((value) => String(value || '').trim()) || '';
+
+export const searchLocalWorkspace = (queryText, user) => {
+  const query = queryText.trim().toLowerCase();
+  if (query.length < 2) return [];
+
+  const noticeResults = getFallbackNotices()
+    .filter((notice) => includesQuery(notice.title, query) || includesQuery(notice.content, query))
+    .map((notice) => ({
+      id: notice.id,
+      type: '공지',
+      title: notice.title,
+      snippet: firstText(notice.content, notice.title).slice(0, 140),
+      href: '/',
+      date: notice.created_at,
+    }));
+
+  const assignmentResults = getLocalAssignments(user?.team_id)
+    .filter((assignment) => includesQuery(assignment.title, query) || includesQuery(assignment.content, query))
+    .map((assignment) => ({
+      id: assignment.id,
+      type: '과제',
+      title: assignment.title,
+      snippet: firstText(assignment.content, assignment.due_at).slice(0, 140),
+      href: '/team',
+      date: assignment.created_at,
+    }));
+
+  const portfolioResults = Object.entries(getAllLocalPortfolios())
+    .map(([email, portfolio]) => ({ ...portfolio, user_id: email, email: portfolio.email || email }))
+    .filter((portfolio) => (
+      user?.is_admin || portfolio.is_public || portfolio.email?.toLowerCase() === user?.email?.toLowerCase()
+    ))
+    .filter((portfolio) => (
+      includesQuery(portfolio.username, query)
+      || ['intro', 'projects', 'skills', 'awards', 'goals'].some((key) => includesQuery(portfolio[key], query))
+    ))
+    .map((portfolio) => ({
+      id: portfolio.user_id,
+      type: '포트폴리오',
+      title: portfolio.username || portfolio.email || 'NC member',
+      snippet: firstText(portfolio.intro, portfolio.projects, portfolio.skills, portfolio.awards, portfolio.goals).slice(0, 140),
+      href: portfolio.email?.toLowerCase() === user?.email?.toLowerCase() ? '/portfolio' : `/portfolio/share/${encodeURIComponent(portfolio.user_id)}`,
+      date: portfolio.updated_at || new Date().toISOString(),
+    }));
+
+  return [...noticeResults, ...assignmentResults, ...portfolioResults]
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 30);
+};
+
 export const deleteLocalSubmission = (id) => {
   const next = readJson(LOCAL_SUBMISSIONS_KEY, []).filter((item) => item.id !== id);
   writeJson(LOCAL_SUBMISSIONS_KEY, next);

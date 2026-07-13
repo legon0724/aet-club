@@ -7,6 +7,7 @@ const pageLoaders = {
   sharedPortfolio: () => import('../pages/SharedPortfolioPage'),
   team: () => import('../pages/TeamPage'),
   ai: () => import('../pages/AIPage'),
+  search: () => import('../pages/SearchPage'),
   admin: () => import('../pages/AdminPage'),
 };
 
@@ -30,6 +31,7 @@ const routePageKeys = {
   '/portfolio/share': 'sharedPortfolio',
   '/team': 'team',
   '/ai': 'ai',
+  '/search': 'search',
   '/admin': 'admin',
   '/login': 'login',
 };
@@ -41,6 +43,7 @@ export const routePages = {
   SharedPortfolioPage: lazyPage('sharedPortfolio'),
   TeamPage: lazyPage('team'),
   AIPage: lazyPage('ai'),
+  SearchPage: lazyPage('search'),
   AdminPage: lazyPage('admin'),
 };
 
@@ -49,6 +52,7 @@ export const protectedRoutes = [
   { path: '/portfolio', Component: routePages.PortfolioPage },
   { path: '/team', Component: routePages.TeamPage },
   { path: '/ai', Component: routePages.AIPage },
+  { path: '/search', Component: routePages.SearchPage },
   { path: '/admin', Component: routePages.AdminPage },
 ];
 

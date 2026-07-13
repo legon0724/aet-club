@@ -3,4 +3,5 @@ export const mainNavItems = [
   { to: '/portfolio', label: '포트폴리오' },
   { to: '/team', label: '과제' },
   { to: '/ai', label: 'AI 분석' },
+  { to: '/search', label: '검색' },
 ];

@@ -8,6 +8,7 @@ import {
   getFallbackNotices,
   getLocalActivitySummary,
   getLocalAssignments,
+  getLocalCalendarEvents,
   getLocalGallery,
   getLocalTeams,
   markLocalNoticesRead,
@@ -93,6 +94,7 @@ export default function HomePage() {
   const [teams, setTeams] = useState(() => getLocalTeams());
   const [assignments, setAssignments] = useState(() => getLocalAssignments());
   const [gallery, setGallery] = useState(() => getLocalGallery());
+  const [events, setEvents] = useState(() => getLocalCalendarEvents());
   const [portfolioCount] = useState(() => Object.keys(getAllLocalPortfolios()).length);
 
   useEffect(() => {
@@ -113,6 +115,7 @@ export default function HomePage() {
       setAssignments(getLocalAssignments());
     });
     api.get('/api/gallery/').then((r) => setGallery(r.data || [])).catch(() => setGallery(getLocalGallery()));
+    api.get('/api/calendar/').then((r) => setEvents(r.data || [])).catch(() => setEvents(getLocalCalendarEvents()));
   }, []);
 
   const orderedNotices = useMemo(() => notices.slice(-6).reverse(), [notices]);
@@ -123,6 +126,27 @@ export default function HomePage() {
     ['기록', `${portfolioCount}`, '포트폴리오'],
   ], [assignments.length, notices.length, portfolioCount, teams.length]);
   const recentAssignments = assignments.slice(0, 4);
+  const scheduleItems = useMemo(() => (
+    [
+      ...events.map((event) => ({
+        id: `event-${event.id}`,
+        title: event.title,
+        date: event.start_date,
+        type: event.event_type || '일정',
+        helper: event.end_date ? `종료 ${new Date(event.end_date).toLocaleString()}` : '등록 일정',
+      })),
+      ...assignments.filter((assignment) => assignment.due_at).map((assignment) => ({
+        id: `assignment-${assignment.id}`,
+        title: assignment.title,
+        date: assignment.due_at,
+        type: '마감',
+        helper: '과제 제출 마감',
+      })),
+    ]
+      .filter((item) => !Number.isNaN(new Date(item.date).getTime()))
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .slice(0, 6)
+  ), [assignments, events]);
 
   useEffect(() => {
     if (!user || orderedNotices.length === 0) return;
@@ -235,6 +259,32 @@ export default function HomePage() {
             <div className="gallery-empty">
               <strong>아직 올라온 활동 자료가 없습니다.</strong>
               <p>관리자가 사진이나 발표 자료를 올리면 여기에 모입니다.</p>
+            </div>
+          )}
+        </section>
+
+        <section className="home-calendar-section" aria-label="다가오는 일정">
+          <div className="section-head">
+            <p>Calendar</p>
+            <h2>다가오는 일정</h2>
+          </div>
+          {scheduleItems.length > 0 ? (
+            <div className="home-calendar-list">
+              {scheduleItems.map((item) => (
+                <article key={item.id} className="home-calendar-item">
+                  <time>{new Date(item.date).toLocaleDateString()}</time>
+                  <div>
+                    <span>{item.type}</span>
+                    <strong>{item.title}</strong>
+                    <p>{item.helper}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="gallery-empty">
+              <strong>예정된 일정이 없습니다.</strong>
+              <p>발표일, 활동일, 과제 마감일이 등록되면 이곳에 표시됩니다.</p>
             </div>
           )}
         </section>

@@ -31,6 +31,7 @@ const LOCAL_AI_USAGE_KEY = 'nc-local-ai-usage-v2';
 const LOCAL_NOTICES_KEY = 'nc-local-notices-v2';
 const LOCAL_NOTICE_READS_KEY = 'nc-local-notice-reads-v1';
 const LOCAL_GALLERY_KEY = 'nc-local-gallery-v1';
+const LOCAL_CALENDAR_KEY = 'nc-local-calendar-v1';
 
 export const readJson = (key, fallback) => {
   try {
@@ -267,6 +268,30 @@ export const addLocalGalleryItem = (data, fileName = '', fileData = '') => {
 export const deleteLocalGalleryItem = (id) => {
   const next = getLocalGallery().filter((item) => item.id !== id);
   writeJson(LOCAL_GALLERY_KEY, next);
+  return next;
+};
+
+export const getLocalCalendarEvents = () => (
+  readJson(LOCAL_CALENDAR_KEY, []).sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
+);
+
+export const addLocalCalendarEvent = (data) => {
+  const item = {
+    id: `local-event-${Date.now()}`,
+    title: data.title,
+    start_date: data.start_date,
+    end_date: data.end_date || '',
+    event_type: data.event_type || '일정',
+    team_id: data.team_id || '',
+  };
+  const next = [...getLocalCalendarEvents(), item].sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+  writeJson(LOCAL_CALENDAR_KEY, next);
+  return next;
+};
+
+export const deleteLocalCalendarEvent = (id) => {
+  const next = getLocalCalendarEvents().filter((item) => item.id !== id);
+  writeJson(LOCAL_CALENDAR_KEY, next);
   return next;
 };
 

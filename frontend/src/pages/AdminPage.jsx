@@ -5,9 +5,11 @@ import Navbar from '../components/Navbar';
 import { getCurrentLocalUser, readLocalUsers, rememberCurrentUser, writeLocalUsers } from '../utils/localAuth';
 import {
   addLocalAssignment,
+  addLocalCalendarEvent,
   addLocalGalleryItem,
   addLocalTeam,
   deleteLocalAssignment,
+  deleteLocalCalendarEvent,
   deleteLocalGalleryItem,
   deleteLocalTeam,
   fileToDataUrl,
@@ -17,6 +19,7 @@ import {
   getLocalAdminUsers,
   getLocalAssignmentStatus,
   getLocalAssignments,
+  getLocalCalendarEvents,
   getLocalGallery,
   getLocalTeams,
 } from '../utils/localWorkspace';
@@ -25,6 +28,7 @@ const BACKEND = 'https://web-production-00104.up.railway.app';
 
 const emptyAssignment = { title: '', content: '', due_at: '', resource_url: '', copy_mode: 'site', points: '' };
 const emptyGallery = { title: '', description: '', link_url: '' };
+const emptyCalendar = { title: '', start_date: '', end_date: '', event_type: '일정', team_id: '' };
 
 export default function AdminPage() {
   const [user, setUser] = useState(() => getCurrentLocalUser());
@@ -52,6 +56,7 @@ export default function AdminPage() {
     ['teams', '팀 관리', '팀 생성과 정리'],
     ['assignments', '과제 관리', '학생별 작업본과 제출 흐름'],
     ['gallery', '활동 갤러리', '사진과 발표 자료'],
+    ['calendar', '캘린더', '발표일과 활동 일정'],
     ['notices', '공지 관리', '전체와 팀별 안내'],
     ['banners', '배너 관리', '홈 배너 운영'],
     ['portfolios', '포트폴리오', '회원 작업물 확인'],
@@ -96,6 +101,7 @@ export default function AdminPage() {
           {tab === 'teams' && <TeamsTab />}
           {tab === 'assignments' && <AssignmentsTab user={user} />}
           {tab === 'gallery' && <GalleryTab />}
+          {tab === 'calendar' && <CalendarTab />}
           {tab === 'notices' && <NoticesTab />}
           {tab === 'banners' && <BannersTab />}
           {tab === 'portfolios' && <PortfoliosTab />}
@@ -522,6 +528,86 @@ function GalleryTab() {
             </article>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function CalendarTab() {
+  const [events, setEvents] = useState([]);
+  const [teams, setTeams] = useState(() => getLocalTeams());
+  const [form, setForm] = useState(emptyCalendar);
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    api.get('/api/calendar/').then((r) => setEvents(r.data || [])).catch(() => setEvents(getLocalCalendarEvents()));
+    api.get('/api/teams/').then((r) => setTeams(r.data)).catch(() => setTeams(getLocalTeams()));
+  }, []);
+
+  const create = async () => {
+    if (!form.title.trim() || !form.start_date) return;
+    const payload = { ...form, title: form.title.trim() };
+    try {
+      await api.post('/api/calendar/', payload);
+      const r = await api.get('/api/calendar/');
+      setEvents(r.data || []);
+    } catch {
+      setEvents(addLocalCalendarEvent(payload));
+    } finally {
+      setForm(emptyCalendar);
+      setShow(false);
+    }
+  };
+
+  const del = async (id) => {
+    if (!window.confirm('일정을 삭제할까요?')) return;
+    try {
+      if (!String(id).startsWith('local-event-')) {
+        await api.delete(`/api/calendar/${id}`);
+      }
+    } catch {
+      // 로컬 미리보기에서는 화면에서만 제거합니다.
+    }
+    deleteLocalCalendarEvent(id);
+    setEvents((current) => current.filter((item) => item.id !== id));
+  };
+
+  return (
+    <div>
+      <div className="admin-toolbar">
+        <button className="modern-btn primary" type="button" onClick={() => setShow((current) => !current)}>일정 추가</button>
+      </div>
+      {show && (
+        <div className="admin-form-grid calendar-admin-form">
+          <input value={form.title} onChange={(e) => setForm((current) => ({ ...current, title: e.target.value }))} placeholder="일정 제목" />
+          <input type="datetime-local" value={form.start_date} onChange={(e) => setForm((current) => ({ ...current, start_date: e.target.value }))} />
+          <input type="datetime-local" value={form.end_date} onChange={(e) => setForm((current) => ({ ...current, end_date: e.target.value }))} />
+          <select value={form.event_type} onChange={(e) => setForm((current) => ({ ...current, event_type: e.target.value }))}>
+            <option value="일정">일정</option>
+            <option value="발표">발표</option>
+            <option value="마감">마감</option>
+            <option value="활동">활동</option>
+          </select>
+          <select value={form.team_id} onChange={(e) => setForm((current) => ({ ...current, team_id: e.target.value }))}>
+            <option value="">전체</option>
+            {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
+          </select>
+          <button className="modern-btn primary" type="button" onClick={create}>등록</button>
+        </div>
+      )}
+      <div className="admin-list calendar-admin-list">
+        {events.length === 0 && <p className="empty-state">등록된 일정이 없습니다.</p>}
+        {events.map((event) => (
+          <article key={event.id} className="admin-list-item calendar-admin-item">
+            <span className="calendar-type-pill">{event.event_type || '일정'}</span>
+            <div>
+              <strong>{event.title}</strong>
+              <span>{new Date(event.start_date).toLocaleString()}</span>
+              {event.end_date && <small>종료 {new Date(event.end_date).toLocaleString()}</small>}
+            </div>
+            <button className="danger-button" type="button" onClick={() => del(event.id)}>삭제</button>
+          </article>
+        ))}
       </div>
     </div>
   );

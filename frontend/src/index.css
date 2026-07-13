@@ -5192,7 +5192,8 @@ select {
   font-weight: 850;
 }
 
-.home-gallery-section {
+.home-gallery-section,
+.home-calendar-section {
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 24px;
@@ -5279,6 +5280,65 @@ select {
 
 .gallery-empty strong {
   color: var(--ink);
+}
+
+.home-calendar-list {
+  display: grid;
+  gap: 10px;
+}
+
+.home-calendar-item {
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr);
+  gap: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.home-calendar-item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.home-calendar-item time {
+  display: grid;
+  place-items: center;
+  align-self: start;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 10px;
+  background: var(--surface-soft);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.home-calendar-item div {
+  display: grid;
+  gap: 4px;
+}
+
+.home-calendar-item span,
+.calendar-type-pill {
+  justify-self: start;
+  border: 1px solid rgba(79, 122, 91, 0.22);
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: var(--surface-tint);
+  color: var(--moss-dark);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.home-calendar-item strong {
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.home-calendar-item p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .home-work-grid {

@@ -251,14 +251,15 @@ function AssignmentsTab() {
   }, []);
 
   useEffect(() => {
-    if (teamId) loadAssignments(teamId);
+    loadAssignments(teamId);
   }, [teamId]);
 
   async function loadAssignments(nextTeamId) {
     try {
-      const r = await api.get(`/api/assignments/?team_id=${nextTeamId}`);
+      const teamQuery = nextTeamId ? `?team_id=${nextTeamId}` : '';
+      const r = await api.get(`/api/assignments/${teamQuery}`);
       setAssignments(r.data || []);
-      api.get(`/api/admin/assignment-status?team_id=${nextTeamId}`).then((status) => {
+      api.get(`/api/admin/assignment-status${teamQuery}`).then((status) => {
         setStatusRows(status.data || []);
       }).catch(() => setStatusRows([]));
     } catch {
@@ -268,7 +269,7 @@ function AssignmentsTab() {
   }
 
   const create = async () => {
-    if (!form.title.trim() || !teamId) return;
+    if (!form.title.trim()) return;
     const payload = {
       ...form,
       title: form.title.trim(),
@@ -277,7 +278,7 @@ function AssignmentsTab() {
 
     try {
       const formData = new FormData();
-      formData.append('team_id', teamId);
+      if (teamId) formData.append('team_id', teamId);
       formData.append('title', payload.title);
       if (payload.content) formData.append('content', payload.content);
       if (payload.due_at) formData.append('due_at', payload.due_at);
@@ -314,6 +315,7 @@ function AssignmentsTab() {
     <div>
       <div className="admin-toolbar split">
         <select value={teamId} onChange={(e) => setTeamId(e.target.value)}>
+          <option value="">전체 과제</option>
           {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
         </select>
         <button className="modern-btn primary" type="button" onClick={() => setShow((current) => !current)}>

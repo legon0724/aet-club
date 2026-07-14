@@ -5,7 +5,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
-from sqlalchemy import inspect, text
+from sqlalchemy import inspect, or_, text
 from sqlalchemy.orm import Session
 
 from backend.core.deps import get_admin_user, get_current_user
@@ -59,7 +59,7 @@ def get_assignments(
     ensure_assignment_columns(db)
     query = db.query(Assignment)
     if team_id:
-        query = query.filter(Assignment.team_id == team_id)
+        query = query.filter(or_(Assignment.team_id == team_id, Assignment.team_id.is_(None)))
     assignments = query.order_by(Assignment.created_at.desc()).all()
     return [serialize_assignment(item, db) for item in assignments]
 

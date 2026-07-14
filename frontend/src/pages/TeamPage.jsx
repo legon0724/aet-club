@@ -7,6 +7,12 @@ const BACKEND = 'https://web-production-00104.up.railway.app';
 const socketUrl = `${BACKEND.replace('https://', 'wss://')}/api/chat/ws`;
 
 const blankSubmission = { title: '', content: '', link_url: '', work_content: '' };
+const allAssignmentsView = {
+  id: '',
+  name: '전체 과제',
+  description: '팀 지정 없이 올라온 과제까지 확인합니다.',
+  color: '#2dd4bf',
+};
 const emptyDraft = (assignment) => ({
   title: assignment?.title || '',
   content: '',
@@ -34,13 +40,15 @@ export default function TeamPage() {
   const bottomRef = useRef(null);
   const fileRef = useRef(null);
   const saveTimerRef = useRef(null);
+  const activeTeam = selectedTeam || allAssignmentsView;
+  const activeTeamId = selectedTeam?.id || '';
 
   useEffect(() => {
     api.get('/api/auth/me').then((r) => setUser(rememberCurrentUser(r.data))).catch(() => {});
     api.get('/api/teams/').then((r) => {
       const nextTeams = r.data;
       setTeams(nextTeams);
-      setSelectedTeam((current) => nextTeams.find((team) => team.id === current?.id) || nextTeams[0] || null);
+      setSelectedTeam((current) => nextTeams.find((team) => team.id === current?.id) || null);
     }).catch(() => {
       setTeams([]);
       setSelectedTeam(null);
@@ -49,14 +57,20 @@ export default function TeamPage() {
   }, []);
 
   useEffect(() => {
-    if (!selectedTeam) return undefined;
-    connectWs(selectedTeam.id);
-    loadAssignments(selectedTeam.id);
-    loadSubmissions(selectedTeam.id, user);
+    if (selectedTeam?.id) {
+      connectWs(selectedTeam.id);
+    } else {
+      if (wsRef.current) wsRef.current.close();
+      wsRef.current = null;
+      setMessages([]);
+      if (tab === 'chat') setTab('assignments');
+    }
+    loadAssignments(activeTeamId);
+    loadSubmissions(activeTeamId, user);
     return () => {
       if (wsRef.current) wsRef.current.close();
     };
-  }, [selectedTeam, user]);
+  }, [activeTeamId, selectedTeam, tab, user]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -134,8 +148,9 @@ export default function TeamPage() {
     }
   }
 
-  function loadAssignments(teamId) {
-    api.get(`/api/assignments/?team_id=${teamId}`).then((r) => {
+  function loadAssignments(teamId = '') {
+    const teamQuery = teamId ? `?team_id=${teamId}` : '';
+    api.get(`/api/assignments/${teamQuery}`).then((r) => {
       const next = r.data || [];
       setAssignments(next);
       setSelectedAssignment((current) => next.find((item) => item.id === current?.id) || next[0] || null);
@@ -146,8 +161,9 @@ export default function TeamPage() {
     });
   }
 
-  function loadSubmissions(teamId) {
-    api.get(`/api/submissions/?team_id=${teamId}`).then((r) => setSubmissions(r.data)).catch(() => {
+  function loadSubmissions(teamId = '') {
+    const teamQuery = teamId ? `?team_id=${teamId}` : '';
+    api.get(`/api/submissions/${teamQuery}`).then((r) => setSubmissions(r.data)).catch(() => {
       setSubmissions([]);
       setLoadError('제출 현황을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
     });
@@ -175,12 +191,12 @@ export default function TeamPage() {
   }
 
   const saveDraft = async (nextData) => {
-    if (!selectedAssignment || !selectedTeam) return;
+    if (!selectedAssignment) return;
     try {
       const r = await api.put(`/api/submissions/work/${selectedAssignment.id}`, nextData);
       setDraftSavedAt(r.data?.updated_at || new Date().toISOString());
       setDraftStatus(r.data?.status === 'submitted' ? 'submitted' : 'saved');
-      loadSubmissions(selectedTeam.id, user);
+      loadSubmissions(activeTeamId, user);
     } catch {
       setDraftStatus('error');
     }
@@ -228,7 +244,6 @@ export default function TeamPage() {
   };
 
   const submitSub = async () => {
-    if (!selectedTeam) return;
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
       saveTimerRef.current = null;
@@ -256,12 +271,12 @@ export default function TeamPage() {
       if (payload.work_content) formData.append('work_content', payload.work_content);
       if (payload.assignment_id) formData.append('assignment_id', String(payload.assignment_id));
       if (payload.assignment_title) formData.append('assignment_title', payload.assignment_title);
-      formData.append('team_id', selectedTeam.id);
+      if (activeTeamId) formData.append('team_id', activeTeamId);
       if (subFile) formData.append('file', subFile);
 
       await api.post('/api/submissions/', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       setDraftStatus('submitted');
-      loadSubmissions(selectedTeam.id, user);
+      loadSubmissions(activeTeamId, user);
     } catch {
       setDraftStatus('error');
       window.alert('제출물을 서버에 저장하지 못했습니다. 다시 시도해주세요.');
@@ -317,6 +332,16 @@ export default function TeamPage() {
         </section>
 
         <div className="assignment-switcher" aria-label="팀 선택">
+          <button
+            type="button"
+            className={!selectedTeam ? 'active' : ''}
+            onClick={() => setSelectedTeam(null)}
+            style={{ '--team-color': allAssignmentsView.color }}
+          >
+            <small>ALL</small>
+            <strong>{allAssignmentsView.name}</strong>
+            <span>{allAssignmentsView.description}</span>
+          </button>
           {teams.map((team) => (
             <button
               key={team.id}
@@ -337,7 +362,7 @@ export default function TeamPage() {
           <div className="workspace-tabs">
             {[
               ['assignments', '팀 과제'],
-              ['chat', '팀 채팅'],
+              ...(activeTeamId ? [['chat', '팀 채팅']] : []),
             ].map(([key, label]) => (
               <button key={key} type="button" className={tab === key ? 'active' : ''} onClick={() => setTab(key)}>
                 {label}
@@ -351,7 +376,7 @@ export default function TeamPage() {
                 <div className="stream-header">
                   <div>
                     <span>Assigned work</span>
-                    <h3>{selectedTeam?.name} 과제</h3>
+                    <h3>{activeTeam.name} 과제</h3>
                   </div>
                   <button className="modern-btn ghost" type="button" onClick={() => openTurnIn()}>내 작업 열기</button>
                 </div>

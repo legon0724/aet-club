@@ -69,7 +69,7 @@ def get_submissions(team_id: Optional[str] = None, db: Session = Depends(get_db)
     ensure_submission_columns(db)
     query = db.query(Submission)
     if team_id:
-        query = query.filter(Submission.team_id == team_id)
+        query = query.filter(or_(Submission.team_id == team_id, Submission.team_id.is_(None)))
     if current_user.is_admin:
         query = query.filter(or_(Submission.status == "submitted", Submission.status.is_(None)))
     else:

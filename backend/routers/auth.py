@@ -26,6 +26,14 @@ def require_school_email(email: str):
         raise HTTPException(400, detail="@cam.hs.kr 학교 이메일만 사용할 수 있습니다.")
 
 
+def normalize_email(email: str) -> str:
+    return email.strip().lower()
+
+
+def normalize_username(username: str) -> str:
+    return username.strip()
+
+
 def smtp_setting(*names: str) -> str:
     for name in names:
         value = getattr(settings, name, "")
@@ -84,19 +92,23 @@ def send_reset_email(to_email: str, code: str):
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(body: RegisterRequest, db: Session = Depends(get_db)):
-    require_school_email(body.email)
+    email = normalize_email(body.email)
+    username = normalize_username(body.username)
+    require_school_email(email)
     if not body.privacy_consented:
         raise HTTPException(400, detail="개인정보 처리방침에 동의해주세요.")
-    if db.query(User).filter(User.email == body.email).first():
+    if not username:
+        raise HTTPException(400, detail="닉네임을 입력해주세요.")
+    if db.query(User).filter(User.email == email).first():
         raise HTTPException(400, detail="이미 사용 중인 이메일입니다.")
-    if db.query(User).filter(User.username == body.username).first():
+    if db.query(User).filter(User.username == username).first():
         raise HTTPException(400, detail="이미 사용 중인 닉네임입니다.")
 
     user = User(
-        username=body.username,
-        email=body.email,
+        username=username,
+        email=email,
         password_hash=hash_password(body.password),
-        is_admin=is_admin_email(body.email),
+        is_admin=is_admin_email(email),
         privacy_consented=body.privacy_consented,
     )
     db.add(user)
@@ -106,8 +118,9 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=TokenResponse)
 def login(body: LoginRequest, db: Session = Depends(get_db)):
-    require_school_email(body.email)
-    user = db.query(User).filter(User.email == body.email).first()
+    email = normalize_email(body.email)
+    require_school_email(email)
+    user = db.query(User).filter(User.email == email).first()
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(401, detail="이메일 또는 비밀번호가 올바르지 않습니다.")
     return TokenResponse(access_token=create_access_token({"sub": str(user.id)}))
@@ -115,25 +128,26 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
 
 @router.post("/password-reset/request")
 def request_password_reset(body: PasswordResetCodeRequest, db: Session = Depends(get_db)):
-    require_school_email(body.email)
-    user = db.query(User).filter(User.email == body.email).first()
+    email = normalize_email(body.email)
+    require_school_email(email)
+    user = db.query(User).filter(User.email == email).first()
     if not user:
         raise HTTPException(404, detail="가입된 이메일을 찾을 수 없습니다.")
 
     code = f"{random.randint(0, 999999):06d}"
     db.query(PasswordResetCode).filter(
-        PasswordResetCode.email == body.email,
+        PasswordResetCode.email == email,
         PasswordResetCode.used == False,
     ).update({"used": True})
     db.add(
         PasswordResetCode(
-            email=body.email,
+            email=email,
             code_hash=hash_password(code),
             expires_at=datetime.utcnow() + timedelta(minutes=10),
         )
     )
     try:
-        send_reset_email(body.email, code)
+        send_reset_email(email, code)
         db.commit()
     except HTTPException:
         db.rollback()
@@ -143,10 +157,11 @@ def request_password_reset(body: PasswordResetCodeRequest, db: Session = Depends
 
 @router.post("/password-reset/confirm")
 def confirm_password_reset(body: PasswordResetConfirmRequest, db: Session = Depends(get_db)):
-    require_school_email(body.email)
+    email = normalize_email(body.email)
+    require_school_email(email)
     reset_code = (
         db.query(PasswordResetCode)
-        .filter(PasswordResetCode.email == body.email, PasswordResetCode.used == False)
+        .filter(PasswordResetCode.email == email, PasswordResetCode.used == False)
         .order_by(PasswordResetCode.created_at.desc())
         .first()
     )
@@ -157,7 +172,7 @@ def confirm_password_reset(body: PasswordResetConfirmRequest, db: Session = Depe
     if len(body.new_password) < 8:
         raise HTTPException(400, detail="비밀번호는 8자 이상으로 설정해주세요.")
 
-    user = db.query(User).filter(User.email == body.email).first()
+    user = db.query(User).filter(User.email == email).first()
     if not user:
         raise HTTPException(404, detail="가입된 이메일을 찾을 수 없습니다.")
 

@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
 import { getCurrentLocalUser } from '../utils/localAuth';
-import { searchLocalWorkspace } from '../utils/localWorkspace';
 
 export default function SearchPage() {
   const [user] = useState(() => getCurrentLocalUser());
@@ -11,10 +10,12 @@ export default function SearchPage() {
   const [results, setResults] = useState([]);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const runSearch = async (e) => {
     e.preventDefault();
     const nextQuery = query.trim();
+    setError('');
     if (nextQuery.length < 2) {
       setResults([]);
       setSearched(true);
@@ -27,7 +28,8 @@ export default function SearchPage() {
       const response = await api.get('/api/search/', { params: { q: nextQuery } });
       setResults(response.data || []);
     } catch {
-      setResults(searchLocalWorkspace(nextQuery, user));
+      setResults([]);
+      setError('검색 결과를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
@@ -50,6 +52,7 @@ export default function SearchPage() {
         </section>
 
         <section className="search-result-panel" aria-label="검색 결과">
+          {error && <div className="inline-alert error">{error}</div>}
           {!searched && <p className="empty-state">두 글자 이상 입력하면 검색을 시작합니다.</p>}
           {searched && results.length === 0 && <p className="empty-state">검색 결과가 없습니다.</p>}
           {results.map((item) => (

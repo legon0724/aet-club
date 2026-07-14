@@ -3,18 +3,16 @@ import api from '../api/client';
 import Navbar from '../components/Navbar';
 import PrefetchLink from '../components/PrefetchLink';
 import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
-import {
-  getAllLocalPortfolios,
-  getFallbackNotices,
-  getLocalActivitySummary,
-  getLocalAssignments,
-  getLocalCalendarEvents,
-  getLocalGallery,
-  getLocalTeams,
-  markLocalNoticesRead,
-} from '../utils/localWorkspace';
 
 const BACKEND = 'https://web-production-00104.up.railway.app';
+const emptyActivity = {
+  score: 0,
+  submitted_count: 0,
+  draft_count: 0,
+  portfolio_sections: 0,
+  gallery_count: 0,
+  badges: [],
+};
 
 const resolveFileUrl = (value = '') => (value?.startsWith('/api') ? `${BACKEND}${value}` : value);
 
@@ -88,34 +86,27 @@ const BannerSlider = memo(({ banners, assignments, notices, teams, user }) => {
 
 export default function HomePage() {
   const [user, setUser] = useState(() => getCurrentLocalUser());
-  const [activity, setActivity] = useState(() => getLocalActivitySummary(getCurrentLocalUser()));
+  const [activity, setActivity] = useState(emptyActivity);
   const [banners, setBanners] = useState([]);
-  const [notices, setNotices] = useState(() => getFallbackNotices());
-  const [teams, setTeams] = useState(() => getLocalTeams());
-  const [assignments, setAssignments] = useState(() => getLocalAssignments());
-  const [gallery, setGallery] = useState(() => getLocalGallery());
-  const [events, setEvents] = useState(() => getLocalCalendarEvents());
-  const [portfolioCount] = useState(() => Object.keys(getAllLocalPortfolios()).length);
+  const [notices, setNotices] = useState([]);
+  const [teams, setTeams] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [gallery, setGallery] = useState([]);
+  const [events, setEvents] = useState([]);
+  const portfolioCount = activity.portfolio_sections > 0 ? 1 : 0;
 
   useEffect(() => {
-    const localUser = getCurrentLocalUser();
     api.get('/api/auth/me').then((r) => {
       const remembered = rememberCurrentUser(r.data);
       setUser(remembered);
     }).catch(() => {});
-    api.get('/api/activity/me').then((r) => setActivity(r.data)).catch(() => {
-      setActivity(getLocalActivitySummary(localUser));
-    });
+    api.get('/api/activity/me').then((r) => setActivity(r.data)).catch(() => setActivity(emptyActivity));
     api.get('/api/banners/').then((r) => setBanners(r.data.filter((b) => b.is_active))).catch(() => {});
-    api.get('/api/notices/').then((r) => setNotices(r.data)).catch(() => {
-      setNotices(getFallbackNotices());
-    });
-    api.get('/api/teams/').then((r) => setTeams(r.data)).catch(() => setTeams(getLocalTeams()));
-    api.get('/api/assignments/').then((r) => setAssignments(r.data || [])).catch(() => {
-      setAssignments(getLocalAssignments());
-    });
-    api.get('/api/gallery/').then((r) => setGallery(r.data || [])).catch(() => setGallery(getLocalGallery()));
-    api.get('/api/calendar/').then((r) => setEvents(r.data || [])).catch(() => setEvents(getLocalCalendarEvents()));
+    api.get('/api/notices/').then((r) => setNotices(r.data)).catch(() => setNotices([]));
+    api.get('/api/teams/').then((r) => setTeams(r.data)).catch(() => setTeams([]));
+    api.get('/api/assignments/').then((r) => setAssignments(r.data || [])).catch(() => setAssignments([]));
+    api.get('/api/gallery/').then((r) => setGallery(r.data || [])).catch(() => setGallery([]));
+    api.get('/api/calendar/').then((r) => setEvents(r.data || [])).catch(() => setEvents([]));
   }, []);
 
   const orderedNotices = useMemo(() => notices.slice(-6).reverse(), [notices]);
@@ -151,9 +142,8 @@ export default function HomePage() {
   useEffect(() => {
     if (!user || orderedNotices.length === 0) return;
 
-    markLocalNoticesRead(orderedNotices, user);
     orderedNotices.forEach((notice) => {
-      if (!notice.id || String(notice.id).startsWith('local-') || notice.id === 'welcome') return;
+      if (!notice.id) return;
       api.post(`/api/notices/${notice.id}/read`).catch(() => {});
     });
   }, [orderedNotices, user]);

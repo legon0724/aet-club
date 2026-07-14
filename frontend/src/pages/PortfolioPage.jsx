@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
 import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
-import { fileToDataUrl, getLocalPortfolio, getPublicLocalPortfolios, saveLocalPortfolio } from '../utils/localWorkspace';
 import {
   buildPortfolioShareUrl,
   buildQrImageUrl,
@@ -67,10 +66,9 @@ export default function PortfolioPage() {
     }
   }, []);
 
-  const loadPortfolio = useCallback((activeUser) => {
-    const resolvedUser = activeUser || getCurrentLocalUser();
+  const loadPortfolio = useCallback(() => {
     api.get('/api/portfolio/me').then((r) => hydratePortfolio(r.data)).catch(() => {
-      hydratePortfolio(getLocalPortfolio(resolvedUser));
+      setMsg('포트폴리오를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
     });
   }, [hydratePortfolio]);
 
@@ -79,7 +77,7 @@ export default function PortfolioPage() {
     api.get('/api/portfolio/public').then((r) => {
       setPublicPortfolios((r.data || []).filter((item) => !isOwnPortfolio(item, resolvedUser)));
     }).catch(() => {
-      setPublicPortfolios(getPublicLocalPortfolios(resolvedUser));
+      setPublicPortfolios([]);
     });
   }, []);
 
@@ -118,13 +116,8 @@ export default function PortfolioPage() {
       if (closeEditor) setEditing(false);
       loadPortfolio(activeUser);
       loadPublicPortfolios(activeUser);
-    } catch {
-      const imageData = profileImage ? await fileToDataUrl(profileImage) : portfolio.profile_image;
-      const saved = saveLocalPortfolio(activeUser, { ...nextForm, profile_image: imageData || '' });
-      hydratePortfolio(saved);
-      loadPublicPortfolios(activeUser);
-      setMsg(message);
-      if (closeEditor) setEditing(false);
+    } catch (error) {
+      setMsg(error?.response?.data?.detail || '서버에 저장하지 못했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setSaving(false);
     }

@@ -2,27 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
-import { getCurrentLocalUser, readLocalUsers, rememberCurrentUser, writeLocalUsers } from '../utils/localAuth';
-import {
-  addLocalAssignment,
-  addLocalCalendarEvent,
-  addLocalGalleryItem,
-  addLocalTeam,
-  deleteLocalAssignment,
-  deleteLocalCalendarEvent,
-  deleteLocalGalleryItem,
-  deleteLocalTeam,
-  fileToDataUrl,
-  getAllLocalPortfolios,
-  getFallbackNotices,
-  getLocalNoticeReadSummary,
-  getLocalAdminUsers,
-  getLocalAssignmentStatus,
-  getLocalAssignments,
-  getLocalCalendarEvents,
-  getLocalGallery,
-  getLocalTeams,
-} from '../utils/localWorkspace';
+import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
 
 const BACKEND = 'https://web-production-00104.up.railway.app';
 
@@ -100,7 +80,7 @@ export default function AdminPage() {
 
           {tab === 'users' && <UsersTab />}
           {tab === 'teams' && <TeamsTab />}
-          {tab === 'assignments' && <AssignmentsTab user={user} />}
+          {tab === 'assignments' && <AssignmentsTab />}
           {tab === 'gallery' && <GalleryTab />}
           {tab === 'calendar' && <CalendarTab />}
           {tab === 'notices' && <NoticesTab />}
@@ -119,23 +99,25 @@ function resolveFileUrl(url) {
   return url.startsWith('/api') ? `${BACKEND}${url}` : url;
 }
 
+function showSaveError(error) {
+  window.alert(error?.response?.data?.detail || '서버에 저장하지 못했습니다. 새로고침 후 다시 시도해주세요.');
+}
+
 function UsersTab() {
   const [users, setUsers] = useState([]);
   const [teams, setTeams] = useState([]);
 
   useEffect(() => {
-    api.get('/api/admin/users').then((r) => setUsers(r.data)).catch(() => setUsers(getLocalAdminUsers()));
-    api.get('/api/teams/').then((r) => setTeams(r.data)).catch(() => setTeams(getLocalTeams()));
+    api.get('/api/admin/users').then((r) => setUsers(r.data)).catch(() => setUsers([]));
+    api.get('/api/teams/').then((r) => setTeams(r.data)).catch(() => setTeams([]));
   }, []);
 
   const toggleAdmin = async (id, isAdmin) => {
     try {
       await api.patch(`/api/admin/users/${id}/admin`);
-    } catch {
-      const nextUsers = readLocalUsers().map((localUser) => (
-        localUser.email === id ? { ...localUser, is_admin: !isAdmin } : localUser
-      ));
-      writeLocalUsers(nextUsers);
+    } catch (error) {
+      showSaveError(error);
+      return;
     }
     setUsers((current) => current.map((item) => (item.id === id ? { ...item, is_admin: !isAdmin } : item)));
   };
@@ -143,11 +125,9 @@ function UsersTab() {
   const assignTeam = async (id, teamId) => {
     try {
       await api.patch(`/api/admin/users/${id}`, { team_id: teamId || null });
-    } catch {
-      const nextUsers = readLocalUsers().map((localUser) => (
-        localUser.email === id ? { ...localUser, team_id: teamId || null } : localUser
-      ));
-      writeLocalUsers(nextUsers);
+    } catch (error) {
+      showSaveError(error);
+      return;
     }
     setUsers((current) => current.map((item) => (item.id === id ? { ...item, team_id: teamId || null } : item)));
   };
@@ -156,8 +136,9 @@ function UsersTab() {
     if (!window.confirm('회원을 삭제할까요?')) return;
     try {
       await api.delete(`/api/admin/users/${id}`);
-    } catch {
-      writeLocalUsers(readLocalUsers().filter((localUser) => localUser.email !== id));
+    } catch (error) {
+      showSaveError(error);
+      return;
     }
     setUsers((current) => current.filter((item) => item.id !== id));
   };
@@ -191,7 +172,7 @@ function TeamsTab() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    api.get('/api/teams/').then((r) => setTeams(r.data)).catch(() => setTeams(getLocalTeams()));
+    api.get('/api/teams/').then((r) => setTeams(r.data)).catch(() => setTeams([]));
   }, []);
 
   const create = async () => {
@@ -200,8 +181,9 @@ function TeamsTab() {
       await api.post('/api/teams/', form);
       const r = await api.get('/api/teams/');
       setTeams(r.data);
-    } catch {
-      setTeams(addLocalTeam(form));
+    } catch (error) {
+      showSaveError(error);
+      return;
     }
     setForm({ name: '', description: '', color: '#2dd4bf' });
     setShow(false);
@@ -211,8 +193,8 @@ function TeamsTab() {
     if (!window.confirm('팀을 삭제할까요?')) return;
     try {
       await api.delete(`/api/teams/${id}`);
-    } catch {
-      setTeams(deleteLocalTeam(id));
+    } catch (error) {
+      showSaveError(error);
       return;
     }
     setTeams((current) => current.filter((item) => item.id !== id));
@@ -247,9 +229,9 @@ function TeamsTab() {
   );
 }
 
-function AssignmentsTab({ user }) {
-  const [teams, setTeams] = useState(() => getLocalTeams());
-  const [teamId, setTeamId] = useState(() => getLocalTeams()[0]?.id || '');
+function AssignmentsTab() {
+  const [teams, setTeams] = useState([]);
+  const [teamId, setTeamId] = useState('');
   const [assignments, setAssignments] = useState([]);
   const [statusRows, setStatusRows] = useState([]);
   const [form, setForm] = useState(emptyAssignment);
@@ -263,9 +245,8 @@ function AssignmentsTab({ user }) {
       setTeams(nextTeams);
       setTeamId((current) => nextTeams.find((team) => team.id === current)?.id || nextTeams[0]?.id || '');
     }).catch(() => {
-      const nextTeams = getLocalTeams();
-      setTeams(nextTeams);
-      setTeamId((current) => nextTeams.find((team) => team.id === current)?.id || nextTeams[0]?.id || '');
+      setTeams([]);
+      setTeamId('');
     });
   }, []);
 
@@ -279,10 +260,10 @@ function AssignmentsTab({ user }) {
       setAssignments(r.data || []);
       api.get(`/api/admin/assignment-status?team_id=${nextTeamId}`).then((status) => {
         setStatusRows(status.data || []);
-      }).catch(() => setStatusRows(getLocalAssignmentStatus(nextTeamId)));
+      }).catch(() => setStatusRows([]));
     } catch {
-      setAssignments(getLocalAssignments(nextTeamId));
-      setStatusRows(getLocalAssignmentStatus(nextTeamId));
+      setAssignments([]);
+      setStatusRows([]);
     }
   }
 
@@ -307,30 +288,26 @@ function AssignmentsTab({ user }) {
 
       await api.post('/api/assignments/', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       await loadAssignments(teamId);
-    } catch {
-      const fileData = file ? await fileToDataUrl(file) : '';
-      setAssignments(addLocalAssignment(teamId, user, payload, file?.name || '', fileData));
-      setStatusRows(getLocalAssignmentStatus(teamId));
-    } finally {
-      setForm(emptyAssignment);
-      setFile(null);
-      setShow(false);
-      if (fileRef.current) fileRef.current.value = '';
+    } catch (error) {
+      showSaveError(error);
+      return;
     }
+    setForm(emptyAssignment);
+    setFile(null);
+    setShow(false);
+    if (fileRef.current) fileRef.current.value = '';
   };
 
   const del = async (id) => {
     if (!window.confirm('과제를 삭제할까요?')) return;
     try {
-      if (!String(id).startsWith('local-assignment-')) {
-        await api.delete(`/api/assignments/${id}`);
-      }
-    } catch {
-      // 서버가 꺼져 있어도 로컬 과제는 바로 정리합니다.
+      await api.delete(`/api/assignments/${id}`);
+    } catch (error) {
+      showSaveError(error);
+      return;
     }
-    deleteLocalAssignment(id);
     setAssignments((current) => current.filter((item) => item.id !== id));
-    setStatusRows(getLocalAssignmentStatus(teamId));
+    await loadAssignments(teamId);
   };
 
   return (
@@ -453,7 +430,7 @@ function GalleryTab() {
   const fileRef = useRef(null);
 
   useEffect(() => {
-    api.get('/api/gallery/').then((r) => setItems(r.data || [])).catch(() => setItems(getLocalGallery()));
+    api.get('/api/gallery/').then((r) => setItems(r.data || [])).catch(() => setItems([]));
   }, []);
 
   const create = async () => {
@@ -469,27 +446,24 @@ function GalleryTab() {
       await api.post('/api/gallery/', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       const r = await api.get('/api/gallery/');
       setItems(r.data || []);
-    } catch {
-      const fileData = file ? await fileToDataUrl(file) : '';
-      setItems(addLocalGalleryItem(payload, file?.name || '', fileData));
-    } finally {
-      setForm(emptyGallery);
-      setFile(null);
-      setShow(false);
-      if (fileRef.current) fileRef.current.value = '';
+    } catch (error) {
+      showSaveError(error);
+      return;
     }
+    setForm(emptyGallery);
+    setFile(null);
+    setShow(false);
+    if (fileRef.current) fileRef.current.value = '';
   };
 
   const del = async (id) => {
     if (!window.confirm('갤러리 항목을 삭제할까요?')) return;
     try {
-      if (!String(id).startsWith('local-gallery-')) {
-        await api.delete(`/api/gallery/${id}`);
-      }
-    } catch {
-      // 로컬 미리보기에서는 화면에서만 제거합니다.
+      await api.delete(`/api/gallery/${id}`);
+    } catch (error) {
+      showSaveError(error);
+      return;
     }
-    deleteLocalGalleryItem(id);
     setItems((current) => current.filter((item) => item.id !== id));
   };
 
@@ -537,13 +511,13 @@ function GalleryTab() {
 
 function CalendarTab() {
   const [events, setEvents] = useState([]);
-  const [teams, setTeams] = useState(() => getLocalTeams());
+  const [teams, setTeams] = useState([]);
   const [form, setForm] = useState(emptyCalendar);
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    api.get('/api/calendar/').then((r) => setEvents(r.data || [])).catch(() => setEvents(getLocalCalendarEvents()));
-    api.get('/api/teams/').then((r) => setTeams(r.data)).catch(() => setTeams(getLocalTeams()));
+    api.get('/api/calendar/').then((r) => setEvents(r.data || [])).catch(() => setEvents([]));
+    api.get('/api/teams/').then((r) => setTeams(r.data)).catch(() => setTeams([]));
   }, []);
 
   const create = async () => {
@@ -553,24 +527,22 @@ function CalendarTab() {
       await api.post('/api/calendar/', payload);
       const r = await api.get('/api/calendar/');
       setEvents(r.data || []);
-    } catch {
-      setEvents(addLocalCalendarEvent(payload));
-    } finally {
-      setForm(emptyCalendar);
-      setShow(false);
+    } catch (error) {
+      showSaveError(error);
+      return;
     }
+    setForm(emptyCalendar);
+    setShow(false);
   };
 
   const del = async (id) => {
     if (!window.confirm('일정을 삭제할까요?')) return;
     try {
-      if (!String(id).startsWith('local-event-')) {
-        await api.delete(`/api/calendar/${id}`);
-      }
-    } catch {
-      // 로컬 미리보기에서는 화면에서만 제거합니다.
+      await api.delete(`/api/calendar/${id}`);
+    } catch (error) {
+      showSaveError(error);
+      return;
     }
-    deleteLocalCalendarEvent(id);
     setEvents((current) => current.filter((item) => item.id !== id));
   };
 
@@ -622,11 +594,11 @@ function NoticesTab() {
   const [form, setForm] = useState({ title: '', content: '', is_pinned: false, team_id: '' });
   const [show, setShow] = useState(false);
 
-  const loadReadSummary = useCallback((nextNotices) => {
+  const loadReadSummary = useCallback(() => {
     api.get('/api/notices/read-status').then((r) => {
       setReadSummary(r.data || []);
     }).catch(() => {
-      setReadSummary(getLocalNoticeReadSummary(nextNotices));
+      setReadSummary([]);
     });
   }, []);
 
@@ -635,15 +607,14 @@ function NoticesTab() {
       setNotices(r.data);
       loadReadSummary(r.data);
     }).catch(() => {
-      const fallback = getFallbackNotices();
-      setNotices(fallback);
-      setReadSummary(getLocalNoticeReadSummary(fallback));
+      setNotices([]);
+      setReadSummary([]);
     });
   }, [loadReadSummary]);
 
   useEffect(() => {
     loadNotices();
-    api.get('/api/teams/').then((r) => setTeams(r.data)).catch(() => setTeams(getLocalTeams()));
+    api.get('/api/teams/').then((r) => setTeams(r.data)).catch(() => setTeams([]));
   }, [loadNotices]);
 
   const create = async () => {
@@ -651,15 +622,9 @@ function NoticesTab() {
     try {
       await api.post('/api/notices/', { ...form, team_id: form.team_id || null });
       loadNotices();
-    } catch {
-      const next = [{
-        ...form,
-        id: `local-notice-${Date.now()}`,
-        team_id: form.team_id || null,
-        created_at: new Date().toISOString(),
-      }, ...notices];
-      setNotices(next);
-      setReadSummary(getLocalNoticeReadSummary(next));
+    } catch (error) {
+      showSaveError(error);
+      return;
     }
     setForm({ title: '', content: '', is_pinned: false, team_id: '' });
     setShow(false);
@@ -669,12 +634,13 @@ function NoticesTab() {
     if (!window.confirm('공지를 삭제할까요?')) return;
     try {
       await api.delete(`/api/notices/${id}`);
-    } catch {
-      // 로컬 미리보기에서는 화면에서만 제거합니다.
+    } catch (error) {
+      showSaveError(error);
+      return;
     }
     setNotices((current) => {
       const next = current.filter((item) => item.id !== id);
-      setReadSummary(getLocalNoticeReadSummary(next));
+      loadReadSummary();
       return next;
     });
   };
@@ -773,13 +739,9 @@ function BannersTab() {
       await api.post('/api/banners/', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       const r = await api.get('/api/banners/');
       setBanners(r.data);
-    } catch {
-      setBanners((current) => [{
-        ...form,
-        id: `local-banner-${Date.now()}`,
-        image_url: '',
-        is_active: true,
-      }, ...current]);
+    } catch (error) {
+      showSaveError(error);
+      return;
     }
     setForm({ title: '', link_url: '', order_num: 0 });
     setImageFile(null);
@@ -790,8 +752,9 @@ function BannersTab() {
     if (!window.confirm('배너를 삭제할까요?')) return;
     try {
       await api.delete(`/api/banners/${id}`);
-    } catch {
-      // 로컬 미리보기에서는 화면에서만 제거합니다.
+    } catch (error) {
+      showSaveError(error);
+      return;
     }
     setBanners((current) => current.filter((item) => item.id !== id));
   };
@@ -799,8 +762,9 @@ function BannersTab() {
   const toggle = async (id, isActive) => {
     try {
       await api.patch(`/api/banners/${id}`, { is_active: !isActive });
-    } catch {
-      // 로컬 미리보기에서는 상태만 전환합니다.
+    } catch (error) {
+      showSaveError(error);
+      return;
     }
     setBanners((current) => current.map((item) => (item.id === id ? { ...item, is_active: !isActive } : item)));
   };
@@ -853,11 +817,8 @@ function PortfoliosTab() {
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
-    api.get('/api/admin/users').then((r) => setUsers(r.data)).catch(() => setUsers(getLocalAdminUsers()));
-    api.get('/api/admin/portfolios').then((r) => setPortfolios(r.data)).catch(() => {
-      const local = getAllLocalPortfolios();
-      setPortfolios(Object.entries(local).map(([email, portfolio]) => ({ ...portfolio, user_id: email, email })));
-    });
+    api.get('/api/admin/users').then((r) => setUsers(r.data)).catch(() => setUsers([]));
+    api.get('/api/admin/portfolios').then((r) => setPortfolios(r.data)).catch(() => setPortfolios([]));
   }, []);
 
   const findPortfolio = (item) => portfolios.find((entry) => (
@@ -945,18 +906,6 @@ function BackupTab() {
   const [message, setMessage] = useState('');
   const fileRef = useRef(null);
 
-  const buildLocalBackup = () => {
-    const local_storage = {};
-    Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith('nc-')) local_storage[key] = localStorage.getItem(key);
-    });
-    return {
-      version: 1,
-      exported_at: new Date().toISOString(),
-      local_storage,
-    };
-  };
-
   const downloadJson = (data) => {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -973,9 +922,8 @@ function BackupTab() {
       const response = await api.get('/api/admin/backup');
       downloadJson(response.data);
       setMessage('서버 백업 파일을 만들었습니다.');
-    } catch {
-      downloadJson(buildLocalBackup());
-      setMessage('로컬 백업 파일을 만들었습니다.');
+    } catch (error) {
+      setMessage(error?.response?.data?.detail || '서버 백업 파일을 만들지 못했습니다. 잠시 후 다시 시도해주세요.');
     }
   };
 
@@ -993,11 +941,9 @@ function BackupTab() {
     try {
       await api.post('/api/admin/backup', data);
       setMessage('서버 데이터 복원이 완료되었습니다.');
-    } catch {
-      Object.entries(data.local_storage || {}).forEach(([key, value]) => {
-        localStorage.setItem(key, value);
-      });
-      setMessage('로컬 데이터 복원이 완료되었습니다.');
+    } catch (error) {
+      setMessage(error?.response?.data?.detail || '서버에 백업을 복원하지 못했습니다.');
+      return;
     } finally {
       setFile(null);
       if (fileRef.current) fileRef.current.value = '';

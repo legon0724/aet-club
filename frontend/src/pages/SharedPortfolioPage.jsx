@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import api from '../api/client';
 import { getCurrentLocalUser } from '../utils/localAuth';
-import { getLocalPortfolioById } from '../utils/localWorkspace';
 import { portfolioLinks, portfolioSections, resolvePortfolioFileUrl } from '../utils/portfolioDisplay';
 
 export default function SharedPortfolioPage() {
@@ -18,11 +17,6 @@ export default function SharedPortfolioPage() {
     api.get(`/api/portfolio/${encodeURIComponent(userId)}`).then((response) => {
       if (!ignore) setView({ userId, status: 'ready', portfolio: response.data });
     }).catch(() => {
-      const localPortfolio = getLocalPortfolioById(userId);
-      if (localPortfolio?.is_public || activeUser?.is_admin || activeUser?.email === localPortfolio?.email) {
-        if (!ignore) setView({ userId, status: localPortfolio ? 'ready' : 'missing', portfolio: localPortfolio });
-        return;
-      }
       if (!ignore) setView({ userId, status: 'private', portfolio: null });
     });
 

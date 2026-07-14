@@ -2,28 +2,22 @@ import { useEffect, useRef, useState } from 'react';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
 import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
-import {
-  addLocalMessage,
-  addLocalSubmission,
-  deleteLocalSubmission,
-  getLocalAssignmentWork,
-  getLocalAssignments,
-  getLocalMessages,
-  getLocalSubmissions,
-  getLocalTeams,
-  saveLocalAssignmentWork,
-  submitLocalAssignmentWork,
-} from '../utils/localWorkspace';
 
 const BACKEND = 'https://web-production-00104.up.railway.app';
 const socketUrl = `${BACKEND.replace('https://', 'wss://')}/api/chat/ws`;
 
 const blankSubmission = { title: '', content: '', link_url: '', work_content: '' };
+const emptyDraft = (assignment) => ({
+  title: assignment?.title || '',
+  content: '',
+  link_url: '',
+  work_content: '',
+});
 
 export default function TeamPage() {
   const [user, setUser] = useState(() => getCurrentLocalUser());
-  const [teams, setTeams] = useState(() => getLocalTeams());
-  const [selectedTeam, setSelectedTeam] = useState(() => getLocalTeams()[0] || null);
+  const [teams, setTeams] = useState([]);
+  const [selectedTeam, setSelectedTeam] = useState(null);
   const [tab, setTab] = useState('assignments');
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -35,6 +29,7 @@ export default function TeamPage() {
   const [showSubForm, setShowSubForm] = useState(false);
   const [draftStatus, setDraftStatus] = useState('ready');
   const [draftSavedAt, setDraftSavedAt] = useState(null);
+  const [loadError, setLoadError] = useState('');
   const wsRef = useRef(null);
   const bottomRef = useRef(null);
   const fileRef = useRef(null);
@@ -47,9 +42,9 @@ export default function TeamPage() {
       setTeams(nextTeams);
       setSelectedTeam((current) => nextTeams.find((team) => team.id === current?.id) || nextTeams[0] || null);
     }).catch(() => {
-      const nextTeams = getLocalTeams();
-      setTeams(nextTeams);
-      setSelectedTeam((current) => nextTeams.find((team) => team.id === current?.id) || nextTeams[0] || null);
+      setTeams([]);
+      setSelectedTeam(null);
+      setLoadError('팀 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
     });
   }, []);
 
@@ -119,7 +114,7 @@ export default function TeamPage() {
   function connectWs(teamId) {
     if (wsRef.current) wsRef.current.close();
     wsRef.current = null;
-    setMessages(getLocalMessages(teamId));
+    setMessages([]);
 
     const token = localStorage.getItem('token');
     if (!token || token.startsWith('local:')) return;
@@ -132,7 +127,6 @@ export default function TeamPage() {
       };
       ws.onerror = () => {
         wsRef.current = null;
-        setMessages(getLocalMessages(teamId));
       };
       wsRef.current = ws;
     } catch {
@@ -146,15 +140,16 @@ export default function TeamPage() {
       setAssignments(next);
       setSelectedAssignment((current) => next.find((item) => item.id === current?.id) || next[0] || null);
     }).catch(() => {
-      const next = getLocalAssignments(teamId);
-      setAssignments(next);
-      setSelectedAssignment((current) => next.find((item) => item.id === current?.id) || next[0] || null);
+      setAssignments([]);
+      setSelectedAssignment(null);
+      setLoadError('과제를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
     });
   }
 
-  function loadSubmissions(teamId, activeUser) {
+  function loadSubmissions(teamId) {
     api.get(`/api/submissions/?team_id=${teamId}`).then((r) => setSubmissions(r.data)).catch(() => {
-      setSubmissions(getLocalSubmissions(teamId, activeUser));
+      setSubmissions([]);
+      setLoadError('제출 현황을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
     });
   }
 
@@ -173,15 +168,9 @@ export default function TeamPage() {
       setDraftSavedAt(work.updated_at || null);
       setDraftStatus(work.status === 'submitted' ? 'submitted' : 'saved');
     } catch {
-      const work = getLocalAssignmentWork(assignment.id, user);
-      setNewSub({
-        title: work?.title || assignment.title,
-        content: work?.content || '',
-        link_url: work?.link_url || '',
-        work_content: work?.work_content || '',
-      });
-      setDraftSavedAt(work?.updated_at || null);
-      setDraftStatus(work?.status === 'submitted' ? 'submitted' : 'ready');
+      setNewSub(emptyDraft(assignment));
+      setDraftSavedAt(null);
+      setDraftStatus('error');
     }
   }
 
@@ -193,10 +182,7 @@ export default function TeamPage() {
       setDraftStatus(r.data?.status === 'submitted' ? 'submitted' : 'saved');
       loadSubmissions(selectedTeam.id, user);
     } catch {
-      const saved = saveLocalAssignmentWork(selectedAssignment, user, nextData, 'draft');
-      setDraftSavedAt(saved.updated_at);
-      setDraftStatus('saved');
-      setSubmissions(getLocalSubmissions(selectedTeam.id, user));
+      setDraftStatus('error');
     }
   };
 
@@ -228,10 +214,10 @@ export default function TeamPage() {
 
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ content }));
+      setInput('');
     } else {
-      setMessages(addLocalMessage(selectedTeam.id, user, content));
+      window.alert('채팅 서버에 연결되지 않았습니다. 새로고침 후 다시 시도해주세요.');
     }
-    setInput('');
   };
 
   const handleKey = (e) => {
@@ -277,29 +263,23 @@ export default function TeamPage() {
       setDraftStatus('submitted');
       loadSubmissions(selectedTeam.id, user);
     } catch {
-      if (selectedAssignment) {
-        setSubmissions(submitLocalAssignmentWork(selectedTeam.id, user, selectedAssignment, payload, subFile?.name || ''));
-        setDraftStatus('submitted');
-      } else {
-        setSubmissions(addLocalSubmission(selectedTeam.id, user, payload, subFile?.name || ''));
-      }
-    } finally {
-      setNewSub(blankSubmission);
-      setSubFile(null);
-      setShowSubForm(false);
+      setDraftStatus('error');
+      window.alert('제출물을 서버에 저장하지 못했습니다. 다시 시도해주세요.');
+      return;
     }
+    setNewSub(blankSubmission);
+    setSubFile(null);
+    setShowSubForm(false);
   };
 
   const deleteSub = async (id) => {
     if (!window.confirm('제출물을 삭제할까요?')) return;
     try {
-      if (!String(id).startsWith('local-sub-')) {
-        await api.delete(`/api/submissions/${id}`);
-      }
+      await api.delete(`/api/submissions/${id}`);
     } catch {
-      // 서버가 잠시 꺼져 있어도 현재 화면에서는 삭제 반응을 유지합니다.
+      window.alert('제출물을 서버에서 삭제하지 못했습니다. 다시 시도해주세요.');
+      return;
     }
-    deleteLocalSubmission(id);
     setSubmissions((current) => current.filter((item) => item.id !== id));
   };
 
@@ -316,6 +296,7 @@ export default function TeamPage() {
     if (draftStatus === 'loading') return '불러오는 중';
     if (draftStatus === 'saving') return '자동저장 중';
     if (draftStatus === 'submitted') return '제출됨';
+    if (draftStatus === 'error') return '저장 실패';
     if (draftSavedAt) return `자동저장 ${formatTime(draftSavedAt)}`;
     return '자동저장 준비';
   };
@@ -352,6 +333,7 @@ export default function TeamPage() {
         </div>
 
         <section className="workspace-card team-board">
+          {loadError && <div className="inline-alert error">{loadError}</div>}
           <div className="workspace-tabs">
             {[
               ['assignments', '팀 과제'],

@@ -8,14 +8,8 @@ import {
   LOCAL_RESET_VERSION_KEY,
   LOCAL_USERS_KEY,
   clearLocalSession,
-  encodePassword,
-  isAdminEmail,
-  isApiUnavailable,
   isSchoolEmail,
-  readLocalUsers,
   rememberCurrentUser,
-  setLocalSession,
-  writeLocalUsers,
 } from '../utils/localAuth';
 
 const terms = [
@@ -89,7 +83,12 @@ export default function LoginPage() {
   }, []);
 
   useEffect(() => {
-    if (localStorage.getItem('token')) navigate('/');
+    const token = localStorage.getItem('token');
+    if (token?.startsWith('local:')) {
+      clearLocalSession();
+      return;
+    }
+    if (token) navigate('/');
   }, [navigate]);
 
   const resetMessage = () => {
@@ -122,8 +121,10 @@ export default function LoginPage() {
 
     setLoading(true);
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     try {
-      const res = await api.post('/api/auth/login', { email, password });
+      const res = await api.post('/api/auth/login', { email: normalizedEmail, password });
       localStorage.setItem('token', res.data.access_token);
       try {
         const me = await api.get('/api/auth/me');
@@ -133,17 +134,7 @@ export default function LoginPage() {
       }
       navigate('/');
     } catch (err) {
-      if (isApiUnavailable(err)) {
-        const localUser = readLocalUsers().find((user) => user.email === email.trim().toLowerCase());
-        if (localUser && localUser.password === encodePassword(password)) {
-          setLocalSession(localUser);
-          navigate('/');
-          return;
-        }
-        setError('가입한 학교 이메일과 비밀번호를 다시 확인해주세요.');
-        return;
-      }
-      setError(err.response?.data?.detail || '이메일과 비밀번호를 다시 확인해주세요.');
+      setError(err.response?.data?.detail || '서버 연결에 실패했습니다. 잠시 후 다시 로그인해주세요.');
     } finally {
       setLoading(false);
     }
@@ -165,45 +156,20 @@ export default function LoginPage() {
 
     setLoading(true);
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     try {
       await api.post('/api/auth/register', {
-        email,
+        email: normalizedEmail,
         password,
-        username,
+        username: username.trim(),
         privacy_consented: agreements.privacy,
       });
       setSuccess('가입이 완료되었습니다. 이제 로그인해주세요.');
       setMode('login');
       setPassword('');
     } catch (err) {
-      if (isApiUnavailable(err)) {
-        const normalizedEmail = email.trim().toLowerCase();
-        const users = readLocalUsers();
-        if (users.some((user) => user.email === normalizedEmail)) {
-          setError('이미 가입된 학교 이메일입니다.');
-          return;
-        }
-        if (users.some((user) => user.username === username.trim())) {
-          setError('이미 사용 중인 닉네임입니다.');
-          return;
-        }
-        writeLocalUsers([
-          ...users,
-          {
-            email: normalizedEmail,
-            username: username.trim(),
-            password: encodePassword(password),
-            is_admin: isAdminEmail(normalizedEmail),
-            team_id: 'creative',
-            created_at: new Date().toISOString(),
-          },
-        ]);
-        setSuccess('가입이 완료되었습니다. 이제 로그인해주세요.');
-        setMode('login');
-        setPassword('');
-        return;
-      }
-      setError(err.response?.data?.detail || '가입 정보를 다시 확인해주세요.');
+      setError(err.response?.data?.detail || '서버에 가입 정보를 저장하지 못했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
@@ -220,32 +186,14 @@ export default function LoginPage() {
 
     setLoading(true);
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     try {
-      await api.post('/api/auth/password-reset/request', { email });
+      await api.post('/api/auth/password-reset/request', { email: normalizedEmail });
       setSuccess('인증번호를 이메일로 보냈습니다. 메일함을 확인해주세요.');
       setResetStep('code');
     } catch (err) {
-      if (isApiUnavailable(err)) {
-        const normalizedEmail = email.trim().toLowerCase();
-        const localUser = readLocalUsers().find((user) => user.email === normalizedEmail);
-        if (!localUser) {
-          setError('가입된 학교 이메일을 찾을 수 없습니다.');
-          return;
-        }
-        const fallbackCode = String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
-        localStorage.setItem(
-          LOCAL_RESET_KEY,
-          JSON.stringify({
-            email: normalizedEmail,
-            code: fallbackCode,
-            expiresAt: Date.now() + 10 * 60 * 1000,
-          }),
-        );
-        setSuccess(`메일 서버 연결 전 임시 인증번호: ${fallbackCode}`);
-        setResetStep('code');
-        return;
-      }
-      setError(err.response?.data?.detail || '이메일 발송에 실패했습니다.');
+      setError(err.response?.data?.detail || '이메일 발송에 실패했습니다. 관리자에게 SMTP 설정을 확인해달라고 알려주세요.');
     } finally {
       setLoading(false);
     }
@@ -267,9 +215,11 @@ export default function LoginPage() {
 
     setLoading(true);
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     try {
       await api.post('/api/auth/password-reset/confirm', {
-        email,
+        email: normalizedEmail,
         code,
         new_password: newPassword,
       });
@@ -280,27 +230,6 @@ export default function LoginPage() {
       setCode('');
       setNewPassword('');
     } catch (err) {
-      if (isApiUnavailable(err)) {
-        const normalizedEmail = email.trim().toLowerCase();
-        const reset = JSON.parse(localStorage.getItem(LOCAL_RESET_KEY) || 'null');
-        if (!reset || reset.email !== normalizedEmail || reset.code !== code || reset.expiresAt < Date.now()) {
-          setError('인증번호가 만료되었거나 올바르지 않습니다.');
-          return;
-        }
-        const users = readLocalUsers();
-        const nextUsers = users.map((user) => (
-          user.email === normalizedEmail ? { ...user, password: encodePassword(newPassword) } : user
-        ));
-        writeLocalUsers(nextUsers);
-        localStorage.removeItem(LOCAL_RESET_KEY);
-        setSuccess('비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.');
-        setMode('login');
-        setResetStep('email');
-        setPassword('');
-        setCode('');
-        setNewPassword('');
-        return;
-      }
       setError(err.response?.data?.detail || '인증번호와 새 비밀번호를 다시 확인해주세요.');
     } finally {
       setLoading(false);

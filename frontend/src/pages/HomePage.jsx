@@ -164,25 +164,56 @@ export default function HomePage() {
           ))}
         </section>
 
-        <section className="home-activity-score" aria-label="활동 점수와 배지">
-          <div className="activity-score-main">
-            <span>Activity score</span>
-            <strong>{activity.score}</strong>
-            <p>과제 제출, 포트폴리오 정리, 프로젝트와 발표 기록을 기준으로 계산합니다.</p>
-          </div>
-          <div className="activity-score-metrics">
-            <small>제출 {activity.submitted_count}</small>
-            <small>작성 중 {activity.draft_count}</small>
-            <small>포트폴리오 {activity.portfolio_sections}/5</small>
-            <small>자료 {activity.gallery_count}</small>
-          </div>
-          <div className="activity-badge-row">
-            {(activity.badges || []).map((badge) => (
-              <span key={badge.key} className={badge.earned ? 'earned' : ''} title={badge.description}>
-                {badge.label}
-              </span>
-            ))}
-          </div>
+        <section className="home-work-grid" aria-label="공지와 과제">
+          <section className="notice-panel">
+            <div className="section-head">
+              <p>Notice</p>
+              <h2>공지사항</h2>
+            </div>
+
+            {orderedNotices.length > 0 ? (
+              <div className="notice-list">
+                {orderedNotices.map((notice) => (
+                  <article key={notice.id} className="notice-item">
+                    <div>
+                      {notice.is_pinned && <span className="pin-label">고정</span>}
+                      <h3>{notice.title}</h3>
+                    </div>
+                    <time>{new Date(notice.created_at).toLocaleDateString()}</time>
+                    {notice.content && <p>{notice.content}</p>}
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="empty-state">아직 등록된 공지사항이 없습니다.</p>
+            )}
+          </section>
+
+          <section className="deadline-panel">
+            <div className="section-head">
+              <p>Assignments</p>
+              <h2>팀 과제</h2>
+            </div>
+            {recentAssignments.length > 0 ? (
+              <div className="deadline-list">
+                {recentAssignments.map((assignment) => (
+                  <PrefetchLink key={assignment.id} to="/team" className="deadline-item">
+                    <div>
+                      <strong>{assignment.title}</strong>
+                      <p>{assignment.content || '과제 화면에서 파일과 제출 상태를 확인하세요.'}</p>
+                    </div>
+                    <span>{assignment.due_at ? new Date(assignment.due_at).toLocaleDateString() : '열림'}</span>
+                  </PrefetchLink>
+                ))}
+              </div>
+            ) : (
+              <div className="deadline-empty">
+                <strong>등록된 과제가 없습니다.</strong>
+                <p>관리자가 과제를 올리면 이 영역에 바로 표시됩니다.</p>
+                <PrefetchLink to="/team">과제 보기</PrefetchLink>
+              </div>
+            )}
+          </section>
         </section>
 
         <section className="home-control-grid" aria-label="오늘 작업">
@@ -279,56 +310,25 @@ export default function HomePage() {
           )}
         </section>
 
-        <section className="home-work-grid" aria-label="공지와 과제">
-          <section className="notice-panel">
-            <div className="section-head">
-              <p>Notice</p>
-              <h2>공지사항</h2>
-            </div>
-
-            {orderedNotices.length > 0 ? (
-              <div className="notice-list">
-                {orderedNotices.map((notice) => (
-                  <article key={notice.id} className="notice-item">
-                    <div>
-                      {notice.is_pinned && <span className="pin-label">고정</span>}
-                      <h3>{notice.title}</h3>
-                    </div>
-                    <time>{new Date(notice.created_at).toLocaleDateString()}</time>
-                    {notice.content && <p>{notice.content}</p>}
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <p className="empty-state">아직 등록된 공지사항이 없습니다.</p>
-            )}
-          </section>
-
-          <section className="deadline-panel">
-            <div className="section-head">
-              <p>Assignments</p>
-              <h2>팀 과제</h2>
-            </div>
-            {recentAssignments.length > 0 ? (
-              <div className="deadline-list">
-                {recentAssignments.map((assignment) => (
-                  <PrefetchLink key={assignment.id} to="/team" className="deadline-item">
-                    <div>
-                      <strong>{assignment.title}</strong>
-                      <p>{assignment.content || '과제 화면에서 파일과 제출 상태를 확인하세요.'}</p>
-                    </div>
-                    <span>{assignment.due_at ? new Date(assignment.due_at).toLocaleDateString() : '열림'}</span>
-                  </PrefetchLink>
-                ))}
-              </div>
-            ) : (
-              <div className="deadline-empty">
-                <strong>등록된 과제가 없습니다.</strong>
-                <p>관리자가 과제를 올리면 이 영역에 바로 표시됩니다.</p>
-                <PrefetchLink to="/team">과제 보기</PrefetchLink>
-              </div>
-            )}
-          </section>
+        <section className="home-activity-score" aria-label="활동 점수와 배지">
+          <div className="activity-score-main">
+            <span>Activity score</span>
+            <strong>{activity.score}</strong>
+            <p>과제 제출, 포트폴리오 정리, 프로젝트와 발표 기록을 기준으로 계산합니다.</p>
+          </div>
+          <div className="activity-score-metrics">
+            <small>제출 {activity.submitted_count}</small>
+            <small>작성 중 {activity.draft_count}</small>
+            <small>포트폴리오 {activity.portfolio_sections}/5</small>
+            <small>자료 {activity.gallery_count}</small>
+          </div>
+          <div className="activity-badge-row">
+            {(activity.badges || []).map((badge) => (
+              <span key={badge.key} className={badge.earned ? 'earned' : ''} title={badge.description}>
+                {badge.label}
+              </span>
+            ))}
+          </div>
         </section>
       </main>
     </div>

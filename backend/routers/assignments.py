@@ -6,12 +6,12 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
-from sqlalchemy import inspect, or_, text
+from sqlalchemy import inspect, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.core.deps import get_admin_user, get_current_user
-from backend.models.database import Assignment, User, get_db
+from backend.models.database import Assignment, Team, User, get_db
 from backend.services.google_workspace import WORKSPACE_MIME_TYPES
 
 router = APIRouter()
@@ -77,12 +77,16 @@ def get_workspace_status(_: User = Depends(get_current_user)):
 def get_assignments(
     team_id: Optional[str] = None,
     db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     ensure_assignment_columns(db)
     query = db.query(Assignment)
     if team_id:
-        query = query.filter(or_(Assignment.team_id == team_id, Assignment.team_id.is_(None)))
+        if not current_user.is_admin and str(current_user.team_id or "") != team_id:
+            raise HTTPException(403, detail="소속 팀의 과제만 확인할 수 있습니다.")
+        query = query.filter(Assignment.team_id == team_id)
+    else:
+        query = query.filter(Assignment.team_id.is_(None))
     assignments = query.order_by(Assignment.created_at.desc()).all()
     creator_ids = {str(item.created_by) for item in assignments if item.created_by}
     creators = {str(user.id): user for user in db.query(User).filter(User.id.in_(creator_ids)).all()} if creator_ids else {}
@@ -105,6 +109,8 @@ async def create_assignment(
     current_user: User = Depends(get_admin_user),
 ):
     ensure_assignment_columns(db)
+    if team_id and not db.query(Team).filter(Team.id == team_id).first():
+        raise HTTPException(404, detail="선택한 팀을 찾을 수 없습니다.")
     allowed_modes = {"site", "student_copy", "material"}
     if copy_mode not in allowed_modes:
         raise HTTPException(400, detail="지원하지 않는 과제 방식입니다.")

@@ -49,6 +49,22 @@ function studentCopyUrl(value) {
   }
 }
 
+function googleOriginalUrl(value) {
+  if (!value) return '';
+  try {
+    const url = new URL(value.trim());
+    if (!url.hostname.includes('docs.google.com')) return value;
+    const resourceKey = url.searchParams.get('resourcekey');
+    url.search = '';
+    url.hash = '';
+    url.pathname = url.pathname.replace(/\/(copy|view|preview).*$/u, '/edit');
+    if (resourceKey) url.searchParams.set('resourcekey', resourceKey);
+    return url.toString();
+  } catch {
+    return value;
+  }
+}
+
 function AssignmentMark() {
   return (
     <span className="classroom-mark" aria-hidden="true">
@@ -339,7 +355,7 @@ export default function AssignmentsPage() {
               <label>학생 작업<select value={newAssignment.workspace_type} onChange={(event) => setNewAssignment((current) => ({ ...current, workspace_type: event.target.value }))}><option value="none">NC에서 바로 제출</option><option value="docs">Google Docs 사본 제출</option><option value="sheets">Google Sheets 사본 제출</option><option value="slides">Google Slides 사본 제출</option></select></label>
               <label className="wide">과제 설명<textarea value={newAssignment.content} onChange={(event) => setNewAssignment((current) => ({ ...current, content: event.target.value }))} placeholder="학생에게 보여줄 안내를 입력하세요" rows={4} /></label>
               <label className="wide">{newAssignment.workspace_type === 'none' ? '참고 링크' : `${workspaceLabel(newAssignment.workspace_type)} 원본 링크`}<input type="url" required={newAssignment.workspace_type !== 'none'} value={newAssignment.resource_url} onChange={(event) => setNewAssignment((current) => ({ ...current, resource_url: event.target.value }))} placeholder={newAssignment.workspace_type === 'none' ? '수업 자료 링크 (선택사항)' : '학생이 사본으로 복사할 원본 링크'} /></label>
-              {newAssignment.workspace_type !== 'none' && <p className="classroom-google-note wide">학생에게 ‘사본 만들기’ 버튼이 표시됩니다. 등록 전에 원본 문서를 학교 계정 또는 링크가 있는 사용자가 열 수 있도록 공유해 주세요. 원본 권한이 없으면 사본 만들기가 열리지 않습니다.</p>}
+              {newAssignment.workspace_type !== 'none' && <p className="classroom-google-note wide">등록 전에 원본 문서를 링크가 있는 사용자가 열 수 있게 공유하고, 공유 설정에서 ‘뷰어 및 댓글 작성자가 다운로드, 인쇄, 복사 가능’을 켜 주세요. 이 권한이 꺼져 있으면 사본 만들기가 열리지 않습니다.</p>}
               <div className="classroom-create-file wide">
                 <button type="button" onClick={() => assignmentFileRef.current?.click()}><span>↑</span>{assignmentFile ? assignmentFile.name : '첨부파일 추가'}</button>
                 {assignmentFile && <button className="remove" type="button" onClick={() => { setAssignmentFile(null); if (assignmentFileRef.current) assignmentFileRef.current.value = ''; }}>삭제</button>}
@@ -413,9 +429,12 @@ export default function AssignmentsPage() {
                 <p className="classroom-description">{selected.content || '과제 안내가 없습니다.'}</p>
                 <div className="classroom-materials">
                   {selected.resource_url && (
-                    <a href={selected.copy_mode === 'student_copy' ? studentCopyUrl(selected.resource_url) : selected.resource_url} target="_blank" rel="noreferrer">
-                      <span>↗</span><div><strong>{selected.copy_mode === 'student_copy' ? `${workspaceLabel(selected.workspace_type) || '개인'} 사본 만들기` : '참고 링크 열기'}</strong><small>{selected.copy_mode === 'student_copy' ? '사본을 만든 뒤 공유 링크를 제출하세요.' : modeLabel(selected.copy_mode)}</small></div>
-                    </a>
+                    <>
+                      <a href={selected.copy_mode === 'student_copy' ? studentCopyUrl(selected.resource_url) : selected.resource_url} target="_blank" rel="noreferrer">
+                        <span>↗</span><div><strong>{selected.copy_mode === 'student_copy' ? `${workspaceLabel(selected.workspace_type) || '개인'} 사본 만들기` : '참고 링크 열기'}</strong><small>{selected.copy_mode === 'student_copy' ? '사본을 만든 뒤 공유 링크를 제출하세요.' : modeLabel(selected.copy_mode)}</small></div>
+                      </a>
+                      {selected.copy_mode === 'student_copy' && <a className="classroom-copy-fallback" href={googleOriginalUrl(selected.resource_url)} target="_blank" rel="noreferrer"><span>↗</span><div><strong>원본 문서 열기</strong><small>사본 오류 시 파일 → 사본 만들기</small></div></a>}
+                    </>
                   )}
                   {selected.file_url && (
                     <a href={resolveFileUrl(selected.file_url)} target="_blank" rel="noreferrer" download={selected.file_name || undefined}>
@@ -451,10 +470,13 @@ export default function AssignmentsPage() {
                 {workError && <div className="inline-alert error">{workError}</div>}
                 <div className="classroom-work-fields">
                   {selected.workspace_type !== 'none' && selected.resource_url && (
-                    <a className={`classroom-google-work ${selected.workspace_type}`} href={studentCopyUrl(selected.resource_url)} target="_blank" rel="noreferrer">
-                      <span>{selected.workspace_type === 'docs' ? '▤' : selected.workspace_type === 'sheets' ? '▦' : '▣'}</span>
-                      <div><strong>{workspaceLabel(selected.workspace_type)} 사본 만들기</strong><small>Google에서 사본을 만든 뒤 아래에 공유 링크를 붙여넣으세요.</small></div>
-                    </a>
+                    <div className="classroom-google-actions">
+                      <a className={`classroom-google-work ${selected.workspace_type}`} href={studentCopyUrl(selected.resource_url)} target="_blank" rel="noreferrer">
+                        <span>{selected.workspace_type === 'docs' ? '▤' : selected.workspace_type === 'sheets' ? '▦' : '▣'}</span>
+                        <div><strong>{workspaceLabel(selected.workspace_type)} 사본 만들기</strong><small>사본을 만든 뒤 아래에 공유 링크를 붙여넣으세요.</small></div>
+                      </a>
+                      <a className="classroom-google-fallback" href={googleOriginalUrl(selected.resource_url)} target="_blank" rel="noreferrer">사본 화면이 안 열리면 원본 열기 → 파일 → 사본 만들기</a>
+                    </div>
                   )}
                   <button className="classroom-add-file" type="button" onClick={() => fileRef.current?.click()} disabled={currentSubmission?.status === 'submitted'}>
                     <span>＋</span>{file ? file.name : '파일 추가 또는 만들기'}

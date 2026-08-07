@@ -1,10 +1,20 @@
-.app-shell.workspace-shell {
-  animation: route-surface-in 260ms cubic-bezier(.22, .8, .24, 1) both;
+.app-shell {
+  animation: route-surface-in 190ms cubic-bezier(.22, .8, .24, 1) both;
 }
 
 .workspace-page,
-.classroom-page {
+.classroom-page,
+.app-window,
+.ipad-home {
   will-change: opacity, transform;
+}
+
+::view-transition-old(root) {
+  animation: route-view-out 110ms ease both;
+}
+
+::view-transition-new(root) {
+  animation: route-view-in 190ms cubic-bezier(.22, .8, .24, 1) both;
 }
 
 .admin-list-item,
@@ -37,13 +47,22 @@
 @keyframes route-surface-in {
   from {
     opacity: 0.01;
-    transform: translateY(8px) scale(.995);
+    transform: translateY(5px);
   }
 
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes route-view-out {
+  to { opacity: 0.72; }
+}
+
+@keyframes route-view-in {
+  from { opacity: 0.55; }
+  to { opacity: 1; }
 }
 
 @keyframes route-loader-pulse {
@@ -60,7 +79,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .app-shell.workspace-shell,
+  .app-shell,
+  ::view-transition-old(root),
+  ::view-transition-new(root),
   .route-loader::before {
     animation: none;
   }

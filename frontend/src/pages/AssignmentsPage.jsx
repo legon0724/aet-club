@@ -104,6 +104,12 @@ export default function AssignmentsPage() {
     }
   }, []);
 
+  const prefetchTeam = useCallback((nextTeamId = '') => {
+    const query = nextTeamId ? `?team_id=${nextTeamId}` : '';
+    api.get(`/api/assignments/${query}`).catch(() => {});
+    api.get(`/api/submissions/${query}`).catch(() => {});
+  }, []);
+
   useEffect(() => {
     api.get('/api/auth/me').then((response) => setUser(rememberCurrentUser(response.data))).catch(() => {}).finally(() => setAuthReady(true));
     api.get('/api/teams/').then((response) => setTeams(response.data || [])).catch(() => setTeams([]));
@@ -350,11 +356,11 @@ export default function AssignmentsPage() {
         <div className="classroom-body">
           <aside className="classroom-courses" aria-label="과제 그룹">
             <span className="classroom-side-label">수업</span>
-            <button type="button" className={!teamId ? 'active' : ''} onClick={() => setTeamId('')}>
+            <button type="button" className={!teamId ? 'active' : ''} onPointerEnter={() => prefetchTeam('')} onFocus={() => prefetchTeam('')} onClick={() => setTeamId('')}>
               <i>NC</i><span><strong>전체 과제</strong><small>모든 팀</small></span>
             </button>
             {teams.map((team) => (
-              <button key={team.id} type="button" className={teamId === team.id ? 'active' : ''} onClick={() => setTeamId(team.id)}>
+              <button key={team.id} type="button" className={teamId === team.id ? 'active' : ''} onPointerEnter={() => prefetchTeam(team.id)} onFocus={() => prefetchTeam(team.id)} onClick={() => setTeamId(team.id)}>
                 <i style={{ background: team.color || '#5f6368' }}>{team.name.slice(0, 1)}</i>
                 <span><strong>{team.name}</strong><small>{team.description || 'NC 팀'}</small></span>
               </button>

@@ -43,6 +43,8 @@ def ensure_assignment_columns(db: Session):
             if name not in existing:
                 db.execute(text(f"ALTER TABLE assignments ADD COLUMN {name} {definition}"))
         db.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_assignments_request_key ON assignments (request_key) WHERE request_key IS NOT NULL"))
+        db.execute(text("CREATE INDEX IF NOT EXISTS ix_assignments_team_created_at ON assignments (team_id, created_at)"))
+        db.execute(text("CREATE INDEX IF NOT EXISTS ix_assignments_created_at ON assignments (created_at)"))
         db.commit()
         _assignment_schema_ready = True
 

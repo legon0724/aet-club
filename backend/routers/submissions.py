@@ -45,6 +45,9 @@ def ensure_submission_columns(db: Session):
         for name, definition in columns.items():
             if name not in existing:
                 db.execute(text(f"ALTER TABLE submissions ADD COLUMN {name} {definition}"))
+        db.execute(text("CREATE INDEX IF NOT EXISTS ix_submissions_team_status_created ON submissions (team_id, status, created_at)"))
+        db.execute(text("CREATE INDEX IF NOT EXISTS ix_submissions_user_assignment ON submissions (user_id, assignment_id)"))
+        db.execute(text("CREATE INDEX IF NOT EXISTS ix_submissions_assignment_status ON submissions (assignment_id, status)"))
         db.commit()
         _submission_schema_ready = True
 

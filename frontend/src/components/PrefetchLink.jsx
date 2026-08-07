@@ -5,7 +5,7 @@ export default function PrefetchLink({ to, children, ...props }) {
   const handlers = getRoutePrefetchHandlers(to, props);
 
   return (
-    <Link to={to} {...props} {...handlers}>
+    <Link to={to} viewTransition {...props} {...handlers}>
       {children}
     </Link>
   );

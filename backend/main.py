@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 from backend.core.config import settings
 from backend.models.database import init_db
 from backend.routers import auth, portfolio, teams, assignments, submissions, notices, banners, gallery, activity, calendar, search, ai, admin, chat
@@ -13,6 +14,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 app.include_router(auth.router,        prefix="/api/auth",        tags=["인증"])
 app.include_router(portfolio.router,   prefix="/api/portfolio",   tags=["포트폴리오"])

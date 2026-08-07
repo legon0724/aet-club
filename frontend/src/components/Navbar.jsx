@@ -24,6 +24,7 @@ export default function Navbar({ user }) {
           <NavLink
             key={item.to}
             to={item.to}
+            viewTransition
             end={item.exact}
             className={({ isActive }) => (isActive ? 'active' : '')}
             {...getRoutePrefetchHandlers(item.to)}
@@ -33,7 +34,7 @@ export default function Navbar({ user }) {
           </NavLink>
         ))}
         {resolvedUser?.is_admin && (
-          <NavLink to="/admin" {...getRoutePrefetchHandlers('/admin')}>
+          <NavLink to="/admin" viewTransition {...getRoutePrefetchHandlers('/admin')}>
             <span className="nav-icon" aria-hidden="true">⚙️</span>
             <small>관리자</small>
           </NavLink>

@@ -42,7 +42,10 @@ def get_db_url() -> str:
 
 _db_url = get_db_url()
 _connect_args = {"check_same_thread": False} if _db_url.startswith("sqlite") else {}
-engine = create_engine(_db_url, echo=False, connect_args=_connect_args)
+_engine_options = {"echo": False, "connect_args": _connect_args}
+if not _db_url.startswith("sqlite"):
+    _engine_options.update({"pool_pre_ping": True, "pool_recycle": 300, "pool_size": 5, "max_overflow": 10})
+engine = create_engine(_db_url, **_engine_options)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

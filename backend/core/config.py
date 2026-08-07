@@ -27,6 +27,76 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     GROQ_API_KEY: str = ""
 
+    # Google Workspace domain-wide delegation. The service account JSON may be
+    # supplied as raw JSON or base64-encoded JSON.
+    GOOGLE_SERVICE_ACCOUNT_JSON: str = ""
+    GOOGLE_DELEGATED_USER: str = ""
+
+    FRONTEND_URL: str = "http://localhost:5173"
+
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = ""
+    SMTP_FROM_NAME: str = "NC"
+    EMAIL_HOST: str = ""
+    EMAIL_PORT: int = 587
+    EMAIL_HOST_USER: str = ""
+    EMAIL_HOST_PASSWORD: str = ""
+    EMAIL_USERNAME: str = ""
+    EMAIL_PASSWORD: str = ""
+    EMAIL_FROM: str = ""
+    DEFAULT_FROM_EMAIL: str = ""
+    MAIL_SERVER: str = ""
+    MAIL_PORT: int = 587
+    MAIL_USERNAME: str = ""
+    MAIL_PASSWORD: str = ""
+    MAIL_FROM: str = ""
+    MAIL_FROM_NAME: str = ""
+
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://aet-club.vercel.app",
+    ]
+
+    class Config:
+        env_file = "backend/.env"
+        env_file_encoding = "utf-8"
+
+
+settings = Settings()
+
+from pydantic_settings import BaseSettings
+from typing import List
+
+
+class Settings(BaseSettings):
+    APP_NAME: str = "NC API"
+    SECRET_KEY: str = "change-this-in-production"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
+
+    ADMIN_EMAILS: List[str] = [
+        "2620325@cam.hs.kr",
+        "bliss00@cam.hs.kr",
+    ]
+
+    ALLOWED_EMAIL_DOMAIN: str = "@cam.hs.kr"
+
+    USE_SQLITE: bool = True
+    DB_HOST: str = "localhost"
+    DB_PORT: int = 5432
+    DB_NAME: str = "aet_club"
+    DB_USER: str = "aet_user"
+    DB_PASSWORD: str = "password"
+    CLOUD_SQL_INSTANCE: str = ""
+
+    GCS_BUCKET_NAME: str = "aet-club-files"
+    GEMINI_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
+
     FRONTEND_URL: str = "http://localhost:5173"
 
     SMTP_HOST: str = ""

@@ -1,11 +1,15 @@
 import { preloadRoute } from '../routes/routeConfig';
+import { prefetchRouteData } from './dataPrefetch';
 
 function callHandler(handler, event) {
   if (handler) handler(event);
 }
 
 export function getRoutePrefetchHandlers(to, handlers = {}) {
-  const warmRoute = () => preloadRoute(to);
+  const warmRoute = () => {
+    preloadRoute(to);
+    prefetchRouteData(to);
+  };
 
   return {
     onFocus: (event) => {

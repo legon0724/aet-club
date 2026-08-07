@@ -14,12 +14,11 @@ export default function ThemePicker() {
   return (
     <details ref={detailsRef} className="theme-picker">
       <summary aria-label={`배경 테마: ${selected.label}`} title="배경 테마 바꾸기">
-        <span aria-hidden="true">{selected.icon}</span>
+        <span>테마</span>
       </summary>
       <div className="theme-menu" aria-label="배경 테마 선택">
         {SITE_THEMES.map((theme) => (
           <button key={theme.id} type="button" className={theme.id === themeId ? 'selected' : ''} onClick={() => selectTheme(theme.id)}>
-            <span aria-hidden="true">{theme.icon}</span>
             <strong>{theme.label}</strong>
           </button>
         ))}

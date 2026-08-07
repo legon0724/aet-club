@@ -89,18 +89,16 @@ export default function AssignmentsPage() {
   const reload = useCallback(async (nextTeamId = '') => {
     const query = nextTeamId ? `?team_id=${nextTeamId}` : '';
     try {
-      const [assignmentResult, submissionResult] = await Promise.all([
-        api.get(`/api/assignments/${query}`),
-        api.get(`/api/submissions/${query}`),
-      ]);
+      const assignmentResult = await api.get(`/api/assignments/${query}`);
       const nextAssignments = assignmentResult.data || [];
       setAssignments(nextAssignments);
-      setSubmissions(submissionResult.data || []);
       setSelectedId((current) => nextAssignments.some((item) => item.id === current) ? current : (nextAssignments[0]?.id || ''));
       setLoadError('');
+      api.get(`/api/submissions/${query}`)
+        .then((submissionResult) => setSubmissions(submissionResult.data || []))
+        .catch(() => setSubmissions([]));
     } catch {
       setAssignments([]);
-      setSubmissions([]);
       setSelectedId('');
       setLoadError('과제 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
     }
@@ -242,17 +240,40 @@ export default function AssignmentsPage() {
     }
     data.append('request_key', requestKeyRef.current);
 
+    const submittedAssignment = { ...newAssignment };
+    const optimisticId = `pending-${requestKeyRef.current}`;
+    const optimisticAssignment = {
+      id: optimisticId,
+      team_id: teamId || null,
+      title,
+      content: newAssignment.content.trim(),
+      due_at: newAssignment.due_at || null,
+      resource_url: newAssignment.resource_url.trim() || null,
+      copy_mode: newAssignment.workspace_type === 'none' ? 'site' : 'student_copy',
+      workspace_type: newAssignment.workspace_type,
+      points: newAssignment.points === '' ? null : Number(newAssignment.points),
+      created_by: user?.username || '관리자',
+      created_at: new Date().toISOString(),
+    };
+    setAssignments((current) => [optimisticAssignment, ...current]);
+    setSelectedId(optimisticId);
+    setNewAssignment(emptyAssignment);
+    setAssignmentFile(null);
+    setShowCreate(false);
+    if (assignmentFileRef.current) assignmentFileRef.current.value = '';
+
     try {
       const response = await api.post('/api/assignments/', data);
-      await reload(teamId);
+      setAssignments((current) => [response.data, ...current.filter((item) => item.id !== optimisticId && item.id !== response.data.id)]);
       setSelectedId(response.data.id);
-      setNewAssignment(emptyAssignment);
-      setAssignmentFile(null);
-      setShowCreate(false);
       setCreateError('');
       requestKeyRef.current = '';
-      if (assignmentFileRef.current) assignmentFileRef.current.value = '';
     } catch (requestError) {
+      setAssignments((current) => current.filter((item) => item.id !== optimisticId));
+      setSelectedId((current) => current === optimisticId ? '' : current);
+      setNewAssignment(submittedAssignment);
+      setAssignmentFile(assignmentFile);
+      setShowCreate(true);
       setCreateError(requestError?.response?.data?.detail || '과제를 등록하지 못했습니다. 입력 내용을 확인하고 다시 시도해주세요.');
     } finally {
       creatingRef.current = false;

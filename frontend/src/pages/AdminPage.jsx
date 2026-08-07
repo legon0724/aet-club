@@ -8,7 +8,14 @@ import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
 const BACKEND = 'https://web-production-00104.up.railway.app';
 
 const emptyGallery = { title: '', description: '', link_url: '' };
-const emptyCalendar = { title: '', start_date: '', end_date: '', event_type: '일정', team_id: '' };
+function calendarDefaultStart() {
+  const date = new Date();
+  date.setHours(9, 0, 0, 0);
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
+const emptyCalendar = { title: '', start_date: calendarDefaultStart(), end_date: '', event_type: '일정', team_id: '' };
 const ADMIN_TAB_KEYS = ['users', 'teams', 'assignments', 'gallery', 'calendar', 'notices', 'portfolios', 'ai', 'backup'];
 
 export default function AdminPage() {

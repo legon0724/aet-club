@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
+import '../styles/portfolio.css';
 import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
 import {
   buildPortfolioShareUrl,
@@ -21,12 +22,6 @@ const emptyForm = {
   blog_url: '',
   notion_url: '',
 };
-
-const portfolioLine = [
-  { step: '01', label: '프로필', detail: '기본 정보 정리' },
-  { step: '02', label: '활동', detail: '프로젝트와 역량 기록' },
-  { step: '03', label: '제출', detail: '공개 여부와 링크 점검' },
-];
 
 const isOwnPortfolio = (item, activeUser) => {
   const sameEmail = item.email?.toLowerCase() === activeUser?.email?.toLowerCase();
@@ -190,8 +185,8 @@ export default function PortfolioPage() {
         <section className="page-hero compact">
           <div>
             <span>Portfolio</span>
-            <h1>활동 기록을 대학 제출용으로 정리합니다.</h1>
-            <p>프로젝트, 기술, 수상, 진로를 한 화면에서 관리하세요.</p>
+            <h1>내 활동을 한눈에 정리해요.</h1>
+            <p>프로젝트와 배운 점을 기록하고, 필요할 때 링크나 PDF로 공유하세요.</p>
           </div>
           <div className="portfolio-hero-side">
             <div className="portfolio-actions">
@@ -200,39 +195,7 @@ export default function PortfolioPage() {
                 {editing ? '보기로 전환' : '편집'}
               </button>
             </div>
-            <div className="peer-portfolio-panel" aria-label="공개된 다른 포트폴리오">
-              <span>다른 애들</span>
-              {publicPortfolios.length ? (
-                <div className="peer-portfolio-list">
-                  {publicPortfolios.map((item) => (
-                    <article key={item.user_id || item.email} className="peer-portfolio-card">
-                      {item.profile_image ? (
-                        <img src={resolvePortfolioFileUrl(item.profile_image)} alt="" loading="lazy" decoding="async" />
-                      ) : (
-                        <strong>{(item.username || item.email || 'N')[0]}</strong>
-                      )}
-                      <div>
-                        <b>{item.username || 'NC 멤버'}</b>
-                        <small>{item.intro || item.projects || item.skills || '공개된 포트폴리오입니다.'}</small>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <p>아직 공개된 친구 포트폴리오가 없습니다.</p>
-              )}
-            </div>
           </div>
-        </section>
-
-        <section className="portfolio-line" aria-label="포트폴리오 작성 흐름">
-          {portfolioLine.map((item) => (
-            <div key={item.step} className="portfolio-line-item">
-              <span>{item.step}</span>
-              <strong>{item.label}</strong>
-              <small>{item.detail}</small>
-            </div>
-          ))}
         </section>
 
         <section className="profile-card">
@@ -278,6 +241,33 @@ export default function PortfolioPage() {
           </label>
         </section>
 
+        <section className="peer-portfolio-panel" aria-label="공개된 친구 포트폴리오">
+          <span>친구 포트폴리오</span>
+          {publicPortfolios.length ? (
+            <div className="peer-portfolio-list">
+              {publicPortfolios.map((item) => (
+                <a
+                  key={item.user_id || item.email}
+                  className="peer-portfolio-card"
+                  href={buildPortfolioShareUrl(item.user_id || item.email)}
+                >
+                  {item.profile_image ? (
+                    <img src={resolvePortfolioFileUrl(item.profile_image)} alt="" loading="lazy" decoding="async" />
+                  ) : (
+                    <strong>{(item.username || item.email || 'N')[0]}</strong>
+                  )}
+                  <div>
+                    <b>{item.username || 'NC 멤버'}</b>
+                    <small>{item.intro || item.projects || item.skills || '공개된 포트폴리오입니다.'}</small>
+                  </div>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p>공개된 친구 포트폴리오가 생기면 여기에 표시됩니다.</p>
+          )}
+        </section>
+
         <section className={`portfolio-share-card ${canShare ? 'is-live' : ''}`}>
           <div>
             <span>Share</span>
@@ -311,7 +301,7 @@ export default function PortfolioPage() {
                   className="workspace-textarea"
                   value={form[section.key]}
                   onChange={(e) => setForm((current) => ({ ...current, [section.key]: e.target.value }))}
-                  rows={7}
+                  rows={5}
                   placeholder={section.placeholder}
                 />
               ) : (

@@ -252,10 +252,6 @@ function AssignmentsTab() {
     });
   }, []);
 
-  useEffect(() => {
-    loadAssignments(teamId);
-  }, [teamId]);
-
   async function loadAssignments(nextTeamId) {
     try {
       const teamQuery = nextTeamId ? `?team_id=${nextTeamId}` : '';
@@ -270,16 +266,25 @@ function AssignmentsTab() {
     }
   }
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => loadAssignments(teamId), 0);
+    return () => window.clearTimeout(timer);
+  }, [teamId]);
+
   const del = async (id) => {
     if (!(await showSiteConfirm('과제를 삭제할까요?', '과제 삭제'))) return;
+    const previousAssignments = assignments;
+    const previousStatusRows = statusRows;
+    setAssignments((current) => current.filter((item) => item.id !== id));
+    setStatusRows((current) => current.filter((item) => String(item.assignment_id) !== String(id)));
     try {
       await api.delete(`/api/assignments/${id}`);
     } catch (error) {
+      setAssignments(previousAssignments);
+      setStatusRows(previousStatusRows);
       showSaveError(error);
       return;
     }
-    setAssignments((current) => current.filter((item) => item.id !== id));
-    await loadAssignments(teamId);
   };
 
   return (

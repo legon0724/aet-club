@@ -9,6 +9,7 @@ import shutil, os, uuid
 from backend.core.deps import get_current_user
 from backend.models.database import Assignment, Submission, ActivityLog, User, get_db
 from backend.models.schemas import SubmissionResponse
+from backend.services.google_workspace import create_student_copy
 
 router = APIRouter()
 
@@ -89,6 +90,31 @@ def get_assignment_work(assignment_id: str, db: Session = Depends(get_db), curre
     if work:
         return serialize_submission(work, db)
 
+    workspace_type = getattr(assignment, "workspace_type", None) or "none"
+    template_id = getattr(assignment, "google_template_id", None)
+    if workspace_type != "none" and template_id:
+        copied = create_student_copy(
+            template_id,
+            assignment.title,
+            current_user.email,
+            current_user.username,
+        )
+        work = Submission(
+            user_id=str(current_user.id),
+            team_id=str(assignment.team_id) if assignment.team_id else None,
+            assignment_id=assignment_id,
+            assignment_title=assignment.title,
+            title=assignment.title,
+            link_url=copied.get("webViewLink"),
+            work_content="",
+            status="draft",
+            updated_at=datetime.utcnow(),
+        )
+        db.add(work)
+        db.commit()
+        db.refresh(work)
+        return serialize_submission(work, db)
+
     return SubmissionResponse(
         id=f"draft-{assignment_id}",
         title=assignment.title,
@@ -132,7 +158,8 @@ def save_assignment_work(
 
     work.title = body.title or assignment.title
     work.content = body.content
-    work.link_url = body.link_url
+    if body.link_url is not None:
+        work.link_url = body.link_url
     work.work_content = body.work_content or ""
     work.assignment_title = assignment.title
     work.team_id = str(assignment.team_id) if assignment.team_id else work.team_id
@@ -193,7 +220,8 @@ async def create_submission(
     submission.title = title
     submission.content = content
     submission.work_content = work_content if work_content is not None else submission.work_content
-    submission.link_url = link_url
+    if link_url is not None:
+        submission.link_url = link_url
     if file_url:
         submission.file_url = file_url
         submission.file_name = file_name
@@ -222,6 +250,14 @@ def delete_submission(submission_id: str, db: Session = Depends(get_db), current
         raise HTTPException(404, detail="찾을 수 없습니다.")
     if str(submission.user_id) != str(current_user.id) and not current_user.is_admin:
         raise HTTPException(403, detail="권한이 없습니다.")
+    assignment = None
+    if submission.assignment_id:
+        assignment = db.query(Assignment).filter(Assignment.id == submission.assignment_id).first()
+    if assignment and (getattr(assignment, "workspace_type", None) or "none") != "none":
+        submission.status = "draft"
+        submission.updated_at = datetime.utcnow()
+        db.commit()
+        return {"message": "제출을 취소했습니다."}
     if submission.file_url:
         filename = submission.file_url.split('/')[-1]
         path = os.path.join(UPLOAD_DIR, filename)
@@ -230,3 +266,4 @@ def delete_submission(submission_id: str, db: Session = Depends(get_db), current
     db.delete(submission)
     db.commit()
     return {"message": "삭제되었습니다."}
+

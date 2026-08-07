@@ -27,6 +27,11 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     GROQ_API_KEY: str = ""
 
+    # Google Workspace domain-wide delegation. The service account JSON may be
+    # supplied as raw JSON or base64-encoded JSON.
+    GOOGLE_SERVICE_ACCOUNT_JSON: str = ""
+    GOOGLE_DELEGATED_USER: str = ""
+
     FRONTEND_URL: str = "http://localhost:5173"
 
     SMTP_HOST: str = ""
@@ -62,3 +67,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+

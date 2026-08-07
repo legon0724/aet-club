@@ -143,6 +143,10 @@ body {
   margin-bottom: 42px;
 }
 
+.ipad-status + .ipad-app-grid {
+  margin-top: clamp(48px, 8vh, 88px);
+}
+
 .ipad-app-link {
   display: grid;
   justify-items: center;

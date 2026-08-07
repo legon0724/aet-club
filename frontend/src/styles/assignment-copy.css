@@ -10,3 +10,26 @@
 .classroom-submitted-link:hover {
   text-decoration: underline;
 }
+
+.classroom-google-actions {
+  display: grid;
+  gap: 7px;
+}
+
+.classroom-google-fallback {
+  justify-self: start;
+  color: #5f6368;
+  font-size: 11px;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.classroom-google-fallback:hover {
+  color: #1967d2;
+  text-decoration: underline;
+}
+
+.classroom-materials a.classroom-copy-fallback > span {
+  background: #f1f3f4;
+  color: #5f6368;
+}

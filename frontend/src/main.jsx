@@ -6,7 +6,11 @@ import './styles/transitions.css'
 import './styles/ipad.css'
 import './styles/dialog.css'
 import './styles/calendar.css'
+import './styles/themes.css'
 import App from './App.jsx'
+import { applySiteTheme, getSiteTheme } from './utils/theme'
+
+applySiteTheme(getSiteTheme())
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

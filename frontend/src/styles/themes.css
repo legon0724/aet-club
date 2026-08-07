@@ -75,12 +75,14 @@ body {
 
 .theme-picker summary {
   display: grid;
-  width: 40px;
+  width: 52px;
   min-height: 40px;
   place-items: center;
   border-radius: 12px;
   background: var(--theme-soft);
-  font-size: 18px;
+  color: var(--theme-accent);
+  font-size: 12px;
+  font-weight: 850;
   cursor: pointer;
   list-style: none;
   transition: transform 160ms ease, box-shadow 160ms ease;
@@ -105,8 +107,7 @@ body {
 }
 
 .theme-menu button {
-  display: grid;
-  grid-template-columns: 30px 1fr;
+  display: flex;
   align-items: center;
   min-height: 38px;
   border: 0;
@@ -120,7 +121,6 @@ body {
 
 .theme-menu button:hover,
 .theme-menu button.selected { background: var(--theme-soft); color: var(--theme-accent); }
-.theme-menu button span { font-size: 17px; }
 .theme-menu button strong { font-size: 13px; }
 
 @media (max-width: 760px) {

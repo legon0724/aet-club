@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
+import '../styles/assignment-copy.css';
 import { showSiteAlert, showSiteConfirm } from '../utils/siteDialog';
 import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
 
@@ -72,7 +73,6 @@ export default function AssignmentsPage() {
   const [loadError, setLoadError] = useState('');
   const [createError, setCreateError] = useState('');
   const [workError, setWorkError] = useState('');
-  const [workspaceConfigured, setWorkspaceConfigured] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [newAssignment, setNewAssignment] = useState(emptyAssignment);
   const [assignmentFile, setAssignmentFile] = useState(null);
@@ -107,7 +107,6 @@ export default function AssignmentsPage() {
   useEffect(() => {
     api.get('/api/auth/me').then((response) => setUser(rememberCurrentUser(response.data))).catch(() => {}).finally(() => setAuthReady(true));
     api.get('/api/teams/').then((response) => setTeams(response.data || [])).catch(() => setTeams([]));
-    api.get('/api/assignments/workspace-status').then((response) => setWorkspaceConfigured(Boolean(response.data?.configured))).catch(() => setWorkspaceConfigured(false));
   }, []);
 
   useEffect(() => {
@@ -142,9 +141,7 @@ export default function AssignmentsPage() {
         if (cancelled) return;
         setWork({ ...emptyWork, title: selected.title });
         setDraftState('');
-        if (selected.workspace_type !== 'none') {
-          setWorkError(requestError?.response?.data?.detail || '내 Google 작업 문서를 만들지 못했습니다.');
-        }
+        setWorkError(requestError?.response?.data?.detail || '내 작업을 불러오지 못했습니다.');
       });
     });
     return () => { cancelled = true; };
@@ -174,7 +171,7 @@ export default function AssignmentsPage() {
 
   const turnIn = async () => {
     if (!selected || busy) return;
-    if (selected.copy_mode === 'student_copy' && selected.workspace_type === 'none' && !work.link_url.trim()) {
+    if (selected.copy_mode === 'student_copy' && !work.link_url.trim()) {
       void showSiteAlert('개인 사본 링크를 추가한 뒤 제출해주세요.');
       return;
     }
@@ -222,6 +219,21 @@ export default function AssignmentsPage() {
       return;
     }
 
+    const resourceUrl = newAssignment.resource_url.trim();
+    if (newAssignment.workspace_type !== 'none') {
+      if (!resourceUrl) {
+        setCreateError(`${workspaceLabel(newAssignment.workspace_type)} 원본 링크를 입력해주세요.`);
+        return;
+      }
+      try {
+        const parsedUrl = new URL(resourceUrl);
+        if (parsedUrl.hostname !== 'docs.google.com') throw new Error('invalid google url');
+      } catch {
+        setCreateError('Google Docs, Sheets 또는 Slides의 원본 링크를 입력해주세요.');
+        return;
+      }
+    }
+
     creatingRef.current = true;
     setCreating(true);
     setCreateError('');
@@ -230,7 +242,7 @@ export default function AssignmentsPage() {
     if (teamId) data.append('team_id', teamId);
     if (newAssignment.content.trim()) data.append('content', newAssignment.content.trim());
     if (newAssignment.due_at) data.append('due_at', newAssignment.due_at);
-    if (newAssignment.resource_url.trim()) data.append('resource_url', newAssignment.resource_url.trim());
+    if (resourceUrl) data.append('resource_url', resourceUrl);
     data.append('workspace_type', newAssignment.workspace_type);
     data.append('copy_mode', newAssignment.workspace_type === 'none' ? 'site' : 'student_copy');
     if (newAssignment.points !== '') data.append('points', String(newAssignment.points));
@@ -248,7 +260,7 @@ export default function AssignmentsPage() {
       title,
       content: newAssignment.content.trim(),
       due_at: newAssignment.due_at || null,
-      resource_url: newAssignment.resource_url.trim() || null,
+      resource_url: resourceUrl || null,
       copy_mode: newAssignment.workspace_type === 'none' ? 'site' : 'student_copy',
       workspace_type: newAssignment.workspace_type,
       points: newAssignment.points === '' ? null : Number(newAssignment.points),
@@ -318,11 +330,10 @@ export default function AssignmentsPage() {
               <label className="wide">과제 제목<input value={newAssignment.title} onChange={(event) => setNewAssignment((current) => ({ ...current, title: event.target.value }))} placeholder="과제 제목을 입력하세요" autoFocus /></label>
               <label>마감일<input type="date" value={newAssignment.due_at} onChange={(event) => setNewAssignment((current) => ({ ...current, due_at: event.target.value }))} /></label>
               <label>배점<input type="number" min="0" value={newAssignment.points} onChange={(event) => setNewAssignment((current) => ({ ...current, points: event.target.value }))} placeholder="선택사항" /></label>
-              <label>학생 작업<select value={newAssignment.workspace_type} onChange={(event) => setNewAssignment((current) => ({ ...current, workspace_type: event.target.value }))}><option value="none">NC에서 바로 제출</option><option value="docs" disabled={!workspaceConfigured}>Google Docs 개인 문서{workspaceConfigured ? '' : ' · 연결 필요'}</option><option value="sheets" disabled={!workspaceConfigured}>Google Sheets 개인 시트{workspaceConfigured ? '' : ' · 연결 필요'}</option><option value="slides" disabled={!workspaceConfigured}>Google Slides 개인 발표자료{workspaceConfigured ? '' : ' · 연결 필요'}</option></select></label>
+              <label>학생 작업<select value={newAssignment.workspace_type} onChange={(event) => setNewAssignment((current) => ({ ...current, workspace_type: event.target.value }))}><option value="none">NC에서 바로 제출</option><option value="docs">Google Docs 사본 제출</option><option value="sheets">Google Sheets 사본 제출</option><option value="slides">Google Slides 사본 제출</option></select></label>
               <label className="wide">과제 설명<textarea value={newAssignment.content} onChange={(event) => setNewAssignment((current) => ({ ...current, content: event.target.value }))} placeholder="학생에게 보여줄 안내를 입력하세요" rows={4} /></label>
-              <label className="wide">참고 링크<input type="url" value={newAssignment.resource_url} onChange={(event) => setNewAssignment((current) => ({ ...current, resource_url: event.target.value }))} placeholder="수업 자료 링크 (선택사항)" /></label>
-              {newAssignment.workspace_type !== 'none' && <p className="classroom-google-note wide">학생이 과제를 처음 열면 {workspaceLabel(newAssignment.workspace_type)} 사본이 자동으로 만들어지고 학교 이메일에 편집 권한이 부여됩니다. 학생은 링크 공유나 권한 요청을 할 필요가 없습니다.</p>}
-              {!workspaceConfigured && <p className="classroom-google-note muted wide">Google 문서 유형은 학교 Workspace 관리자 연결 후 사용할 수 있습니다. 지금은 ‘NC에서 바로 제출’로 과제를 등록할 수 있습니다.</p>}
+              <label className="wide">{newAssignment.workspace_type === 'none' ? '참고 링크' : `${workspaceLabel(newAssignment.workspace_type)} 원본 링크`}<input type="url" required={newAssignment.workspace_type !== 'none'} value={newAssignment.resource_url} onChange={(event) => setNewAssignment((current) => ({ ...current, resource_url: event.target.value }))} placeholder={newAssignment.workspace_type === 'none' ? '수업 자료 링크 (선택사항)' : '학생이 사본으로 복사할 원본 링크'} /></label>
+              {newAssignment.workspace_type !== 'none' && <p className="classroom-google-note wide">학생에게 ‘사본 만들기’ 버튼이 표시됩니다. 학생은 사본을 만든 뒤 공유 링크를 붙여넣어 제출합니다.</p>}
               <div className="classroom-create-file wide">
                 <button type="button" onClick={() => assignmentFileRef.current?.click()}><span>↑</span>{assignmentFile ? assignmentFile.name : '첨부파일 추가'}</button>
                 {assignmentFile && <button className="remove" type="button" onClick={() => { setAssignmentFile(null); if (assignmentFileRef.current) assignmentFileRef.current.value = ''; }}>삭제</button>}
@@ -395,9 +406,9 @@ export default function AssignmentsPage() {
                 <div className="classroom-detail-line" />
                 <p className="classroom-description">{selected.content || '과제 안내가 없습니다.'}</p>
                 <div className="classroom-materials">
-                  {selected.resource_url && selected.workspace_type === 'none' && (
+                  {selected.resource_url && (
                     <a href={selected.copy_mode === 'student_copy' ? studentCopyUrl(selected.resource_url) : selected.resource_url} target="_blank" rel="noreferrer">
-                      <span>↗</span><div><strong>{selected.copy_mode === 'student_copy' ? '개인 사본 만들기' : '참고 링크 열기'}</strong><small>{modeLabel(selected.copy_mode)}</small></div>
+                      <span>↗</span><div><strong>{selected.copy_mode === 'student_copy' ? `${workspaceLabel(selected.workspace_type) || '개인'} 사본 만들기` : '참고 링크 열기'}</strong><small>{selected.copy_mode === 'student_copy' ? '사본을 만든 뒤 공유 링크를 제출하세요.' : modeLabel(selected.copy_mode)}</small></div>
                     </a>
                   )}
                   {selected.file_url && (
@@ -433,17 +444,18 @@ export default function AssignmentsPage() {
                 <header><h2>내 과제</h2><span className={currentSubmission?.status === 'submitted' ? 'submitted' : ''}>{currentSubmission?.status === 'submitted' ? '제출됨' : draftState || '할당됨'}</span></header>
                 {workError && <div className="inline-alert error">{workError}</div>}
                 <div className="classroom-work-fields">
-                  {selected.workspace_type !== 'none' && work.link_url && (
-                    <a className={`classroom-google-work ${selected.workspace_type}`} href={work.link_url} target="_blank" rel="noreferrer">
+                  {selected.workspace_type !== 'none' && selected.resource_url && (
+                    <a className={`classroom-google-work ${selected.workspace_type}`} href={studentCopyUrl(selected.resource_url)} target="_blank" rel="noreferrer">
                       <span>{selected.workspace_type === 'docs' ? '▤' : selected.workspace_type === 'sheets' ? '▦' : '▣'}</span>
-                      <div><strong>내 {workspaceLabel(selected.workspace_type)} 열기</strong><small>편집 권한이 자동으로 연결되었습니다.</small></div>
+                      <div><strong>{workspaceLabel(selected.workspace_type)} 사본 만들기</strong><small>Google에서 사본을 만든 뒤 아래에 공유 링크를 붙여넣으세요.</small></div>
                     </a>
                   )}
                   <button className="classroom-add-file" type="button" onClick={() => fileRef.current?.click()} disabled={currentSubmission?.status === 'submitted'}>
                     <span>＋</span>{file ? file.name : '파일 추가 또는 만들기'}
                   </button>
                   <input ref={fileRef} type="file" hidden onChange={(event) => setFile(event.target.files?.[0] || null)} />
-                  {selected.workspace_type === 'none' && <label>링크<input value={work.link_url} onChange={(event) => setWork((current) => ({ ...current, link_url: event.target.value }))} onBlur={saveDraft} placeholder="참고할 링크가 있으면 붙여넣기" disabled={currentSubmission?.status === 'submitted'} /></label>}
+                  <label>{selected.copy_mode === 'student_copy' ? '사본 공유 링크' : '링크'}<input type="url" value={work.link_url} onChange={(event) => setWork((current) => ({ ...current, link_url: event.target.value }))} onBlur={saveDraft} placeholder={selected.copy_mode === 'student_copy' ? '내가 만든 Google 사본의 공유 링크' : '참고할 링크가 있으면 붙여넣기'} disabled={currentSubmission?.status === 'submitted'} /></label>
+                  {selected.copy_mode === 'student_copy' && work.link_url && <a className="classroom-submitted-link" href={work.link_url} target="_blank" rel="noreferrer">붙여넣은 사본 열기 ↗</a>}
                   <label>답안<textarea value={work.work_content} onChange={(event) => setWork((current) => ({ ...current, work_content: event.target.value }))} onBlur={saveDraft} placeholder="답안 또는 작업 내용을 입력하세요." rows={7} disabled={currentSubmission?.status === 'submitted'} /></label>
                   <label>선생님께 남길 메모<textarea value={work.content} onChange={(event) => setWork((current) => ({ ...current, content: event.target.value }))} onBlur={saveDraft} placeholder="선택사항" rows={3} disabled={currentSubmission?.status === 'submitted'} /></label>
                 </div>

@@ -42,8 +42,9 @@ export default function Navbar({ user }) {
         )}
       </div>
 
+      <ThemePicker />
+
       <div className="site-account">
-        <ThemePicker />
         {resolvedUser?.username && <span>{resolvedUser.username}</span>}
         <button type="button" onClick={logout} aria-label="로그아웃">↗</button>
       </div>

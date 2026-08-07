@@ -67,7 +67,10 @@ body {
 }
 
 .theme-picker {
-  position: relative;
+  position: fixed;
+  top: 28px;
+  right: max(154px, calc((100vw - 1180px) / 2 + 154px));
+  z-index: 120;
 }
 
 .theme-picker summary {
@@ -121,7 +124,12 @@ body {
 .theme-menu button strong { font-size: 13px; }
 
 @media (max-width: 760px) {
-  .theme-menu { right: 50%; transform: translateX(50%); }
+  .theme-picker {
+    top: 18px;
+    right: 116px;
+  }
+
+  .theme-menu { right: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

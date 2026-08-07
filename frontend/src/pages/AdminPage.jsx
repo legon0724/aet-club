@@ -6,7 +6,6 @@ import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
 
 const BACKEND = 'https://web-production-00104.up.railway.app';
 
-const emptyAssignment = { title: '', content: '', due_at: '', resource_url: '', copy_mode: 'site', points: '' };
 const emptyGallery = { title: '', description: '', link_url: '' };
 const emptyCalendar = { title: '', start_date: '', end_date: '', event_type: '일정', team_id: '' };
 
@@ -232,10 +231,6 @@ function AssignmentsTab() {
   const [teamId, setTeamId] = useState('');
   const [assignments, setAssignments] = useState([]);
   const [statusRows, setStatusRows] = useState([]);
-  const [form, setForm] = useState(emptyAssignment);
-  const [file, setFile] = useState(null);
-  const [show, setShow] = useState(true);
-  const fileRef = useRef(null);
 
   useEffect(() => {
     api.get('/api/teams/').then((r) => {
@@ -266,37 +261,6 @@ function AssignmentsTab() {
     }
   }
 
-  const create = async () => {
-    if (!form.title.trim()) return;
-    const payload = {
-      ...form,
-      title: form.title.trim(),
-      points: form.points ? Number(form.points) : '',
-    };
-
-    try {
-      const formData = new FormData();
-      if (teamId) formData.append('team_id', teamId);
-      formData.append('title', payload.title);
-      if (payload.content) formData.append('content', payload.content);
-      if (payload.due_at) formData.append('due_at', payload.due_at);
-      if (payload.resource_url) formData.append('resource_url', payload.resource_url);
-      if (payload.copy_mode) formData.append('copy_mode', payload.copy_mode);
-      if (payload.points) formData.append('points', String(payload.points));
-      if (file) formData.append('file', file);
-
-      await api.post('/api/assignments/', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      await loadAssignments(teamId);
-    } catch (error) {
-      showSaveError(error);
-      return;
-    }
-    setForm(emptyAssignment);
-    setFile(null);
-    setShow(false);
-    if (fileRef.current) fileRef.current.value = '';
-  };
-
   const del = async (id) => {
     if (!window.confirm('과제를 삭제할까요?')) return;
     try {
@@ -311,46 +275,12 @@ function AssignmentsTab() {
 
   return (
     <div>
-      <div className="admin-toolbar split">
+      <div className="admin-toolbar">
         <select value={teamId} onChange={(e) => setTeamId(e.target.value)}>
           <option value="">전체 과제</option>
           {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
         </select>
-        <button className="modern-btn primary" type="button" onClick={() => setShow((current) => !current)}>
-          과제 등록
-        </button>
       </div>
-
-      {show && (
-        <div className="admin-form-grid assignment-admin-form">
-          <input value={form.title} onChange={(e) => setForm((current) => ({ ...current, title: e.target.value }))} placeholder="과제 제목" />
-          <input type="date" value={form.due_at} onChange={(e) => setForm((current) => ({ ...current, due_at: e.target.value }))} />
-          <select value={form.copy_mode} onChange={(e) => setForm((current) => ({ ...current, copy_mode: e.target.value }))}>
-            <option value="site">사이트 작업 문서</option>
-            <option value="student_copy">학생별 사본 링크</option>
-            <option value="material">자료만 제공</option>
-          </select>
-          <input value={form.points} type="number" min="0" onChange={(e) => setForm((current) => ({ ...current, points: e.target.value }))} placeholder="점수 / 배점" />
-          <textarea value={form.content} onChange={(e) => setForm((current) => ({ ...current, content: e.target.value }))} placeholder="과제 설명" rows={4} />
-          <input
-            className="assignment-resource-input"
-            value={form.resource_url}
-            onChange={(e) => setForm((current) => ({ ...current, resource_url: e.target.value }))}
-            placeholder="Google Docs 원본 링크 또는 참고 링크"
-          />
-          {form.copy_mode === 'student_copy' && (
-            <p className="assignment-admin-note">
-              원본 문서는 보기 권한으로 공유하고, 학생은 개인 사본을 만들어 자기 링크로 제출합니다.
-            </p>
-          )}
-          <div className="admin-file-pick" role="button" tabIndex={0} onClick={() => fileRef.current?.click()} onKeyDown={(e) => e.key === 'Enter' && fileRef.current?.click()}>
-            <strong>{file ? file.name : '첨부 파일 선택'}</strong>
-            <span>안내문, PDF, docx 같은 자료를 함께 올릴 수 있습니다.</span>
-          </div>
-          <input ref={fileRef} type="file" onChange={(e) => setFile(e.target.files[0])} hidden />
-          <button className="modern-btn primary" type="button" onClick={create}>등록 완료</button>
-        </div>
-      )}
 
       <section className="assignment-status-board" aria-label="과제 제출 현황표">
         <div className="assignment-status-head">
@@ -879,3 +809,4 @@ function BackupTab() {
     </div>
   );
 }
+

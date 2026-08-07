@@ -75,12 +75,21 @@ def find_user_assignment_work(db: Session, user_id: str, assignment_id: str):
     ).first()
 
 
+def ensure_assignment_access(assignment: Assignment, current_user: User):
+    if assignment.team_id and not current_user.is_admin and str(assignment.team_id) != str(current_user.team_id or ""):
+        raise HTTPException(403, detail="소속 팀의 과제만 확인하거나 제출할 수 있습니다.")
+
+
 @router.get("/", response_model=List[SubmissionResponse])
 def get_submissions(team_id: Optional[str] = None, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     ensure_submission_columns(db)
     query = db.query(Submission)
     if team_id:
-        query = query.filter(or_(Submission.team_id == team_id, Submission.team_id.is_(None)))
+        if not current_user.is_admin and str(current_user.team_id or "") != team_id:
+            raise HTTPException(403, detail="소속 팀의 제출 내역만 확인할 수 있습니다.")
+        query = query.filter(Submission.team_id == team_id)
+    else:
+        query = query.filter(Submission.team_id.is_(None))
     if current_user.is_admin:
         query = query.filter(or_(Submission.status == "submitted", Submission.status.is_(None)))
     else:
@@ -98,6 +107,7 @@ def get_assignment_work(assignment_id: str, db: Session = Depends(get_db), curre
     if not assignment:
         raise HTTPException(404, detail="과제를 찾을 수 없습니다.")
 
+    ensure_assignment_access(assignment, current_user)
     work = find_user_assignment_work(db, str(current_user.id), assignment_id)
     if work:
         return serialize_submission(work, db)
@@ -131,6 +141,7 @@ def save_assignment_work(
     if not assignment:
         raise HTTPException(404, detail="과제를 찾을 수 없습니다.")
 
+    ensure_assignment_access(assignment, current_user)
     work = find_user_assignment_work(db, str(current_user.id), assignment_id)
     if not work:
         work = Submission(
@@ -192,6 +203,11 @@ async def create_submission(
     assignment = None
     if assignment_id:
         assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+        if not assignment:
+            raise HTTPException(404, detail="과제를 찾을 수 없습니다.")
+        ensure_assignment_access(assignment, current_user)
+    elif team_id and not current_user.is_admin and str(current_user.team_id or "") != team_id:
+        raise HTTPException(403, detail="소속 팀에만 제출할 수 있습니다.")
 
     submission = None
     if assignment_id:
@@ -201,7 +217,7 @@ async def create_submission(
         submission = Submission(user_id=str(current_user.id))
         db.add(submission)
 
-    submission.team_id = team_id or (str(assignment.team_id) if assignment and assignment.team_id else None)
+    submission.team_id = str(assignment.team_id) if assignment and assignment.team_id else (team_id or None)
     submission.assignment_id = assignment_id
     submission.assignment_title = assignment_title or (assignment.title if assignment else None)
     submission.title = title

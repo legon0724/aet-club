@@ -1,9 +1,9 @@
 export const SITE_THEMES = [
-  { id: 'spring', label: '봄', icon: '🌸' },
-  { id: 'summer', label: '여름', icon: '🌊' },
-  { id: 'autumn', label: '가을', icon: '🍂' },
-  { id: 'winter', label: '겨울', icon: '❄️' },
-  { id: 'christmas', label: '크리스마스', icon: '🎄' },
+  { id: 'spring', label: '봄' },
+  { id: 'summer', label: '여름' },
+  { id: 'autumn', label: '가을' },
+  { id: 'winter', label: '겨울' },
+  { id: 'christmas', label: '크리스마스' },
 ];
 
 const STORAGE_KEY = 'nc-site-theme';

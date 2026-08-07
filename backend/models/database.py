@@ -121,6 +121,8 @@ class Assignment(Base):
     resource_url = Column(Text, nullable=True)
     copy_mode = Column(String(30), default="site")
     points = Column(Integer, nullable=True)
+    workspace_type = Column(String(20), default="none")
+    google_template_id = Column(String(255), nullable=True)
     due_at = Column(String(50), nullable=True)
     created_by = Column(UUID(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -248,3 +250,4 @@ class ChatMessage(Base):
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+

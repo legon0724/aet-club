@@ -23,6 +23,7 @@
 .calendar-dots { display: flex; gap: 4px; margin-top: 12px; }
 .calendar-dots i { width: 7px; height: 7px; border-radius: 50%; background: #44b9a6; }
 .calendar-dots i.public { background: #6572d8; }
+.calendar-dots i.assignment { background: #f59e0b; }
 .calendar-agenda > header { display: grid; gap: 4px; padding: 19px; border-bottom: 1px solid #edf0f6; background: linear-gradient(145deg, #5967ca, #7884e4); color: #fff; }
 .calendar-agenda > header span { color: rgba(255,255,255,.72); font-size: 12px; }
 .calendar-agenda > header strong { font-size: 25px; letter-spacing: -.04em; }
@@ -30,6 +31,8 @@
 .calendar-agenda-list > p { margin: 38px 0; color: #9097a8; text-align: center; }
 .calendar-agenda-list article { display: flex; align-items: center; gap: 12px; border: 1px solid #e7eaf1; border-radius: 17px; padding: 14px; background: #fff; }
 .calendar-agenda-list article.public { background: #f4f5ff; }
+.calendar-agenda-list article.assignment { border-color: #f5d48a; background: #fff8e8; }
+.calendar-agenda-list article.assignment span { color: #b66a00; }
 .calendar-agenda-list article > div { display: grid; flex: 1; gap: 4px; min-width: 0; }
 .calendar-agenda-list article span { color: #6975d8; font-size: 10px; font-weight: 850; }
 .calendar-agenda-list article.personal span { color: #248e7d; }

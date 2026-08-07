@@ -15,39 +15,40 @@ export default function Navbar({ user }) {
   };
 
   return (
-    <nav className="site-nav">
-      <PrefetchLink to="/" className="site-logo" aria-label="NC 홈">
-        <span>NC</span>
-      </PrefetchLink>
-
-      <div className="site-links">
-        {mainNavItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            viewTransition
-            end={item.exact}
-            className={({ isActive }) => (isActive ? 'active' : '')}
-            {...getRoutePrefetchHandlers(item.to)}
-          >
-            <span className="nav-icon" aria-hidden="true">{item.icon}</span>
-            <small>{item.label}</small>
-          </NavLink>
-        ))}
-        {resolvedUser?.is_admin && (
-          <NavLink to="/admin" viewTransition {...getRoutePrefetchHandlers('/admin')}>
-            <span className="nav-icon" aria-hidden="true">⚙️</span>
-            <small>관리자</small>
-          </NavLink>
-        )}
-      </div>
-
+    <>
       <ThemePicker />
+      <nav className="site-nav">
+        <PrefetchLink to="/" className="site-logo" aria-label="NC 홈">
+          <span>NC</span>
+        </PrefetchLink>
 
-      <div className="site-account">
-        {resolvedUser?.username && <span>{resolvedUser.username}</span>}
-        <button type="button" onClick={logout} aria-label="로그아웃">↗</button>
-      </div>
-    </nav>
+        <div className="site-links">
+          {mainNavItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              viewTransition
+              end={item.exact}
+              className={({ isActive }) => (isActive ? 'active' : '')}
+              {...getRoutePrefetchHandlers(item.to)}
+            >
+              <span className="nav-icon" aria-hidden="true">{item.icon}</span>
+              <small>{item.label}</small>
+            </NavLink>
+          ))}
+          {resolvedUser?.is_admin && (
+            <NavLink to="/admin" viewTransition {...getRoutePrefetchHandlers('/admin')}>
+              <span className="nav-icon" aria-hidden="true">⚙️</span>
+              <small>관리자</small>
+            </NavLink>
+          )}
+        </div>
+
+        <div className="site-account">
+          {resolvedUser?.username && <span>{resolvedUser.username}</span>}
+          <button type="button" onClick={logout} aria-label="로그아웃">↗</button>
+        </div>
+      </nav>
+    </>
   );
 }

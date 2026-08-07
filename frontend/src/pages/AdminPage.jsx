@@ -319,7 +319,7 @@ function AssignmentsTab() {
               <article key={row.assignment_id} className="assignment-status-card">
                 <div>
                   <strong>{row.title}</strong>
-                  <small>{row.due_at ? `마감 ${row.due_at}` : '마감일 없음'}</small>
+                  <small>{row.start_at ? `시작 ${row.start_at} · ` : ''}{row.due_at ? `마감 ${row.due_at}` : '마감일 없음'}</small>
                 </div>
                 <div className="assignment-status-metrics">
                   <span className="submitted">제출 {row.submitted_count}</span>
@@ -351,7 +351,7 @@ function AssignmentsTab() {
                 <strong>{assignment.title}</strong>
                 {assignment.content && <span>{assignment.content}</span>}
                 <span>{assignment.copy_mode === 'student_copy' ? '학생별 사본 과제' : assignment.copy_mode === 'material' ? '자료 제공' : '사이트 작업 문서'}</span>
-                <small>{assignment.due_at ? `마감 ${assignment.due_at}` : '마감일 없음'}</small>
+                <small>{assignment.start_at ? `시작 ${assignment.start_at} · ` : ''}{assignment.due_at ? `마감 ${assignment.due_at}` : '마감일 없음'}</small>
                 {assignment.points ? <small>{assignment.points}점</small> : null}
               </div>
               {assignment.resource_url && (

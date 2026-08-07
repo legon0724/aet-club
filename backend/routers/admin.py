@@ -18,6 +18,7 @@ from backend.models.database import (
     get_db,
 )
 from backend.models.schemas import UserResponse
+from backend.routers.assignments import ensure_assignment_columns
 from backend.routers.submissions import ensure_submission_columns
 
 router = APIRouter()
@@ -102,6 +103,7 @@ def get_all_portfolios(db: Session = Depends(get_db), _: User = Depends(get_admi
 
 @router.get("/assignment-status")
 def get_assignment_status(team_id: Optional[str] = None, db: Session = Depends(get_db), _: User = Depends(get_admin_user)):
+    ensure_assignment_columns(db)
     ensure_submission_columns(db)
 
     assignment_query = db.query(Assignment)
@@ -146,6 +148,7 @@ def get_assignment_status(team_id: Optional[str] = None, db: Session = Depends(g
         result.append({
             "assignment_id": str(assignment.id),
             "title": assignment.title,
+            "start_at": assignment.start_at,
             "due_at": assignment.due_at,
             "submitted_count": counts["submitted"],
             "draft_count": counts["draft"],
@@ -170,6 +173,7 @@ def parse_datetime(value):
 
 @router.get("/backup")
 def export_backup(db: Session = Depends(get_db), _: User = Depends(get_admin_user)):
+    ensure_assignment_columns(db)
     return {
         "version": 1,
         "exported_at": datetime.utcnow().isoformat(),
@@ -203,6 +207,7 @@ def export_backup(db: Session = Depends(get_db), _: User = Depends(get_admin_use
                 "resource_url": item.resource_url,
                 "copy_mode": item.copy_mode,
                 "points": item.points,
+                "start_at": item.start_at,
                 "due_at": item.due_at,
                 "created_at": iso(item.created_at),
             }
@@ -268,6 +273,7 @@ def export_backup(db: Session = Depends(get_db), _: User = Depends(get_admin_use
 
 @router.post("/backup")
 def restore_backup(data: dict, db: Session = Depends(get_db), _: User = Depends(get_admin_user)):
+    ensure_assignment_columns(db)
     for entry in data.get("teams", []):
         item = db.query(Team).filter(Team.id == entry.get("id")).first() if entry.get("id") else None
         if not item:
@@ -298,6 +304,7 @@ def restore_backup(data: dict, db: Session = Depends(get_db), _: User = Depends(
         item.resource_url = entry.get("resource_url")
         item.copy_mode = entry.get("copy_mode") or "site"
         item.points = entry.get("points")
+        item.start_at = entry.get("start_at")
         item.due_at = entry.get("due_at")
 
     for entry in data.get("calendar_events", []):

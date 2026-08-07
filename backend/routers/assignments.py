@@ -1,6 +1,7 @@
 import os
 import shutil
 import uuid
+from datetime import datetime
 from threading import Lock
 from typing import Optional
 
@@ -38,6 +39,7 @@ def ensure_assignment_columns(db: Session):
             "workspace_type": "VARCHAR(20) DEFAULT 'none'",
             "google_template_id": "VARCHAR(255)",
             "request_key": "VARCHAR(100)",
+            "start_at": "VARCHAR(50)",
         }
         for name, definition in columns.items():
             if name not in existing:
@@ -64,6 +66,7 @@ def serialize_assignment(assignment: Assignment, db: Session, creators: Optional
         "copy_mode": getattr(assignment, "copy_mode", None) or "site",
         "points": getattr(assignment, "points", None),
         "workspace_type": getattr(assignment, "workspace_type", None) or "none",
+        "start_at": getattr(assignment, "start_at", None),
         "due_at": assignment.due_at,
         "created_by": creator.username if creator else "관리자",
         "created_at": assignment.created_at,
@@ -100,6 +103,7 @@ async def create_assignment(
     title: str = Form(...),
     content: Optional[str] = Form(None),
     team_id: Optional[str] = Form(None),
+    start_at: Optional[str] = Form(None),
     due_at: Optional[str] = Form(None),
     resource_url: Optional[str] = Form(None),
     copy_mode: str = Form("site"),
@@ -118,6 +122,12 @@ async def create_assignment(
         raise HTTPException(400, detail="지원하지 않는 과제 방식입니다.")
     if workspace_type not in {"none", *WORKSPACE_MIME_TYPES.keys()}:
         raise HTTPException(400, detail="지원하지 않는 Google 문서 유형입니다.")
+    if start_at and due_at:
+        try:
+            if datetime.fromisoformat(due_at) < datetime.fromisoformat(start_at):
+                raise HTTPException(400, detail="마감일은 시작일보다 빠를 수 없습니다.")
+        except ValueError:
+            raise HTTPException(400, detail="과제 날짜 형식이 올바르지 않습니다.")
 
     normalized_request_key = request_key.strip()[:100] if request_key else None
     if normalized_request_key:
@@ -161,6 +171,7 @@ async def create_assignment(
         workspace_type=workspace_type,
         google_template_id=None,
         request_key=normalized_request_key,
+        start_at=start_at,
         due_at=due_at,
         created_by=str(current_user.id),
     )

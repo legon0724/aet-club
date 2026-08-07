@@ -7,7 +7,8 @@ from sqlalchemy import and_, not_, or_
 from sqlalchemy.orm import Session
 
 from backend.core.deps import get_admin_user, get_current_user
-from backend.models.database import CalendarEvent, User, get_db
+from backend.models.database import Assignment, CalendarEvent, User, get_db
+from backend.routers.assignments import ensure_assignment_columns
 
 router = APIRouter()
 
@@ -52,6 +53,7 @@ def serialize_event(event: CalendarEvent, current_user: User) -> dict:
 
 @router.get("/")
 def get_events(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    ensure_assignment_columns(db)
     query = db.query(CalendarEvent)
     public_events = or_(CalendarEvent.event_type.is_(None), not_(CalendarEvent.event_type.startswith(PERSONAL_EVENT_PREFIX)))
     if not current_user.is_admin and current_user.team_id:
@@ -59,7 +61,42 @@ def get_events(db: Session = Depends(get_db), current_user: User = Depends(get_c
     personal_events = and_(CalendarEvent.event_type.startswith(PERSONAL_EVENT_PREFIX), CalendarEvent.created_by == str(current_user.id))
     query = query.filter(or_(public_events, personal_events))
     events = query.order_by(CalendarEvent.start_date.asc()).all()
-    return [serialize_event(event, current_user) for event in events]
+    result = [serialize_event(event, current_user) for event in events]
+
+    assignment_query = db.query(Assignment)
+    if not current_user.is_admin:
+        assignment_scope = Assignment.team_id.is_(None)
+        if current_user.team_id:
+            assignment_scope = or_(assignment_scope, Assignment.team_id == str(current_user.team_id))
+        assignment_query = assignment_query.filter(assignment_scope)
+
+    for assignment in assignment_query.order_by(Assignment.created_at.asc()).all():
+        for kind, value, label in (
+            ("start", getattr(assignment, "start_at", None), "과제 시작"),
+            ("due", assignment.due_at, "과제 마감"),
+        ):
+            if not value:
+                continue
+            try:
+                event_date = datetime.fromisoformat(value.replace("Z", "+00:00")).isoformat()
+            except ValueError:
+                continue
+            result.append({
+                "id": f"assignment:{assignment.id}:{kind}",
+                "title": assignment.title,
+                "start_date": event_date,
+                "end_date": None,
+                "team_id": str(assignment.team_id) if assignment.team_id else None,
+                "event_type": label,
+                "created_by": str(assignment.created_by) if assignment.created_by else None,
+                "is_public": True,
+                "is_owner": False,
+                "editable": False,
+                "is_assignment": True,
+                "assignment_id": str(assignment.id),
+            })
+
+    return sorted(result, key=lambda item: item["start_date"])
 
 
 @router.get("/admin")

@@ -3,6 +3,7 @@ import { mainNavItems } from '../config/navigation';
 import PrefetchLink from './PrefetchLink';
 import { clearLocalSession, getCurrentLocalUser } from '../utils/localAuth';
 import { getRoutePrefetchHandlers } from '../utils/routePrefetchHandlers';
+import ThemePicker from './ThemePicker';
 
 export default function Navbar({ user }) {
   const navigate = useNavigate();
@@ -42,6 +43,7 @@ export default function Navbar({ user }) {
       </div>
 
       <div className="site-account">
+        <ThemePicker />
         {resolvedUser?.username && <span>{resolvedUser.username}</span>}
         <button type="button" onClick={logout} aria-label="로그아웃">↗</button>
       </div>

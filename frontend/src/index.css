@@ -70,6 +70,133 @@
   font-size: 13px;
 }
 
+.classroom-create-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px solid #dadce0;
+  border-radius: 10px;
+  padding: 0 18px;
+  background: #1a73e8;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(26, 115, 232, 0.2);
+}
+
+.classroom-create-button:hover { background: #1765cc; }
+.classroom-create-button span { font-size: 21px; font-weight: 400; line-height: 1; }
+
+.classroom-create-panel {
+  margin: 0 0 22px;
+  border: 1px solid #dadce0;
+  border-radius: 14px;
+  padding: 24px;
+  background: #fff;
+  box-shadow: 0 8px 26px rgba(60, 64, 67, 0.08);
+}
+
+.classroom-create-panel > header,
+.classroom-create-panel > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.classroom-create-panel > header { margin-bottom: 20px; }
+.classroom-create-panel > header div { display: grid; gap: 3px; }
+.classroom-create-panel > header span { color: #1a73e8; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; }
+.classroom-create-panel > header h2 { margin: 0; font-size: 22px; letter-spacing: -0.035em; }
+.classroom-create-panel > header > button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: #f1f3f4;
+  color: #5f6368;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.classroom-create-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.classroom-create-grid label {
+  display: grid;
+  gap: 7px;
+  color: #5f6368;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.classroom-create-grid .wide { grid-column: 1 / -1; }
+.classroom-create-grid input,
+.classroom-create-grid select,
+.classroom-create-grid textarea {
+  width: 100%;
+  border: 1px solid #dadce0;
+  border-radius: 9px;
+  padding: 11px 12px;
+  background: #fff;
+  color: #202124;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  outline: 0;
+}
+
+.classroom-create-grid textarea { resize: vertical; }
+.classroom-create-grid input:focus,
+.classroom-create-grid select:focus,
+.classroom-create-grid textarea:focus { border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.12); }
+
+.classroom-google-note {
+  margin: 0;
+  border-radius: 9px;
+  padding: 12px 14px;
+  background: #e8f0fe;
+  color: #174ea6;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.classroom-create-file { display: flex; align-items: center; gap: 10px; }
+.classroom-create-file button {
+  min-height: 42px;
+  border: 1px solid #dadce0;
+  border-radius: 9px;
+  padding: 0 14px;
+  background: #fff;
+  color: #1967d2;
+  font-weight: 800;
+  cursor: pointer;
+}
+.classroom-create-file button span { margin-right: 7px; }
+.classroom-create-file button.remove { border: 0; color: #c5221f; }
+
+.classroom-create-panel > footer {
+  margin-top: 20px;
+  border-top: 1px solid #eceff1;
+  padding-top: 18px;
+}
+.classroom-create-panel > footer small { color: #70757a; }
+.classroom-create-panel > footer button {
+  min-width: 110px;
+  min-height: 42px;
+  border: 0;
+  border-radius: 9px;
+  background: #1a73e8;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+.classroom-create-panel > footer button:disabled { opacity: 0.58; cursor: wait; }
+
 .classroom-body {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr) 330px;
@@ -383,6 +510,35 @@
   gap: 12px;
 }
 
+.classroom-google-work {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 11px;
+  align-items: center;
+  border: 1px solid #dadce0;
+  border-radius: 10px;
+  padding: 11px;
+  color: #202124;
+  text-decoration: none;
+}
+
+.classroom-google-work:hover { background: #f8f9fa; }
+.classroom-google-work > span {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 8px;
+  background: #1a73e8;
+  color: #fff;
+  font-size: 21px;
+}
+.classroom-google-work.sheets > span { background: #188038; }
+.classroom-google-work.slides > span { background: #f9ab00; }
+.classroom-google-work > div { display: grid; gap: 2px; min-width: 0; }
+.classroom-google-work strong { font-size: 13px; }
+.classroom-google-work small { color: #70757a; font-size: 10px; }
+
 .classroom-add-file {
   display: flex;
   align-items: center;
@@ -488,8 +644,13 @@
 
 @media (max-width: 760px) {
   .classroom-page { width: min(100% - 24px, 680px); padding-top: 92px; }
-  .classroom-header { align-items: flex-start; }
+  .classroom-header { align-items: flex-start; flex-wrap: wrap; }
   .classroom-summary { display: none; }
+  .classroom-create-button { margin-left: auto; }
+  .classroom-create-panel { padding: 19px; }
+  .classroom-create-grid { grid-template-columns: 1fr; }
+  .classroom-create-grid .wide { grid-column: 1; }
+  .classroom-create-panel > footer { align-items: stretch; flex-direction: column; }
   .classroom-body { grid-template-columns: 1fr; }
   .classroom-courses { position: static; display: flex; overflow-x: auto; }
   .classroom-side-label { display: none; }
@@ -7049,3 +7210,4 @@ body,
     right: 54px;
   }
 }
+

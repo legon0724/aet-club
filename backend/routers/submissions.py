@@ -10,7 +10,6 @@ import shutil, os, uuid
 from backend.core.deps import get_current_user
 from backend.models.database import Assignment, Submission, ActivityLog, User, get_db
 from backend.models.schemas import SubmissionResponse
-from backend.services.google_workspace import create_student_copy
 
 router = APIRouter()
 
@@ -101,31 +100,6 @@ def get_assignment_work(assignment_id: str, db: Session = Depends(get_db), curre
 
     work = find_user_assignment_work(db, str(current_user.id), assignment_id)
     if work:
-        return serialize_submission(work, db)
-
-    workspace_type = getattr(assignment, "workspace_type", None) or "none"
-    template_id = getattr(assignment, "google_template_id", None)
-    if workspace_type != "none" and template_id:
-        copied = create_student_copy(
-            template_id,
-            assignment.title,
-            current_user.email,
-            current_user.username,
-        )
-        work = Submission(
-            user_id=str(current_user.id),
-            team_id=str(assignment.team_id) if assignment.team_id else None,
-            assignment_id=assignment_id,
-            assignment_title=assignment.title,
-            title=assignment.title,
-            link_url=copied.get("webViewLink"),
-            work_content="",
-            status="draft",
-            updated_at=datetime.utcnow(),
-        )
-        db.add(work)
-        db.commit()
-        db.refresh(work)
         return serialize_submission(work, db)
 
     return SubmissionResponse(

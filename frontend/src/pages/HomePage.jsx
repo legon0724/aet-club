@@ -26,6 +26,13 @@ const appItems = [
     helper: '활동 기록 정리',
     tone: 'amber',
   },
+  {
+    to: '/calendar',
+    icon: '📅',
+    label: '캘린더',
+    helper: '개인·공용 일정',
+    tone: 'mint',
+  },
 ];
 
 function formatDay(date) {

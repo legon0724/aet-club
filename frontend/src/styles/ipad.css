@@ -138,7 +138,7 @@ body {
 
 .ipad-app-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 150px));
+  grid-template-columns: repeat(4, minmax(0, 150px));
   gap: clamp(22px, 4vw, 54px);
   margin-bottom: 42px;
 }
@@ -179,6 +179,7 @@ body {
 .mini-app-icon.coral { background: linear-gradient(145deg, #ff8179, #f04444); }
 .ipad-app-icon.blue { background: linear-gradient(145deg, #68a4ff, #2861ee); }
 .ipad-app-icon.amber { background: linear-gradient(145deg, #ffc75b, #f18b15); }
+.ipad-app-icon.mint { background: linear-gradient(145deg, #63dbc5, #159b88); }
 
 .ipad-app-link strong { font-size: 15px; }
 .ipad-app-link small { color: rgba(255, 255, 255, 0.6); font-size: 11px; }

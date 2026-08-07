@@ -19,6 +19,7 @@ from backend.models.database import (
 )
 from backend.models.schemas import UserResponse
 from backend.routers.submissions import ensure_submission_columns
+from backend.routers.calendar import ensure_calendar_columns
 
 router = APIRouter()
 
@@ -170,6 +171,7 @@ def parse_datetime(value):
 
 @router.get("/backup")
 def export_backup(db: Session = Depends(get_db), _: User = Depends(get_admin_user)):
+    ensure_calendar_columns(db)
     return {
         "version": 1,
         "exported_at": datetime.utcnow().isoformat(),
@@ -216,6 +218,8 @@ def export_backup(db: Session = Depends(get_db), _: User = Depends(get_admin_use
                 "end_date": iso(item.end_date),
                 "team_id": str(item.team_id) if item.team_id else None,
                 "event_type": item.event_type,
+                "created_by": str(item.created_by) if item.created_by else None,
+                "is_public": getattr(item, "is_public", True),
             }
             for item in db.query(CalendarEvent).all()
         ],
@@ -267,6 +271,7 @@ def export_backup(db: Session = Depends(get_db), _: User = Depends(get_admin_use
 
 @router.post("/backup")
 def restore_backup(data: dict, db: Session = Depends(get_db), _: User = Depends(get_admin_user)):
+    ensure_calendar_columns(db)
     for entry in data.get("teams", []):
         item = db.query(Team).filter(Team.id == entry.get("id")).first() if entry.get("id") else None
         if not item:
@@ -313,6 +318,8 @@ def restore_backup(data: dict, db: Session = Depends(get_db), _: User = Depends(
         item.end_date = parse_datetime(entry.get("end_date"))
         item.team_id = entry.get("team_id") or None
         item.event_type = entry.get("event_type") or "일정"
+        item.created_by = entry.get("created_by") or item.created_by
+        item.is_public = bool(entry.get("is_public", True))
 
     for entry in data.get("gallery", []):
         item = db.query(ActivityGalleryItem).filter(ActivityGalleryItem.id == entry.get("id")).first() if entry.get("id") else None

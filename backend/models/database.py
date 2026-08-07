@@ -216,6 +216,7 @@ class CalendarEvent(Base):
     team_id = Column(UUID(), ForeignKey("teams.id", ondelete="SET NULL"), nullable=True)
     event_type = Column(String(20), default="일정")
     created_by = Column(UUID(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    is_public = Column(Boolean, default=True, nullable=False)
 
 
 class AIUsage(Base):
@@ -251,4 +252,3 @@ class ChatMessage(Base):
 
 def init_db():
     Base.metadata.create_all(bind=engine)
-

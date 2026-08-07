@@ -17,6 +17,10 @@ WORKSPACE_MIME_TYPES = {
 }
 
 
+def google_workspace_configured() -> bool:
+    return bool(settings.GOOGLE_SERVICE_ACCOUNT_JSON.strip() and settings.GOOGLE_DELEGATED_USER.strip())
+
+
 def _service_account_info() -> dict:
     raw = settings.GOOGLE_SERVICE_ACCOUNT_JSON.strip()
     if not raw or not settings.GOOGLE_DELEGATED_USER.strip():

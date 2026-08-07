@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from backend.core.deps import get_admin_user, get_current_user
 from backend.models.database import Assignment, User, get_db
-from backend.services.google_workspace import WORKSPACE_MIME_TYPES, create_assignment_template, google_workspace_configured
+from backend.services.google_workspace import WORKSPACE_MIME_TYPES
 
 router = APIRouter()
 
@@ -70,7 +70,7 @@ def serialize_assignment(assignment: Assignment, db: Session, creators: Optional
 
 @router.get("/workspace-status")
 def get_workspace_status(_: User = Depends(get_current_user)):
-    return {"configured": google_workspace_configured()}
+    return {"configured": True, "mode": "manual_copy"}
 
 
 @router.get("/")
@@ -134,10 +134,11 @@ async def create_assignment(
         file_url = f"/api/assignments/files/{save_name}"
         file_name = file.filename
 
-    google_template = None
     if workspace_type != "none":
-        google_template = create_assignment_template(title, workspace_type)
-        resource_url = google_template.get("webViewLink")
+        normalized_resource_url = (resource_url or "").strip()
+        if not normalized_resource_url or "docs.google.com" not in normalized_resource_url:
+            raise HTTPException(400, detail="Google Docs, Sheets 또는 Slides 원본 링크를 입력해주세요.")
+        resource_url = normalized_resource_url
         copy_mode = "student_copy"
 
     assignment = Assignment(
@@ -150,7 +151,7 @@ async def create_assignment(
         copy_mode=copy_mode,
         points=points,
         workspace_type=workspace_type,
-        google_template_id=google_template.get("id") if google_template else None,
+        google_template_id=None,
         request_key=normalized_request_key,
         due_at=due_at,
         created_by=str(current_user.id),

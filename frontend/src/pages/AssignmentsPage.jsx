@@ -57,6 +57,7 @@ function AssignmentMark() {
 
 export default function AssignmentsPage() {
   const [user, setUser] = useState(() => getCurrentLocalUser());
+  const [authReady, setAuthReady] = useState(false);
   const [teams, setTeams] = useState([]);
   const [teamId, setTeamId] = useState('');
   const [assignments, setAssignments] = useState([]);
@@ -67,13 +68,18 @@ export default function AssignmentsPage() {
   const [file, setFile] = useState(null);
   const [busy, setBusy] = useState(false);
   const [draftState, setDraftState] = useState('');
-  const [error, setError] = useState('');
+  const [loadError, setLoadError] = useState('');
+  const [createError, setCreateError] = useState('');
+  const [workError, setWorkError] = useState('');
+  const [workspaceConfigured, setWorkspaceConfigured] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [newAssignment, setNewAssignment] = useState(emptyAssignment);
   const [assignmentFile, setAssignmentFile] = useState(null);
   const [creating, setCreating] = useState(false);
   const fileRef = useRef(null);
   const assignmentFileRef = useRef(null);
+  const creatingRef = useRef(false);
+  const requestKeyRef = useRef('');
 
   const selected = assignments.find((item) => item.id === selectedId) || null;
   const currentSubmission = submissions.find((item) => item.assignment_id === selectedId) || null;
@@ -90,18 +96,19 @@ export default function AssignmentsPage() {
       setAssignments(nextAssignments);
       setSubmissions(submissionResult.data || []);
       setSelectedId((current) => nextAssignments.some((item) => item.id === current) ? current : (nextAssignments[0]?.id || ''));
-      setError('');
+      setLoadError('');
     } catch {
       setAssignments([]);
       setSubmissions([]);
       setSelectedId('');
-      setError('과제 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
+      setLoadError('과제 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
     }
   }, []);
 
   useEffect(() => {
-    api.get('/api/auth/me').then((response) => setUser(rememberCurrentUser(response.data))).catch(() => {});
+    api.get('/api/auth/me').then((response) => setUser(rememberCurrentUser(response.data))).catch(() => {}).finally(() => setAuthReady(true));
     api.get('/api/teams/').then((response) => setTeams(response.data || [])).catch(() => setTeams([]));
+    api.get('/api/assignments/workspace-status').then((response) => setWorkspaceConfigured(Boolean(response.data?.configured))).catch(() => setWorkspaceConfigured(false));
   }, []);
 
   useEffect(() => {
@@ -115,8 +122,9 @@ export default function AssignmentsPage() {
       if (cancelled) return;
       setFile(null);
       setDraftState('');
-      if (!selected || user?.is_admin) {
+      if (!authReady || !selected || user?.is_admin) {
         setWork(emptyWork);
+        setWorkError('');
         return;
       }
       setDraftState('불러오는 중');
@@ -130,17 +138,18 @@ export default function AssignmentsPage() {
           work_content: saved.work_content || '',
         });
         setDraftState(saved.status === 'submitted' ? '제출됨' : '임시저장됨');
+        setWorkError('');
       }).catch((requestError) => {
         if (cancelled) return;
         setWork({ ...emptyWork, title: selected.title });
         setDraftState('');
         if (selected.workspace_type !== 'none') {
-          setError(requestError?.response?.data?.detail || '내 Google 작업 문서를 만들지 못했습니다.');
+          setWorkError(requestError?.response?.data?.detail || '내 Google 작업 문서를 만들지 못했습니다.');
         }
       });
     });
     return () => { cancelled = true; };
-  }, [selected, user?.is_admin]);
+  }, [authReady, selected, user?.is_admin]);
 
   const filteredAssignments = useMemo(() => assignments.filter((assignment) => {
     const submitted = submissions.some((item) => item.assignment_id === assignment.id && item.status === 'submitted');
@@ -209,13 +218,14 @@ export default function AssignmentsPage() {
   const createAssignment = async (event) => {
     event.preventDefault();
     const title = newAssignment.title.trim();
-    if (!title || creating) {
-      if (!title) setError('과제 제목을 입력해주세요.');
+    if (!title || creatingRef.current) {
+      if (!title) setCreateError('과제 제목을 입력해주세요.');
       return;
     }
 
+    creatingRef.current = true;
     setCreating(true);
-    setError('');
+    setCreateError('');
     const data = new FormData();
     data.append('title', title);
     if (teamId) data.append('team_id', teamId);
@@ -226,6 +236,10 @@ export default function AssignmentsPage() {
     data.append('copy_mode', newAssignment.workspace_type === 'none' ? 'site' : 'student_copy');
     if (newAssignment.points !== '') data.append('points', String(newAssignment.points));
     if (assignmentFile) data.append('file', assignmentFile);
+    if (!requestKeyRef.current) {
+      requestKeyRef.current = globalThis.crypto?.randomUUID?.() || `assignment-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+    data.append('request_key', requestKeyRef.current);
 
     try {
       const response = await api.post('/api/assignments/', data);
@@ -234,10 +248,13 @@ export default function AssignmentsPage() {
       setNewAssignment(emptyAssignment);
       setAssignmentFile(null);
       setShowCreate(false);
+      setCreateError('');
+      requestKeyRef.current = '';
       if (assignmentFileRef.current) assignmentFileRef.current.value = '';
     } catch (requestError) {
-      setError(requestError?.response?.data?.detail || '과제를 등록하지 못했습니다. 입력 내용을 확인하고 다시 시도해주세요.');
+      setCreateError(requestError?.response?.data?.detail || '과제를 등록하지 못했습니다. 입력 내용을 확인하고 다시 시도해주세요.');
     } finally {
+      creatingRef.current = false;
       setCreating(false);
     }
   };
@@ -263,7 +280,7 @@ export default function AssignmentsPage() {
           )}
         </header>
 
-        {error && <div className="inline-alert error">{error}</div>}
+        {loadError && <div className="inline-alert error">{loadError}</div>}
 
         {user?.is_admin && showCreate && (
           <form className="classroom-create-panel" onSubmit={createAssignment}>
@@ -274,14 +291,16 @@ export default function AssignmentsPage() {
               </div>
               <button type="button" onClick={() => setShowCreate(false)} aria-label="과제 만들기 닫기">×</button>
             </header>
+            {createError && <div className="inline-alert error">{createError}</div>}
             <div className="classroom-create-grid">
               <label className="wide">과제 제목<input value={newAssignment.title} onChange={(event) => setNewAssignment((current) => ({ ...current, title: event.target.value }))} placeholder="과제 제목을 입력하세요" autoFocus /></label>
               <label>마감일<input type="date" value={newAssignment.due_at} onChange={(event) => setNewAssignment((current) => ({ ...current, due_at: event.target.value }))} /></label>
               <label>배점<input type="number" min="0" value={newAssignment.points} onChange={(event) => setNewAssignment((current) => ({ ...current, points: event.target.value }))} placeholder="선택사항" /></label>
-              <label>학생 작업<select value={newAssignment.workspace_type} onChange={(event) => setNewAssignment((current) => ({ ...current, workspace_type: event.target.value }))}><option value="none">NC에서 바로 제출</option><option value="docs">Google Docs 개인 문서</option><option value="sheets">Google Sheets 개인 시트</option><option value="slides">Google Slides 개인 발표자료</option></select></label>
+              <label>학생 작업<select value={newAssignment.workspace_type} onChange={(event) => setNewAssignment((current) => ({ ...current, workspace_type: event.target.value }))}><option value="none">NC에서 바로 제출</option><option value="docs" disabled={!workspaceConfigured}>Google Docs 개인 문서{workspaceConfigured ? '' : ' · 연결 필요'}</option><option value="sheets" disabled={!workspaceConfigured}>Google Sheets 개인 시트{workspaceConfigured ? '' : ' · 연결 필요'}</option><option value="slides" disabled={!workspaceConfigured}>Google Slides 개인 발표자료{workspaceConfigured ? '' : ' · 연결 필요'}</option></select></label>
               <label className="wide">과제 설명<textarea value={newAssignment.content} onChange={(event) => setNewAssignment((current) => ({ ...current, content: event.target.value }))} placeholder="학생에게 보여줄 안내를 입력하세요" rows={4} /></label>
               <label className="wide">참고 링크<input type="url" value={newAssignment.resource_url} onChange={(event) => setNewAssignment((current) => ({ ...current, resource_url: event.target.value }))} placeholder="수업 자료 링크 (선택사항)" /></label>
               {newAssignment.workspace_type !== 'none' && <p className="classroom-google-note wide">학생이 과제를 처음 열면 {workspaceLabel(newAssignment.workspace_type)} 사본이 자동으로 만들어지고 학교 이메일에 편집 권한이 부여됩니다. 학생은 링크 공유나 권한 요청을 할 필요가 없습니다.</p>}
+              {!workspaceConfigured && <p className="classroom-google-note muted wide">Google 문서 유형은 학교 Workspace 관리자 연결 후 사용할 수 있습니다. 지금은 ‘NC에서 바로 제출’로 과제를 등록할 수 있습니다.</p>}
               <div className="classroom-create-file wide">
                 <button type="button" onClick={() => assignmentFileRef.current?.click()}><span>↑</span>{assignmentFile ? assignmentFile.name : '첨부파일 추가'}</button>
                 {assignmentFile && <button className="remove" type="button" onClick={() => { setAssignmentFile(null); if (assignmentFileRef.current) assignmentFileRef.current.value = ''; }}>삭제</button>}
@@ -390,6 +409,7 @@ export default function AssignmentsPage() {
             ) : (
               <>
                 <header><h2>내 과제</h2><span className={currentSubmission?.status === 'submitted' ? 'submitted' : ''}>{currentSubmission?.status === 'submitted' ? '제출됨' : draftState || '할당됨'}</span></header>
+                {workError && <div className="inline-alert error">{workError}</div>}
                 <div className="classroom-work-fields">
                   {selected.workspace_type !== 'none' && work.link_url && (
                     <a className={`classroom-google-work ${selected.workspace_type}`} href={work.link_url} target="_blank" rel="noreferrer">

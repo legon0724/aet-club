@@ -6,11 +6,12 @@ from typing import Optional
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy import inspect, or_, text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.core.deps import get_admin_user, get_current_user
 from backend.models.database import Assignment, User, get_db
-from backend.services.google_workspace import WORKSPACE_MIME_TYPES, create_assignment_template
+from backend.services.google_workspace import WORKSPACE_MIME_TYPES, create_assignment_template, google_workspace_configured
 
 router = APIRouter()
 
@@ -26,10 +27,12 @@ def ensure_assignment_columns(db: Session):
         "points": "INTEGER",
         "workspace_type": "VARCHAR(20) DEFAULT 'none'",
         "google_template_id": "VARCHAR(255)",
+        "request_key": "VARCHAR(100)",
     }
     for name, definition in columns.items():
         if name not in existing:
             db.execute(text(f"ALTER TABLE assignments ADD COLUMN {name} {definition}"))
+    db.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_assignments_request_key ON assignments (request_key) WHERE request_key IS NOT NULL"))
     db.commit()
 
 
@@ -52,6 +55,11 @@ def serialize_assignment(assignment: Assignment, db: Session) -> dict:
         "created_by": creator.username if creator else "관리자",
         "created_at": assignment.created_at,
     }
+
+
+@router.get("/workspace-status")
+def get_workspace_status(_: User = Depends(get_current_user)):
+    return {"configured": google_workspace_configured()}
 
 
 @router.get("/")
@@ -78,6 +86,7 @@ async def create_assignment(
     copy_mode: str = Form("site"),
     workspace_type: str = Form("none"),
     points: Optional[int] = Form(None),
+    request_key: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_admin_user),
@@ -88,6 +97,12 @@ async def create_assignment(
         raise HTTPException(400, detail="지원하지 않는 과제 방식입니다.")
     if workspace_type not in {"none", *WORKSPACE_MIME_TYPES.keys()}:
         raise HTTPException(400, detail="지원하지 않는 Google 문서 유형입니다.")
+
+    normalized_request_key = request_key.strip()[:100] if request_key else None
+    if normalized_request_key:
+        existing_assignment = db.query(Assignment).filter(Assignment.request_key == normalized_request_key).first()
+        if existing_assignment:
+            return serialize_assignment(existing_assignment, db)
 
     file_url = None
     file_name = None
@@ -123,11 +138,20 @@ async def create_assignment(
         points=points,
         workspace_type=workspace_type,
         google_template_id=google_template.get("id") if google_template else None,
+        request_key=normalized_request_key,
         due_at=due_at,
         created_by=str(current_user.id),
     )
     db.add(assignment)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        if normalized_request_key:
+            existing_assignment = db.query(Assignment).filter(Assignment.request_key == normalized_request_key).first()
+            if existing_assignment:
+                return serialize_assignment(existing_assignment, db)
+        raise
     db.refresh(assignment)
     return serialize_assignment(assignment, db)
 

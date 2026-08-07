@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { preloadRoutes } from '../routes/routeConfig';
 
-const commonRoutes = ['/', '/portfolio', '/team', '/ai'];
+const commonRoutes = ['/', '/notices', '/assignments', '/calendar', '/portfolio', '/team', '/ai'];
 
 export default function useIdleRoutePreload(includeAdmin = false) {
   useEffect(() => {

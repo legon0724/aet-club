@@ -8,8 +8,13 @@ router = APIRouter()
 
 
 @router.get("/")
-def get_teams(db: Session = Depends(get_db)):
-    return db.query(Team).all()
+def get_teams(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    query = db.query(Team)
+    if not current_user.is_admin:
+        if not current_user.team_id:
+            return []
+        query = query.filter(Team.id == current_user.team_id)
+    return query.order_by(Team.name.asc()).all()
 
 
 @router.post("/")

@@ -17,7 +17,7 @@ const terms = [
     id: 'service',
     required: true,
     title: '서비스 이용약관',
-    body: 'NC는 동아리 활동, 공지, 팀 협업, 포트폴리오 관리를 위한 서비스입니다. 가입한 사용자는 본인 계정으로만 이용해야 하며, 허위 정보 등록이나 동아리 활동과 무관한 게시물 작성은 제한될 수 있습니다.',
+    body: 'NC는 동아리 활동, 공지, 과제, 포트폴리오 관리를 위한 서비스입니다. 가입한 사용자는 본인 계정으로만 이용해야 하며, 허위 정보 등록이나 동아리 활동과 무관한 게시물 작성은 제한될 수 있습니다.',
   },
   {
     id: 'privacy',
@@ -269,7 +269,7 @@ export default function LoginPage() {
       <section className="editorial-form-wrap" aria-label={copy.title}>
         <div className="editorial-form">
           <div className="form-title">
-            <strong>NC Portal</strong>
+            <strong>NC Club</strong>
             <span>{copy.eyebrow}</span>
             <h2>{copy.title}</h2>
             <p>{copy.helper}</p>

@@ -67,7 +67,7 @@ def search_workspace(q: str = "", db: Session = Depends(get_db), current_user: U
             results.append({
                 "id": str(portfolio.id),
                 "type": "포트폴리오",
-                "title": owner.username if owner else "NC member",
+                "title": owner.username if owner else "NC 멤버",
                 "snippet": make_snippet(*fields),
                 "href": href,
                 "date": portfolio.updated_at,

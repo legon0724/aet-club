@@ -62,8 +62,6 @@ export default function TeamPage() {
     } else {
       if (wsRef.current) wsRef.current.close();
       wsRef.current = null;
-      setMessages([]);
-      if (tab === 'chat') setTab('assignments');
     }
     loadAssignments(activeTeamId);
     loadSubmissions(activeTeamId, user);
@@ -322,9 +320,9 @@ export default function TeamPage() {
       <main className="workspace-page team-page">
         <section className="page-hero compact assignment-hero">
           <div>
-            <span>Team Assignments</span>
-            <h1>원본 자료와 개인 작업본을 분리합니다.</h1>
-            <p>관리자가 올린 템플릿은 원본으로만 두고, 학생은 자기 사본이나 사이트 작업문서로 제출합니다.</p>
+            <span>NC ASSIGNMENTS</span>
+            <h1>과제를 확인하고 바로 제출하세요.</h1>
+            <p>과제를 고르고, 내 작업을 작성한 뒤 제출하면 끝입니다.</p>
           </div>
           <button className="modern-btn primary" type="button" onClick={() => openTurnIn()}>
             내 작업 열기
@@ -361,8 +359,7 @@ export default function TeamPage() {
           {loadError && <div className="inline-alert error">{loadError}</div>}
           <div className="workspace-tabs">
             {[
-              ['assignments', '팀 과제'],
-              ...(activeTeamId ? [['chat', '팀 채팅']] : []),
+              ['assignments', '과제'],
             ].map(([key, label]) => (
               <button key={key} type="button" className={tab === key ? 'active' : ''} onClick={() => setTab(key)}>
                 {label}
@@ -383,7 +380,7 @@ export default function TeamPage() {
 
                 {assignments.length === 0 ? (
                   <article className="assignment-card empty">
-                    <div className="assignment-icon">NC</div>
+                    <div className="assignment-icon">A</div>
                     <div>
                       <span>대기 중</span>
                       <h2>등록된 과제가 없습니다.</h2>
@@ -400,7 +397,7 @@ export default function TeamPage() {
                       const assignmentSubmission = submissions.find((item) => item.assignment_id === assignment.id);
                       return (
                         <article key={assignment.id} className={`assignment-card ${active ? 'active' : ''}`}>
-                          <div className="assignment-icon">NC</div>
+                          <div className="assignment-icon">A</div>
                           <div>
                             <span>{assignment.created_by || '관리자'}</span>
                             <h2>{assignment.title}</h2>

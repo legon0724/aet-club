@@ -170,7 +170,7 @@ export default function PortfolioPage() {
         <section className="portfolio-print-document" aria-hidden="true">
           <header>
             <span>NC Portfolio</span>
-            <h1>{user?.username || 'NC member'}</h1>
+            <h1>{user?.username || 'NC 멤버'}</h1>
             <p>{user?.email || 'school email'}</p>
           </header>
           <div className="portfolio-print-links">
@@ -212,7 +212,7 @@ export default function PortfolioPage() {
                         <strong>{(item.username || item.email || 'N')[0]}</strong>
                       )}
                       <div>
-                        <b>{item.username || 'NC member'}</b>
+                        <b>{item.username || 'NC 멤버'}</b>
                         <small>{item.intro || item.projects || item.skills || '공개된 포트폴리오입니다.'}</small>
                       </div>
                     </article>
@@ -243,7 +243,7 @@ export default function PortfolioPage() {
           <input ref={imgRef} type="file" accept=".jpg,.jpeg,.png,.webp" onChange={handleImageChange} hidden />
 
           <div className="profile-meta">
-            <strong>{user?.username || 'NC member'}</strong>
+            <strong>{user?.username || 'NC 멤버'}</strong>
             <span>{user?.email || 'school email'}</span>
             {editing ? (
               <div className="link-editor">

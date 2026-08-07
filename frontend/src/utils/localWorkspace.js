@@ -97,7 +97,7 @@ export const getFallbackNotices = () => {
 export const markLocalNoticesRead = (notices, user) => {
   const activeUser = {
     user_id: userKey(user),
-    username: user?.username || 'NC member',
+    username: user?.username || 'NC 멤버',
     email: user?.email || '',
     read_at: new Date().toISOString(),
   };
@@ -222,7 +222,7 @@ export const addLocalMessage = (teamId, user, content) => {
   const message = {
     id: `local-msg-${Date.now()}`,
     team_id: teamId,
-    username: user?.username || 'NC member',
+    username: user?.username || 'NC 멤버',
     content,
     created_at: new Date().toISOString(),
   };
@@ -357,7 +357,7 @@ export const addLocalAssignment = (teamId, user, data, fileName = '', fileData =
     points: data.points || '',
     file_name: fileName,
     file_data: fileData,
-    created_by: user?.username || 'NC admin',
+    created_by: user?.username || 'NC 관리자',
     created_at: new Date().toISOString(),
   };
   const next = [item, ...all];
@@ -384,7 +384,7 @@ export const saveLocalAssignmentWork = (assignment, user, data = {}, status = 'd
     id: existing.id || `local-work-${assignment.id}-${userKey(user)}`,
     user_id: userKey(user),
     email: user?.email || '',
-    username: user?.username || 'NC member',
+    username: user?.username || 'NC 멤버',
     team_id: assignment.team_id,
     assignment_id: assignment.id,
     assignment_title: assignment.title,
@@ -429,7 +429,7 @@ export const addLocalSubmission = (teamId, user, data, fileName = '') => {
     team_id: teamId,
     assignment_id: data.assignment_id || null,
     assignment_title: data.assignment_title || '',
-    username: user?.username || 'NC member',
+    username: user?.username || 'NC 멤버',
     title: data.title,
     content: data.content || '',
     work_content: data.work_content || '',
@@ -531,7 +531,7 @@ export const searchLocalWorkspace = (queryText, user) => {
     .map((portfolio) => ({
       id: portfolio.user_id,
       type: '포트폴리오',
-      title: portfolio.username || portfolio.email || 'NC member',
+      title: portfolio.username || portfolio.email || 'NC 멤버',
       snippet: firstText(portfolio.intro, portfolio.projects, portfolio.skills, portfolio.awards, portfolio.goals).slice(0, 140),
       href: portfolio.email?.toLowerCase() === user?.email?.toLowerCase() ? '/portfolio' : `/portfolio/share/${encodeURIComponent(portfolio.user_id)}`,
       date: portfolio.updated_at || new Date().toISOString(),

@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from backend.core.deps import get_admin_user, get_current_user
 from backend.models.database import Assignment, User, get_db
+from backend.services.google_workspace import WORKSPACE_MIME_TYPES, create_assignment_template
 
 router = APIRouter()
 
@@ -23,6 +24,8 @@ def ensure_assignment_columns(db: Session):
         "resource_url": "TEXT",
         "copy_mode": "VARCHAR(30) DEFAULT 'site'",
         "points": "INTEGER",
+        "workspace_type": "VARCHAR(20) DEFAULT 'none'",
+        "google_template_id": "VARCHAR(255)",
     }
     for name, definition in columns.items():
         if name not in existing:
@@ -44,6 +47,7 @@ def serialize_assignment(assignment: Assignment, db: Session) -> dict:
         "resource_url": getattr(assignment, "resource_url", None),
         "copy_mode": getattr(assignment, "copy_mode", None) or "site",
         "points": getattr(assignment, "points", None),
+        "workspace_type": getattr(assignment, "workspace_type", None) or "none",
         "due_at": assignment.due_at,
         "created_by": creator.username if creator else "관리자",
         "created_at": assignment.created_at,
@@ -72,6 +76,7 @@ async def create_assignment(
     due_at: Optional[str] = Form(None),
     resource_url: Optional[str] = Form(None),
     copy_mode: str = Form("site"),
+    workspace_type: str = Form("none"),
     points: Optional[int] = Form(None),
     file: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
@@ -81,6 +86,8 @@ async def create_assignment(
     allowed_modes = {"site", "student_copy", "material"}
     if copy_mode not in allowed_modes:
         raise HTTPException(400, detail="지원하지 않는 과제 방식입니다.")
+    if workspace_type not in {"none", *WORKSPACE_MIME_TYPES.keys()}:
+        raise HTTPException(400, detail="지원하지 않는 Google 문서 유형입니다.")
 
     file_url = None
     file_name = None
@@ -99,6 +106,12 @@ async def create_assignment(
         file_url = f"/api/assignments/files/{save_name}"
         file_name = file.filename
 
+    google_template = None
+    if workspace_type != "none":
+        google_template = create_assignment_template(title, workspace_type)
+        resource_url = google_template.get("webViewLink")
+        copy_mode = "student_copy"
+
     assignment = Assignment(
         team_id=team_id or None,
         title=title,
@@ -108,6 +121,8 @@ async def create_assignment(
         resource_url=resource_url,
         copy_mode=copy_mode,
         points=points,
+        workspace_type=workspace_type,
+        google_template_id=google_template.get("id") if google_template else None,
         due_at=due_at,
         created_by=str(current_user.id),
     )
@@ -145,3 +160,4 @@ def delete_assignment(
     db.delete(assignment)
     db.commit()
     return {"message": "삭제되었습니다."}
+

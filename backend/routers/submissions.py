@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy import inspect, or_, text
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from threading import Lock
 import shutil, os, uuid
 from backend.core.deps import get_current_user
 from backend.models.database import Assignment, Submission, ActivityLog, User, get_db
@@ -16,6 +17,9 @@ router = APIRouter()
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+_submission_schema_ready = False
+_submission_schema_lock = Lock()
+
 
 class AssignmentWorkDraft(BaseModel):
     title: Optional[str] = None
@@ -25,22 +29,29 @@ class AssignmentWorkDraft(BaseModel):
 
 
 def ensure_submission_columns(db: Session):
-    existing = {column["name"] for column in inspect(db.bind).get_columns("submissions")}
-    columns = {
-        "assignment_id": "VARCHAR(36)",
-        "assignment_title": "VARCHAR(255)",
-        "work_content": "TEXT",
-        "status": "VARCHAR(20) DEFAULT 'submitted'",
-        "updated_at": "TIMESTAMP",
-    }
-    for name, definition in columns.items():
-        if name not in existing:
-            db.execute(text(f"ALTER TABLE submissions ADD COLUMN {name} {definition}"))
-    db.commit()
+    global _submission_schema_ready
+    if _submission_schema_ready:
+        return
+    with _submission_schema_lock:
+        if _submission_schema_ready:
+            return
+        existing = {column["name"] for column in inspect(db.bind).get_columns("submissions")}
+        columns = {
+            "assignment_id": "VARCHAR(36)",
+            "assignment_title": "VARCHAR(255)",
+            "work_content": "TEXT",
+            "status": "VARCHAR(20) DEFAULT 'submitted'",
+            "updated_at": "TIMESTAMP",
+        }
+        for name, definition in columns.items():
+            if name not in existing:
+                db.execute(text(f"ALTER TABLE submissions ADD COLUMN {name} {definition}"))
+        db.commit()
+        _submission_schema_ready = True
 
 
-def serialize_submission(submission: Submission, db: Session) -> SubmissionResponse:
-    user = db.query(User).filter(User.id == str(submission.user_id)).first()
+def serialize_submission(submission: Submission, db: Session, users: Optional[dict] = None) -> SubmissionResponse:
+    user = users.get(str(submission.user_id)) if users is not None else db.query(User).filter(User.id == str(submission.user_id)).first()
     return SubmissionResponse(
         id=str(submission.id),
         title=submission.title,
@@ -76,7 +87,9 @@ def get_submissions(team_id: Optional[str] = None, db: Session = Depends(get_db)
     else:
         query = query.filter(Submission.user_id == str(current_user.id))
     submissions = query.order_by(Submission.created_at.desc()).all()
-    return [serialize_submission(item, db) for item in submissions]
+    user_ids = {str(item.user_id) for item in submissions if item.user_id}
+    users = {str(user.id): user for user in db.query(User).filter(User.id.in_(user_ids)).all()} if user_ids else {}
+    return [serialize_submission(item, db, users) for item in submissions]
 
 
 @router.get("/work/{assignment_id}", response_model=SubmissionResponse)
@@ -266,4 +279,3 @@ def delete_submission(submission_id: str, db: Session = Depends(get_db), current
     db.delete(submission)
     db.commit()
     return {"message": "삭제되었습니다."}
-

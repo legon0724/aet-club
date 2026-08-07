@@ -1,5 +1,17 @@
 .app-shell.workspace-shell {
-  animation: route-surface-in 180ms ease both;
+  animation: route-surface-in 260ms cubic-bezier(.22, .8, .24, 1) both;
+}
+
+.workspace-page,
+.classroom-page {
+  will-change: opacity, transform;
+}
+
+.admin-list-item,
+.assignment-status-card,
+.classroom-assignment-card,
+.classroom-create-panel {
+  transition: opacity 180ms ease, transform 180ms ease, box-shadow 180ms ease;
 }
 
 .route-loader {
@@ -25,7 +37,7 @@
 @keyframes route-surface-in {
   from {
     opacity: 0.01;
-    transform: translateY(6px);
+    transform: translateY(8px) scale(.995);
   }
 
   to {

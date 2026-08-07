@@ -7,7 +7,7 @@ import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
 
 const BACKEND = 'https://web-production-00104.up.railway.app';
 const emptyWork = { title: '', content: '', link_url: '', work_content: '' };
-const emptyAssignment = { title: '', content: '', due_at: '', resource_url: '', workspace_type: 'none', points: '' };
+const emptyAssignment = { title: '', content: '', start_at: '', due_at: '', resource_url: '', workspace_type: 'none', points: '' };
 
 function resolveFileUrl(url) {
   if (!url) return '';
@@ -18,6 +18,9 @@ function dueLabel(value) {
   if (!value) return '마감일 없음';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+  }
   return `${date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })} ${date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`;
 }
 
@@ -242,6 +245,10 @@ export default function AssignmentsPage() {
     }
 
     const resourceUrl = newAssignment.resource_url.trim();
+    if (newAssignment.start_at && newAssignment.due_at && newAssignment.due_at < newAssignment.start_at) {
+      setCreateError('마감일은 시작일보다 빠를 수 없습니다.');
+      return;
+    }
     if (newAssignment.workspace_type !== 'none') {
       if (!resourceUrl) {
         setCreateError(`${workspaceLabel(newAssignment.workspace_type)} 원본 링크를 입력해주세요.`);
@@ -263,6 +270,7 @@ export default function AssignmentsPage() {
     data.append('title', title);
     if (teamId) data.append('team_id', teamId);
     if (newAssignment.content.trim()) data.append('content', newAssignment.content.trim());
+    if (newAssignment.start_at) data.append('start_at', newAssignment.start_at);
     if (newAssignment.due_at) data.append('due_at', newAssignment.due_at);
     if (resourceUrl) data.append('resource_url', resourceUrl);
     data.append('workspace_type', newAssignment.workspace_type);
@@ -281,6 +289,7 @@ export default function AssignmentsPage() {
       team_id: teamId || null,
       title,
       content: newAssignment.content.trim(),
+      start_at: newAssignment.start_at || null,
       due_at: newAssignment.due_at || null,
       resource_url: resourceUrl || null,
       copy_mode: newAssignment.workspace_type === 'none' ? 'site' : 'student_copy',
@@ -350,7 +359,8 @@ export default function AssignmentsPage() {
             {createError && <div className="inline-alert error">{createError}</div>}
             <div className="classroom-create-grid">
               <label className="wide">과제 제목<input value={newAssignment.title} onChange={(event) => setNewAssignment((current) => ({ ...current, title: event.target.value }))} placeholder="과제 제목을 입력하세요" autoFocus /></label>
-              <label>마감일<input type="date" value={newAssignment.due_at} onChange={(event) => setNewAssignment((current) => ({ ...current, due_at: event.target.value }))} /></label>
+              <label>시작일<input type="date" value={newAssignment.start_at} onChange={(event) => setNewAssignment((current) => ({ ...current, start_at: event.target.value }))} /></label>
+              <label>마감일<input type="date" min={newAssignment.start_at || undefined} value={newAssignment.due_at} onChange={(event) => setNewAssignment((current) => ({ ...current, due_at: event.target.value }))} /></label>
               <label>배점<input type="number" min="0" value={newAssignment.points} onChange={(event) => setNewAssignment((current) => ({ ...current, points: event.target.value }))} placeholder="선택사항" /></label>
               <label>학생 작업<select value={newAssignment.workspace_type} onChange={(event) => setNewAssignment((current) => ({ ...current, workspace_type: event.target.value }))}><option value="none">NC에서 바로 제출</option><option value="docs">Google Docs 사본 제출</option><option value="sheets">Google Sheets 사본 제출</option><option value="slides">Google Slides 사본 제출</option></select></label>
               <label className="wide">과제 설명<textarea value={newAssignment.content} onChange={(event) => setNewAssignment((current) => ({ ...current, content: event.target.value }))} placeholder="학생에게 보여줄 안내를 입력하세요" rows={4} /></label>
@@ -422,6 +432,7 @@ export default function AssignmentsPage() {
                   </div>
                   <div className="classroom-score">
                     <strong>{selected.points ? `${selected.points}점` : '배점 없음'}</strong>
+                    {selected.start_at && <span>시작 {dueLabel(selected.start_at)}</span>}
                     <span>{dueLabel(selected.due_at)}</span>
                   </div>
                 </header>

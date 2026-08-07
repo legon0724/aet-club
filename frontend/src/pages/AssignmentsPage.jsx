@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
+import { showSiteAlert, showSiteConfirm } from '../utils/siteDialog';
 import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
 
 const BACKEND = 'https://web-production-00104.up.railway.app';
@@ -176,7 +177,7 @@ export default function AssignmentsPage() {
   const turnIn = async () => {
     if (!selected || busy) return;
     if (selected.copy_mode === 'student_copy' && selected.workspace_type === 'none' && !work.link_url.trim()) {
-      window.alert('개인 사본 링크를 추가한 뒤 제출해주세요.');
+      void showSiteAlert('개인 사본 링크를 추가한 뒤 제출해주세요.');
       return;
     }
     setBusy(true);
@@ -195,21 +196,21 @@ export default function AssignmentsPage() {
       setDraftState('제출됨');
       setFile(null);
     } catch (requestError) {
-      window.alert(requestError?.response?.data?.detail || '과제를 제출하지 못했습니다. 다시 시도해주세요.');
+      void showSiteAlert(requestError?.response?.data?.detail || '과제를 제출하지 못했습니다. 다시 시도해주세요.');
     } finally {
       setBusy(false);
     }
   };
 
   const unsubmit = async () => {
-    if (!currentSubmission || !window.confirm('제출을 취소하고 다시 수정할까요?')) return;
+    if (!currentSubmission || !(await showSiteConfirm('제출을 취소하고 다시 수정할까요?', '제출 취소'))) return;
     setBusy(true);
     try {
       await api.delete(`/api/submissions/${currentSubmission.id}`);
       await reload(teamId);
       setDraftState('제출 취소됨');
     } catch {
-      window.alert('제출을 취소하지 못했습니다. 다시 시도해주세요.');
+      void showSiteAlert('제출을 취소하지 못했습니다. 다시 시도해주세요.');
     } finally {
       setBusy(false);
     }
@@ -439,4 +440,3 @@ export default function AssignmentsPage() {
     </div>
   );
 }
-

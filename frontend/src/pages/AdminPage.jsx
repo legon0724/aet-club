@@ -1,18 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
+import { showSiteAlert, showSiteConfirm } from '../utils/siteDialog';
 import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
 
 const BACKEND = 'https://web-production-00104.up.railway.app';
 
 const emptyGallery = { title: '', description: '', link_url: '' };
 const emptyCalendar = { title: '', start_date: '', end_date: '', event_type: '일정', team_id: '' };
+const ADMIN_TAB_KEYS = ['users', 'teams', 'assignments', 'gallery', 'calendar', 'notices', 'portfolios', 'ai', 'backup'];
 
 export default function AdminPage() {
   const [user, setUser] = useState(() => getCurrentLocalUser());
-  const [tab, setTab] = useState('users');
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get('tab');
+  const tab = ADMIN_TAB_KEYS.includes(requestedTab) ? requestedTab : 'users';
 
   useEffect(() => {
     const localUser = getCurrentLocalUser();
@@ -61,7 +65,12 @@ export default function AdminPage() {
 
         <section className="admin-overview" aria-label="관리 메뉴">
           {tabs.map(([key, label, helper]) => (
-            <button key={key} type="button" className={tab === key ? 'active' : ''} onClick={() => setTab(key)}>
+            <button
+              key={key}
+              type="button"
+              className={tab === key ? 'active' : ''}
+              onClick={() => setSearchParams(key === 'users' ? {} : { tab: key }, { replace: true })}
+            >
               <span>{label}</span>
               <small>{helper}</small>
             </button>
@@ -97,7 +106,7 @@ function resolveFileUrl(url) {
 }
 
 function showSaveError(error) {
-  window.alert(error?.response?.data?.detail || '서버에 저장하지 못했습니다. 새로고침 후 다시 시도해주세요.');
+  void showSiteAlert(error?.response?.data?.detail || '서버에 저장하지 못했습니다. 새로고침 후 다시 시도해주세요.');
 }
 
 function UsersTab() {
@@ -130,7 +139,7 @@ function UsersTab() {
   };
 
   const deleteUser = async (id) => {
-    if (!window.confirm('회원을 삭제할까요?')) return;
+    if (!(await showSiteConfirm('회원을 삭제할까요?', '회원 삭제'))) return;
     try {
       await api.delete(`/api/admin/users/${id}`);
     } catch (error) {
@@ -187,7 +196,7 @@ function TeamsTab() {
   };
 
   const del = async (id) => {
-    if (!window.confirm('팀을 삭제할까요?')) return;
+    if (!(await showSiteConfirm('팀을 삭제할까요?', '팀 삭제'))) return;
     try {
       await api.delete(`/api/teams/${id}`);
     } catch (error) {
@@ -262,7 +271,7 @@ function AssignmentsTab() {
   }
 
   const del = async (id) => {
-    if (!window.confirm('과제를 삭제할까요?')) return;
+    if (!(await showSiteConfirm('과제를 삭제할까요?', '과제 삭제'))) return;
     try {
       await api.delete(`/api/assignments/${id}`);
     } catch (error) {
@@ -387,7 +396,7 @@ function GalleryTab() {
   };
 
   const del = async (id) => {
-    if (!window.confirm('갤러리 항목을 삭제할까요?')) return;
+    if (!(await showSiteConfirm('갤러리 항목을 삭제할까요?', '갤러리 삭제'))) return;
     try {
       await api.delete(`/api/gallery/${id}`);
     } catch (error) {
@@ -466,7 +475,7 @@ function CalendarTab() {
   };
 
   const del = async (id) => {
-    if (!window.confirm('일정을 삭제할까요?')) return;
+    if (!(await showSiteConfirm('일정을 삭제할까요?', '일정 삭제'))) return;
     try {
       await api.delete(`/api/calendar/${id}`);
     } catch (error) {
@@ -561,7 +570,7 @@ function NoticesTab() {
   };
 
   const del = async (id) => {
-    if (!window.confirm('공지를 삭제할까요?')) return;
+    if (!(await showSiteConfirm('공지를 삭제할까요?', '공지 삭제'))) return;
     try {
       await api.delete(`/api/notices/${id}`);
     } catch (error) {
@@ -809,4 +818,3 @@ function BackupTab() {
     </div>
   );
 }
-

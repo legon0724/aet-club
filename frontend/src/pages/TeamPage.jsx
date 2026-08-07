@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
+import { showSiteAlert, showSiteConfirm } from '../utils/siteDialog';
 import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
 
 const BACKEND = 'https://web-production-00104.up.railway.app';
@@ -230,7 +231,7 @@ export default function TeamPage() {
       wsRef.current.send(JSON.stringify({ content }));
       setInput('');
     } else {
-      window.alert('채팅 서버에 연결되지 않았습니다. 새로고침 후 다시 시도해주세요.');
+      void showSiteAlert('채팅 서버에 연결되지 않았습니다. 새로고침 후 다시 시도해주세요.');
     }
   };
 
@@ -250,7 +251,7 @@ export default function TeamPage() {
     const title = (newSub.title || selectedAssignment?.title || '').trim();
     if (!title) return;
     if (isStudentCopyAssignment(selectedAssignment) && !newSub.link_url.trim()) {
-      window.alert('개인 사본 링크를 붙여넣어야 제출할 수 있습니다.');
+      void showSiteAlert('개인 사본 링크를 붙여넣어야 제출할 수 있습니다.');
       return;
     }
 
@@ -277,7 +278,7 @@ export default function TeamPage() {
       loadSubmissions(activeTeamId, user);
     } catch {
       setDraftStatus('error');
-      window.alert('제출물을 서버에 저장하지 못했습니다. 다시 시도해주세요.');
+      void showSiteAlert('제출물을 서버에 저장하지 못했습니다. 다시 시도해주세요.');
       return;
     }
     setNewSub(blankSubmission);
@@ -286,11 +287,11 @@ export default function TeamPage() {
   };
 
   const deleteSub = async (id) => {
-    if (!window.confirm('제출물을 삭제할까요?')) return;
+    if (!(await showSiteConfirm('제출물을 삭제할까요?', '제출물 삭제'))) return;
     try {
       await api.delete(`/api/submissions/${id}`);
     } catch {
-      window.alert('제출물을 서버에서 삭제하지 못했습니다. 다시 시도해주세요.');
+      void showSiteAlert('제출물을 서버에서 삭제하지 못했습니다. 다시 시도해주세요.');
       return;
     }
     setSubmissions((current) => current.filter((item) => item.id !== id));

@@ -15,7 +15,7 @@ export default function Navbar({ user }) {
 
   return (
     <nav className="site-nav">
-      <PrefetchLink to="/" className="site-logo" aria-label="AET 홈">
+      <PrefetchLink to="/" className="site-logo" aria-label="NC 홈">
         <span>NC</span>
       </PrefetchLink>
 
@@ -28,15 +28,21 @@ export default function Navbar({ user }) {
             className={({ isActive }) => (isActive ? 'active' : '')}
             {...getRoutePrefetchHandlers(item.to)}
           >
-            {item.label}
+            <span className="nav-icon" aria-hidden="true">{item.icon}</span>
+            <small>{item.label}</small>
           </NavLink>
         ))}
-        {resolvedUser?.is_admin && <NavLink to="/admin" {...getRoutePrefetchHandlers('/admin')}>관리자</NavLink>}
+        {resolvedUser?.is_admin && (
+          <NavLink to="/admin" {...getRoutePrefetchHandlers('/admin')}>
+            <span className="nav-icon" aria-hidden="true">⚙️</span>
+            <small>관리자</small>
+          </NavLink>
+        )}
       </div>
 
       <div className="site-account">
         {resolvedUser?.username && <span>{resolvedUser.username}</span>}
-        <button type="button" onClick={logout}>로그아웃</button>
+        <button type="button" onClick={logout} aria-label="로그아웃">↗</button>
       </div>
     </nav>
   );

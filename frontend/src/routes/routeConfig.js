@@ -3,6 +3,7 @@ import { lazy } from 'react';
 const pageLoaders = {
   login: () => import('../pages/LoginPage'),
   home: () => import('../pages/HomePage'),
+  notices: () => import('../pages/NoticesPage'),
   portfolio: () => import('../pages/PortfolioPage'),
   sharedPortfolio: () => import('../pages/SharedPortfolioPage'),
   team: () => import('../pages/TeamPage'),
@@ -27,9 +28,11 @@ function lazyPage(key) {
 
 const routePageKeys = {
   '/': 'home',
+  '/notices': 'notices',
   '/portfolio': 'portfolio',
   '/portfolio/share': 'sharedPortfolio',
   '/team': 'team',
+  '/assignments': 'team',
   '/ai': 'ai',
   '/search': 'search',
   '/admin': 'admin',
@@ -39,6 +42,7 @@ const routePageKeys = {
 export const routePages = {
   LoginPage: lazyPage('login'),
   HomePage: lazyPage('home'),
+  NoticesPage: lazyPage('notices'),
   PortfolioPage: lazyPage('portfolio'),
   SharedPortfolioPage: lazyPage('sharedPortfolio'),
   TeamPage: lazyPage('team'),
@@ -49,8 +53,10 @@ export const routePages = {
 
 export const protectedRoutes = [
   { path: '/', Component: routePages.HomePage },
+  { path: '/notices', Component: routePages.NoticesPage },
   { path: '/portfolio', Component: routePages.PortfolioPage },
   { path: '/team', Component: routePages.TeamPage },
+  { path: '/assignments', Component: routePages.TeamPage },
   { path: '/ai', Component: routePages.AIPage },
   { path: '/search', Component: routePages.SearchPage },
   { path: '/admin', Component: routePages.AdminPage },

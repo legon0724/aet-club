@@ -54,7 +54,7 @@ export default function SharedPortfolioPage() {
           )}
           <div>
             <span>Public Portfolio</span>
-            <h1>{portfolio.username || 'NC member'}</h1>
+            <h1>{portfolio.username || 'NC 멤버'}</h1>
             <p>{portfolio.email || 'school email'}</p>
           </div>
         </div>

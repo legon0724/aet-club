@@ -1,7 +1,6 @@
 export const mainNavItems = [
-  { to: '/', label: '홈', exact: true },
-  { to: '/portfolio', label: '포트폴리오' },
-  { to: '/team', label: '과제' },
-  { to: '/ai', label: 'AI 분석' },
-  { to: '/search', label: '검색' },
+  { to: '/', label: '홈', icon: '⌂', exact: true },
+  { to: '/notices', label: '공지', icon: '🔔' },
+  { to: '/assignments', label: '과제', icon: '✏️' },
+  { to: '/portfolio', label: '포트폴리오', icon: '🗂️' },
 ];

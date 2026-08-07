@@ -460,7 +460,7 @@ function CalendarTab() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    api.get('/api/calendar/').then((r) => setEvents(r.data || [])).catch(() => setEvents([]));
+    api.get('/api/calendar/admin').then((r) => setEvents(r.data || [])).catch(() => setEvents([]));
     api.get('/api/teams/').then((r) => setTeams(r.data)).catch(() => setTeams([]));
   }, []);
 
@@ -469,7 +469,7 @@ function CalendarTab() {
     const payload = { ...form, title: form.title.trim() };
     try {
       await api.post('/api/calendar/', payload);
-      const r = await api.get('/api/calendar/');
+      const r = await api.get('/api/calendar/admin');
       setEvents(r.data || []);
     } catch (error) {
       showSaveError(error);

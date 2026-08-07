@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
 import { showSiteAlert, showSiteConfirm } from '../utils/siteDialog';
-import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
+import { rememberCurrentUser } from '../utils/localAuth';
 
 const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
 const emptyForm = { title: '', start_date: '', end_date: '', event_type: '개인' };
@@ -31,7 +31,7 @@ function monthCells(month) {
 }
 
 export default function CalendarPage() {
-  const [user, setUser] = useState(() => getCurrentLocalUser());
+  const [user, setUser] = useState(null);
   const [events, setEvents] = useState([]);
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [selectedDate, setSelectedDate] = useState(() => new Date());
@@ -42,8 +42,17 @@ export default function CalendarPage() {
   const loadEvents = () => api.get('/api/calendar/').then((response) => setEvents(response.data || []));
 
   useEffect(() => {
-    api.get('/api/auth/me').then((response) => setUser(rememberCurrentUser(response.data))).catch(() => {});
-    loadEvents().catch(() => setEvents([]));
+    let active = true;
+    const load = async () => {
+      const response = await api.get('/api/auth/me');
+      if (!active) return;
+      setUser(rememberCurrentUser(response.data));
+      await loadEvents();
+    };
+    load().catch(() => {
+      if (active) setEvents([]);
+    });
+    return () => { active = false; };
   }, []);
 
   const cells = useMemo(() => monthCells(month), [month]);

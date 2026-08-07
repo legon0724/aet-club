@@ -151,7 +151,7 @@ export default function CalendarPage() {
                   <button key={key} type="button" className={`${outside ? 'outside ' : ''}${selected ? 'selected' : ''}`} onClick={() => chooseDate(date)}>
                     <time>{date.getDate()}</time>
                     <span className="calendar-dots">
-                      {dayEvents.slice(0, 3).map((item) => <i key={item.id} className={item.is_public ? 'public' : 'personal'} />)}
+                      {dayEvents.slice(0, 3).map((item) => <i key={item.id} className={item.is_assignment ? 'assignment' : item.is_public ? 'public' : 'personal'} />)}
                     </span>
                     {dayEvents.length > 0 && <small>{dayEvents.length}개</small>}
                   </button>
@@ -168,14 +168,14 @@ export default function CalendarPage() {
             <div className="calendar-agenda-list">
               {selectedEvents.length === 0 && <p>등록된 일정이 없습니다.</p>}
               {selectedEvents.map((event) => (
-                <article key={event.id} className={event.is_public ? 'public' : 'personal'}>
+                <article key={event.id} className={event.is_assignment ? 'assignment' : event.is_public ? 'public' : 'personal'}>
                   <div>
-                    <span>{event.is_public ? '관리자 일정 · 수정 불가' : '나만 보는 일정'}</span>
+                    <span>{event.is_assignment ? `${event.event_type} · 자동 연동` : event.is_public ? '관리자 일정 · 수정 불가' : '나만 보는 일정'}</span>
                     <strong>{event.title}</strong>
-                    <small>{new Date(event.start_date).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}{event.end_date ? ` – ${new Date(event.end_date).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}` : ''}</small>
+                    <small>{event.is_assignment ? '과제에서 날짜가 바뀌면 자동으로 반영됩니다.' : `${new Date(event.start_date).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}${event.end_date ? ` – ${new Date(event.end_date).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}` : ''}`}</small>
                   </div>
                   {event.editable && <button type="button" onClick={() => remove(event)}>삭제</button>}
-                  {event.is_public && <span className="calendar-lock" aria-label="읽기 전용">🔒</span>}
+                  {event.is_public && !event.is_assignment && <span className="calendar-lock" aria-label="읽기 전용">🔒</span>}
                 </article>
               ))}
             </div>

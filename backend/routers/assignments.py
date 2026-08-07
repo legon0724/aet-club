@@ -1,6 +1,7 @@
 import os
 import shutil
 import uuid
+from threading import Lock
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
@@ -18,27 +19,37 @@ router = APIRouter()
 UPLOAD_DIR = os.path.join("uploads", "assignments")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+_assignment_schema_ready = False
+_assignment_schema_lock = Lock()
+
 
 def ensure_assignment_columns(db: Session):
-    existing = {column["name"] for column in inspect(db.bind).get_columns("assignments")}
-    columns = {
-        "resource_url": "TEXT",
-        "copy_mode": "VARCHAR(30) DEFAULT 'site'",
-        "points": "INTEGER",
-        "workspace_type": "VARCHAR(20) DEFAULT 'none'",
-        "google_template_id": "VARCHAR(255)",
-        "request_key": "VARCHAR(100)",
-    }
-    for name, definition in columns.items():
-        if name not in existing:
-            db.execute(text(f"ALTER TABLE assignments ADD COLUMN {name} {definition}"))
-    db.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_assignments_request_key ON assignments (request_key) WHERE request_key IS NOT NULL"))
-    db.commit()
+    global _assignment_schema_ready
+    if _assignment_schema_ready:
+        return
+    with _assignment_schema_lock:
+        if _assignment_schema_ready:
+            return
+        existing = {column["name"] for column in inspect(db.bind).get_columns("assignments")}
+        columns = {
+            "resource_url": "TEXT",
+            "copy_mode": "VARCHAR(30) DEFAULT 'site'",
+            "points": "INTEGER",
+            "workspace_type": "VARCHAR(20) DEFAULT 'none'",
+            "google_template_id": "VARCHAR(255)",
+            "request_key": "VARCHAR(100)",
+        }
+        for name, definition in columns.items():
+            if name not in existing:
+                db.execute(text(f"ALTER TABLE assignments ADD COLUMN {name} {definition}"))
+        db.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_assignments_request_key ON assignments (request_key) WHERE request_key IS NOT NULL"))
+        db.commit()
+        _assignment_schema_ready = True
 
 
-def serialize_assignment(assignment: Assignment, db: Session) -> dict:
-    creator = None
-    if assignment.created_by:
+def serialize_assignment(assignment: Assignment, db: Session, creators: Optional[dict] = None) -> dict:
+    creator = creators.get(str(assignment.created_by)) if creators is not None and assignment.created_by else None
+    if creators is None and assignment.created_by:
         creator = db.query(User).filter(User.id == str(assignment.created_by)).first()
     return {
         "id": str(assignment.id),
@@ -73,7 +84,9 @@ def get_assignments(
     if team_id:
         query = query.filter(or_(Assignment.team_id == team_id, Assignment.team_id.is_(None)))
     assignments = query.order_by(Assignment.created_at.desc()).all()
-    return [serialize_assignment(item, db) for item in assignments]
+    creator_ids = {str(item.created_by) for item in assignments if item.created_by}
+    creators = {str(user.id): user for user in db.query(User).filter(User.id.in_(creator_ids)).all()} if creator_ids else {}
+    return [serialize_assignment(item, db, creators) for item in assignments]
 
 
 @router.post("/")
@@ -184,4 +197,3 @@ def delete_assignment(
     db.delete(assignment)
     db.commit()
     return {"message": "삭제되었습니다."}
-

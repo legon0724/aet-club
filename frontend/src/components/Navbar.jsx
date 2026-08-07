@@ -5,7 +5,7 @@ import { clearLocalSession, getCurrentLocalUser } from '../utils/localAuth';
 import { getRoutePrefetchHandlers } from '../utils/routePrefetchHandlers';
 import ThemePicker from './ThemePicker';
 
-export default function Navbar({ user }) {
+export default function Navbar({ user, showThemePicker = false }) {
   const navigate = useNavigate();
   const resolvedUser = user || getCurrentLocalUser();
 
@@ -16,7 +16,7 @@ export default function Navbar({ user }) {
 
   return (
     <>
-      <ThemePicker />
+      {showThemePicker && <ThemePicker />}
       <nav className="site-nav">
         <PrefetchLink to="/" className="site-logo" aria-label="NC 홈">
           <span>NC</span>

@@ -38,7 +38,6 @@ export default function AdminPage() {
     ['gallery', '활동 갤러리', '사진과 발표 자료'],
     ['calendar', '캘린더', '발표일과 활동 일정'],
     ['notices', '공지 관리', '전체와 팀별 안내'],
-    ['banners', '배너 관리', '홈 배너 운영'],
     ['portfolios', '포트폴리오', '회원 작업물 확인'],
     ['ai', 'AI 사용량', '분석 사용 현황'],
     ['backup', '백업/복원', '운영 데이터 저장'],
@@ -84,7 +83,6 @@ export default function AdminPage() {
           {tab === 'gallery' && <GalleryTab />}
           {tab === 'calendar' && <CalendarTab />}
           {tab === 'notices' && <NoticesTab />}
-          {tab === 'banners' && <BannersTab />}
           {tab === 'portfolios' && <PortfoliosTab />}
           {tab === 'ai' && <AITab />}
           {tab === 'backup' && <BackupTab />}
@@ -711,100 +709,6 @@ function NoticesTab() {
               </div>
               <small>{new Date(notice.created_at).toLocaleDateString()}</small>
               <button className="danger-button" type="button" onClick={() => del(notice.id)}>삭제</button>
-            </article>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function BannersTab() {
-  const [banners, setBanners] = useState([]);
-  const [form, setForm] = useState({ title: '', link_url: '', order_num: 0 });
-  const [imageFile, setImageFile] = useState(null);
-  const [show, setShow] = useState(false);
-  const imgRef = useRef(null);
-
-  useEffect(() => {
-    api.get('/api/banners/').then((r) => setBanners(r.data)).catch(() => setBanners([]));
-  }, []);
-
-  const create = async () => {
-    const formData = new FormData();
-    if (form.title) formData.append('title', form.title);
-    if (form.link_url) formData.append('link_url', form.link_url);
-    formData.append('order_num', String(form.order_num));
-    if (imageFile) formData.append('image_file', imageFile);
-
-    try {
-      await api.post('/api/banners/', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      const r = await api.get('/api/banners/');
-      setBanners(r.data);
-    } catch (error) {
-      showSaveError(error);
-      return;
-    }
-    setForm({ title: '', link_url: '', order_num: 0 });
-    setImageFile(null);
-    setShow(false);
-  };
-
-  const del = async (id) => {
-    if (!window.confirm('배너를 삭제할까요?')) return;
-    try {
-      await api.delete(`/api/banners/${id}`);
-    } catch (error) {
-      showSaveError(error);
-      return;
-    }
-    setBanners((current) => current.filter((item) => item.id !== id));
-  };
-
-  const toggle = async (id, isActive) => {
-    try {
-      await api.patch(`/api/banners/${id}`, { is_active: !isActive });
-    } catch (error) {
-      showSaveError(error);
-      return;
-    }
-    setBanners((current) => current.map((item) => (item.id === id ? { ...item, is_active: !isActive } : item)));
-  };
-
-  return (
-    <div>
-      <div className="admin-toolbar">
-        <button className="modern-btn primary" type="button" onClick={() => setShow((current) => !current)}>배너 추가</button>
-      </div>
-      {show && (
-        <div className="admin-form-grid">
-          <input value={form.title} onChange={(e) => setForm((current) => ({ ...current, title: e.target.value }))} placeholder="배너 제목" />
-          <input value={form.link_url} onChange={(e) => setForm((current) => ({ ...current, link_url: e.target.value }))} placeholder="연결 링크" />
-          <input value={form.order_num} type="number" onChange={(e) => setForm((current) => ({ ...current, order_num: Number(e.target.value) }))} placeholder="순서" />
-          <div className="admin-file-pick" role="button" tabIndex={0} onClick={() => imgRef.current?.click()} onKeyDown={(e) => e.key === 'Enter' && imgRef.current?.click()}>
-            <strong>{imageFile ? imageFile.name : '이미지 선택'}</strong>
-            <span>JPG, PNG, WebP, GIF</span>
-          </div>
-          <input ref={imgRef} type="file" accept=".jpg,.jpeg,.png,.webp,.gif" onChange={(e) => setImageFile(e.target.files[0])} hidden />
-          <button className="modern-btn primary" type="button" onClick={create}>추가</button>
-        </div>
-      )}
-      <div className="admin-list">
-        {banners.length === 0 && <p className="empty-state">배너가 없습니다.</p>}
-        {banners.map((banner) => {
-          const imgUrl = resolveFileUrl(banner.image_url);
-          return (
-            <article key={banner.id} className="admin-list-item">
-              {imgUrl && <img className="admin-thumb" src={imgUrl} alt="" loading="lazy" decoding="async" />}
-              <div>
-                <strong>{banner.title || '제목 없음'}</strong>
-                {banner.link_url && <span>{banner.link_url}</span>}
-                <small>순서 {banner.order_num}</small>
-              </div>
-              <button className={banner.is_active ? 'status-button active' : 'status-button'} type="button" onClick={() => toggle(banner.id, banner.is_active)}>
-                {banner.is_active ? '활성' : '비활성'}
-              </button>
-              <button className="danger-button" type="button" onClick={() => del(banner.id)}>삭제</button>
             </article>
           );
         })}

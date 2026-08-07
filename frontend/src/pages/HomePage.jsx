@@ -96,11 +96,6 @@ export default function HomePage() {
           </div>
         </header>
 
-        <section className="ipad-greeting">
-          <p>NC CLUB</p>
-          <h1>오늘도 좋은 활동을<br />시작해볼까요?</h1>
-        </section>
-
         <section className="ipad-app-grid" aria-label="NC 앱">
           {appItems.map((item) => (
             <PrefetchLink key={item.to} to={item.to} className="ipad-app-link">

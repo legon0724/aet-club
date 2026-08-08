@@ -10,6 +10,7 @@ import './styles/themes.css'
 import App from './App.jsx'
 import { applySiteTheme, getSiteTheme } from './utils/theme'
 
+// Keep the latest merged frontend build active in production.
 applySiteTheme(getSiteTheme())
 
 createRoot(document.getElementById('root')).render(

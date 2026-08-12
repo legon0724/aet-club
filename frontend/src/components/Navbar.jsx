@@ -1,11 +1,10 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { mainNavItems } from '../config/navigation';
 import PrefetchLink from './PrefetchLink';
-import AccountSettings from './AccountSettings';
 import { clearLocalSession, getCurrentLocalUser } from '../utils/localAuth';
 import { getRoutePrefetchHandlers } from '../utils/routePrefetchHandlers';
 
-export default function Navbar({ user, showThemePicker = false }) {
+export default function Navbar({ user }) {
   const navigate = useNavigate();
   const resolvedUser = user || getCurrentLocalUser();
 
@@ -43,7 +42,6 @@ export default function Navbar({ user, showThemePicker = false }) {
         </div>
 
         <div className="site-account">
-          {!showThemePicker && <AccountSettings user={resolvedUser} />}
           <button type="button" className="logout-button" onClick={logout} aria-label="로그아웃">↗</button>
         </div>
       </nav>

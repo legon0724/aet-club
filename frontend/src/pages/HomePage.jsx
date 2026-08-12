@@ -154,7 +154,7 @@ export default function HomePage() {
           <span>●</span> 공지 확인부터 과제 제출, 활동 기록까지 한 곳에서
         </footer>
       </main>
-      <Navbar user={user} showThemePicker />
+      <Navbar user={user} />
     </div>
   );
 }

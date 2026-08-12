@@ -66,6 +66,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     is_admin = Column(Boolean, default=False)
     privacy_consented = Column(Boolean, default=False)
+    background_image = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     team_id = Column(UUID(), ForeignKey("teams.id", ondelete="SET NULL"), nullable=True)
 
@@ -255,3 +256,9 @@ class ChatMessage(Base):
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    # Safe additive migration for existing databases. It does not modify user content.
+    from sqlalchemy import inspect, text
+    columns = {column["name"] for column in inspect(engine).get_columns("users")}
+    if "background_image" not in columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE users ADD COLUMN background_image TEXT"))

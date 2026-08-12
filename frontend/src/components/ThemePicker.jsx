@@ -1,7 +1,7 @@
-import { useRef, useState } from 'react';
+import { memo, useRef, useState } from 'react';
 import { applySiteTheme, getSiteTheme, SITE_THEMES } from '../utils/theme';
 
-export default function ThemePicker() {
+function ThemePicker({ inline = false }) {
   const [themeId, setThemeId] = useState(() => getSiteTheme());
   const detailsRef = useRef(null);
   const selected = SITE_THEMES.find((theme) => theme.id === themeId) || SITE_THEMES[0];
@@ -12,7 +12,7 @@ export default function ThemePicker() {
   };
 
   return (
-    <details ref={detailsRef} className="theme-picker">
+    <details ref={detailsRef} className={`theme-picker${inline ? ' inline' : ''}`}>
       <summary aria-label={`배경 테마: ${selected.label}`} title="배경 테마 바꾸기">
         <span>테마</span>
       </summary>
@@ -26,3 +26,5 @@ export default function ThemePicker() {
     </details>
   );
 }
+
+export default memo(ThemePicker);

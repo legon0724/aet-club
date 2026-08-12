@@ -5,7 +5,7 @@ const api = axios.create({
   timeout: 15000,
 });
 
-const GET_CACHE_TTL = 8000;
+const GET_CACHE_TTL = 30000;
 const getCache = new Map();
 const pendingGets = new Map();
 let cacheGeneration = 0;

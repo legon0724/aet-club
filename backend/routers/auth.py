@@ -10,7 +10,10 @@ from backend.core.deps import get_current_user
 from backend.core.security import create_access_token, hash_password, is_admin_email, is_allowed_email, verify_password
 from backend.models.database import PasswordResetCode, User, get_db
 from backend.models.schemas import (
+    BackgroundUpdateRequest,
+    BackgroundResponse,
     LoginRequest,
+    PasswordChangeRequest,
     PasswordResetCodeRequest,
     PasswordResetConfirmRequest,
     RegisterRequest,
@@ -185,3 +188,45 @@ def confirm_password_reset(body: PasswordResetConfirmRequest, db: Session = Depe
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.patch("/me/password")
+def change_password(
+    body: PasswordChangeRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not verify_password(body.current_password, current_user.password_hash):
+        raise HTTPException(400, detail="?? ????? ???? ????.")
+    if len(body.new_password) < 8:
+        raise HTTPException(400, detail="? ????? 8? ????? ???.")
+    if verify_password(body.new_password, current_user.password_hash):
+        raise HTTPException(400, detail="? ????? ?? ????? ??? ???.")
+
+    current_user.password_hash = hash_password(body.new_password)
+    db.commit()
+    return {"message": "????? ???????."}
+
+
+@router.get("/me/background", response_model=BackgroundResponse)
+def get_background(current_user: User = Depends(get_current_user)):
+    return {"background_image": current_user.background_image}
+
+
+@router.patch("/me/background", response_model=BackgroundResponse)
+def update_background(
+    body: BackgroundUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    background = body.background_image
+    if background is not None:
+        if not background.startswith("data:image/webp;base64,"):
+            raise HTTPException(400, detail="???? ?? ??? ?????.")
+        if len(background) > 1_800_000:
+            raise HTTPException(413, detail="??? ??? ?? ???.")
+
+    current_user.background_image = background
+    db.commit()
+    db.refresh(current_user)
+    return {"background_image": current_user.background_image}

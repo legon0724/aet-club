@@ -1,9 +1,9 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { mainNavItems } from '../config/navigation';
 import PrefetchLink from './PrefetchLink';
+import AccountSettings from './AccountSettings';
 import { clearLocalSession, getCurrentLocalUser } from '../utils/localAuth';
 import { getRoutePrefetchHandlers } from '../utils/routePrefetchHandlers';
-import ThemePicker from './ThemePicker';
 
 export default function Navbar({ user, showThemePicker = false }) {
   const navigate = useNavigate();
@@ -15,9 +15,7 @@ export default function Navbar({ user, showThemePicker = false }) {
   };
 
   return (
-    <>
-      {showThemePicker && <ThemePicker />}
-      <nav className="site-nav">
+    <nav className="site-nav">
         <PrefetchLink to="/" className="site-logo" aria-label="NC 홈">
           <span>NC</span>
         </PrefetchLink>
@@ -45,10 +43,9 @@ export default function Navbar({ user, showThemePicker = false }) {
         </div>
 
         <div className="site-account">
-          {resolvedUser?.username && <span>{resolvedUser.username}</span>}
-          <button type="button" onClick={logout} aria-label="로그아웃">↗</button>
+          {!showThemePicker && <AccountSettings user={resolvedUser} />}
+          <button type="button" className="logout-button" onClick={logout} aria-label="로그아웃">↗</button>
         </div>
       </nav>
-    </>
   );
 }

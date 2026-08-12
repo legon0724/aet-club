@@ -1,12 +1,16 @@
 import { useEffect } from 'react';
 import { preloadRoutes } from '../routes/routeConfig';
+import { prefetchRouteData } from '../utils/dataPrefetch';
 
 const commonRoutes = ['/', '/notices', '/assignments', '/calendar', '/portfolio', '/team', '/ai'];
 
 export default function useIdleRoutePreload(includeAdmin = false) {
   useEffect(() => {
     const routes = includeAdmin ? [...commonRoutes, '/admin'] : commonRoutes;
-    const warmRoutes = () => preloadRoutes(routes);
+    const warmRoutes = () => {
+      preloadRoutes(routes);
+      routes.forEach((route) => prefetchRouteData(route));
+    };
 
     if ('requestIdleCallback' in window) {
       const id = window.requestIdleCallback(warmRoutes, { timeout: 1800 });

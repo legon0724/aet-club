@@ -80,7 +80,7 @@ body {
   place-items: center;
   border-radius: 12px;
   background: var(--theme-soft);
-  color: var(--theme-accent);
+  color: #000;
   font-size: 12px;
   font-weight: 850;
   cursor: pointer;
@@ -120,8 +120,20 @@ body {
 }
 
 .theme-menu button:hover,
-.theme-menu button.selected { background: var(--theme-soft); color: var(--theme-accent); }
+.theme-menu button.selected { background: var(--theme-soft); color: #000; }
 .theme-menu button strong { font-size: 13px; }
+
+.theme-picker.inline {
+  position: relative;
+  inset: auto;
+}
+
+.theme-picker.inline summary {
+  width: auto;
+  min-width: 52px;
+  background: rgba(255, 255, 255, .88);
+  color: #000;
+}
 
 @media (max-width: 760px) {
   .theme-picker {

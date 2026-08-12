@@ -1,0 +1,110 @@
+.account-settings-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  border: 0;
+  border-radius: 999px;
+  padding: 5px 11px 5px 5px;
+  background: rgba(31, 49, 89, .07);
+  color: #111827;
+  cursor: pointer;
+}
+
+.account-settings-trigger .account-avatar {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff;
+  color: #1f3159;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.account-copy { display: grid; gap: 1px; min-width: 0; text-align: left; }
+.account-copy strong { max-width: 110px; overflow: hidden; color: #111827; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.account-copy small { color: #64748b; font-size: 9px; }
+
+.account-settings-trigger.chip {
+  border: 1px solid rgba(255, 255, 255, .2);
+  background: rgba(13, 22, 61, .3);
+  backdrop-filter: blur(18px);
+}
+
+.account-settings-trigger.chip .account-copy strong { color: #fff; }
+.account-settings-trigger.chip .account-copy small { color: rgba(255, 255, 255, .65); }
+
+.ipad-user-actions { display: flex; align-items: center; gap: 9px; }
+
+.account-settings-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10020;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, .46);
+  backdrop-filter: blur(12px);
+  animation: settings-fade 150ms ease-out;
+}
+
+.account-settings-panel {
+  width: min(520px, 100%);
+  max-height: min(760px, calc(100dvh - 40px));
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, .75);
+  border-radius: 26px;
+  padding: 24px;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 30px 90px rgba(15, 23, 42, .28);
+  color: #111827;
+  animation: settings-rise 180ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.account-settings-panel > header,
+.account-settings-panel > header > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.account-settings-panel > header > div > span { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 13px; background: #17191d; color: #fff; font-size: 12px; font-weight: 900; }
+.account-settings-panel h2, .account-settings-panel h3, .account-settings-panel p { margin: 0; }
+.account-settings-panel h2 { font-size: 22px; letter-spacing: -.04em; }
+.account-settings-panel header p, .settings-section > div > p { margin-top: 3px; color: #64748b; font-size: 12px; }
+.settings-close { width: 38px; height: 38px; border: 0; border-radius: 12px; background: #eef2f7; color: #1f2937; font-size: 23px; cursor: pointer; }
+
+.settings-section { display: grid; gap: 14px; margin-top: 20px; border: 1px solid #e5e7eb; border-radius: 18px; padding: 18px; background: #fff; }
+.settings-section h3 { font-size: 16px; }
+.background-actions { display: flex; gap: 8px; }
+.background-actions button, .save-password { min-height: 40px; border: 0; border-radius: 11px; padding: 0 15px; background: #17191d; color: #fff; font-weight: 800; cursor: pointer; }
+.background-actions button.quiet { background: #eef2f7; color: #334155; }
+.background-actions button:disabled, .save-password:disabled { opacity: .55; cursor: wait; }
+
+.password-section label { display: grid; gap: 6px; color: #475569; font-size: 12px; font-weight: 800; }
+.password-section input { min-height: 42px; border: 1px solid #dbe1e8; border-radius: 11px; padding: 0 12px; background: #f8fafc; color: #111827; font: inherit; }
+.password-section input:focus { outline: 2px solid rgba(50, 118, 245, .22); border-color: #3276f5; }
+.save-password { justify-self: end; }
+.settings-message { margin-top: 14px !important; border-radius: 11px; padding: 10px 12px; background: #eef6ff; color: #245caa; font-size: 13px; font-weight: 750; }
+
+:root.has-custom-background body,
+:root.has-custom-background .app-shell,
+:root.has-custom-background .ipad-home-shell,
+:root.has-custom-background .app-page-shell,
+:root.has-custom-background .workspace-shell {
+  background-image: linear-gradient(rgba(9, 16, 36, .22), rgba(9, 16, 36, .22)), var(--user-background-image) !important;
+  background-position: center !important;
+  background-size: cover !important;
+  background-attachment: fixed !important;
+}
+
+@keyframes settings-fade { from { opacity: 0; } }
+@keyframes settings-rise { from { opacity: 0; transform: translateY(8px) scale(.985); } }
+
+@media (max-width: 760px) {
+  .account-copy { display: none; }
+  .account-settings-trigger { padding: 4px; }
+  .ipad-user-actions { gap: 6px; }
+  .account-settings-panel { padding: 18px; border-radius: 22px; }
+  .background-actions { flex-wrap: wrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-settings-backdrop, .account-settings-panel { animation: none; }
+}

@@ -7,11 +7,14 @@ import './styles/ipad.css'
 import './styles/dialog.css'
 import './styles/calendar.css'
 import './styles/themes.css'
+import './styles/settings.css'
 import App from './App.jsx'
 import { applySiteTheme, getSiteTheme } from './utils/theme'
+import { applyCachedUserBackground } from './utils/background'
+import { getCurrentLocalUser } from './utils/localAuth'
 
-// Keep the latest merged frontend build active in production.
 applySiteTheme(getSiteTheme())
+applyCachedUserBackground(getCurrentLocalUser()?.id)
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

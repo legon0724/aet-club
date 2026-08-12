@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
 import PrefetchLink from '../components/PrefetchLink';
+import AccountSettings from '../components/AccountSettings';
+import ThemePicker from '../components/ThemePicker';
 import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
 
 const appItems = [
@@ -97,9 +99,9 @@ export default function HomePage() {
             <span>{formatDay(now)}</span>
             <strong>{now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</strong>
           </div>
-          <div className="ipad-user-chip">
-            <span>{(user?.username || 'A')[0].toUpperCase()}</span>
-            <p><strong>{user?.username || 'NC 멤버'}</strong><small>NC Club</small></p>
+          <div className="ipad-user-actions">
+            <ThemePicker inline />
+            <AccountSettings user={user} variant="chip" />
           </div>
         </header>
 

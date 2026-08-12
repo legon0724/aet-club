@@ -25,6 +25,19 @@ class PasswordResetConfirmRequest(BaseModel):
     new_password: str
 
 
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+class BackgroundUpdateRequest(BaseModel):
+    background_image: Optional[str] = None
+
+
+class BackgroundResponse(BaseModel):
+    background_image: Optional[str] = None
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"

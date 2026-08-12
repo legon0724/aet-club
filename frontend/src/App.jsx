@@ -11,7 +11,10 @@ export default function App() {
 
   useEffect(() => {
     const user = getCurrentLocalUser();
-    if (!user) return;
+    if (!user) {
+      applyUserBackground(null);
+      return;
+    }
     api.get('/api/auth/me/background')
       .then((response) => applyUserBackground(response.data.background_image, user.id))
       .catch(() => {});

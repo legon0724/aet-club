@@ -24,7 +24,8 @@ function getProtectedElement(Component) {
 }
 
 export default function AppRoutes() {
-  useIdleRoutePreload(Boolean(getCurrentLocalUser()?.is_admin));
+  const currentUser = getCurrentLocalUser();
+  useIdleRoutePreload(Boolean(currentUser), Boolean(currentUser?.is_admin));
 
   return (
     <Suspense fallback={<PageLoader />}>

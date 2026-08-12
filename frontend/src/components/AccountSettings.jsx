@@ -67,9 +67,12 @@ function AccountSettings({ user, variant = 'nav' }) {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
+    setSaving(true);
+    setMessage('이미지를 최적화하는 중입니다…');
     try {
       await saveBackground(await prepareBackgroundImage(file));
     } catch (error) {
+      setSaving(false);
       setMessage(error.message || '이미지를 처리하지 못했습니다.');
     }
   };
@@ -99,7 +102,7 @@ function AccountSettings({ user, variant = 'nav' }) {
             <section className="settings-section">
               <div><h3>배경화면</h3><p>선택한 사진은 내 계정에만 적용됩니다.</p></div>
               <div className="background-actions">
-                <input ref={fileInputRef} type="file" accept="image/*" onChange={onBackgroundFile} hidden />
+                <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp" onChange={onBackgroundFile} hidden />
                 <button type="button" onClick={() => fileInputRef.current?.click()} disabled={saving}>사진 선택</button>
                 <button type="button" className="quiet" onClick={() => saveBackground(null)} disabled={saving}>기본 배경</button>
               </div>

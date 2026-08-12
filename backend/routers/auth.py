@@ -221,7 +221,7 @@ def update_background(
 ):
     background = body.background_image
     if background is not None:
-        if not background.startswith("data:image/webp;base64,"):
+        if not background.startswith(("data:image/webp;base64,", "data:image/jpeg;base64,")):
             raise HTTPException(400, detail="???? ?? ??? ?????.")
         if len(background) > 1_800_000:
             raise HTTPException(413, detail="??? ??? ?? ???.")

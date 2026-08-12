@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import heroImage from '../assets/hero.png';
+import { applyCachedUserBackground, applyUserBackground } from '../utils/background';
 import {
   LOCAL_RESET_KEY,
   LOCAL_RESET_VERSION,
@@ -126,14 +127,19 @@ export default function LoginPage() {
     try {
       const res = await api.post('/api/auth/login', { email: normalizedEmail, password });
       localStorage.setItem('token', res.data.access_token);
+      const me = await api.get('/api/auth/me', { cache: false });
+      const signedInUser = rememberCurrentUser(me.data);
+      applyCachedUserBackground(signedInUser.id);
       try {
-        const me = await api.get('/api/auth/me');
-        rememberCurrentUser(me.data);
+        const background = await api.get('/api/auth/me/background', { cache: false });
+        applyUserBackground(background.data.background_image, signedInUser.id);
       } catch {
-        // If the profile request is unavailable, the route guards still keep the token.
+        // A temporary background failure must never block a successful login.
       }
       navigate('/');
     } catch (err) {
+      clearLocalSession();
+      applyUserBackground(null);
       setError(err.response?.data?.detail || '서버 연결에 실패했습니다. 잠시 후 다시 로그인해주세요.');
     } finally {
       setLoading(false);

@@ -4,8 +4,10 @@ import { prefetchRouteData } from '../utils/dataPrefetch';
 
 const commonRoutes = ['/', '/notices', '/assignments', '/calendar', '/portfolio', '/team', '/ai'];
 
-export default function useIdleRoutePreload(includeAdmin = false) {
+export default function useIdleRoutePreload(enabled = false, includeAdmin = false) {
   useEffect(() => {
+    if (!enabled) return undefined;
+
     const routes = includeAdmin ? [...commonRoutes, '/admin'] : commonRoutes;
     const warmRoutes = () => {
       preloadRoutes(routes);
@@ -19,5 +21,5 @@ export default function useIdleRoutePreload(includeAdmin = false) {
 
     const id = window.setTimeout(warmRoutes, 450);
     return () => window.clearTimeout(id);
-  }, [includeAdmin]);
+  }, [enabled, includeAdmin]);
 }

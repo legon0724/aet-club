@@ -197,6 +197,104 @@ def download_assignment_file(filename: str):
     return FileResponse(path)
 
 
+@router.patch("/{assignment_id}")
+async def update_assignment(
+    assignment_id: str,
+    title: str = Form(...),
+    content: Optional[str] = Form(None),
+    team_id: Optional[str] = Form(None),
+    start_at: Optional[str] = Form(None),
+    due_at: Optional[str] = Form(None),
+    resource_url: Optional[str] = Form(None),
+    copy_mode: str = Form("site"),
+    workspace_type: str = Form("none"),
+    points: Optional[str] = Form(None),
+    remove_file: bool = Form(False),
+    file: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_admin_user),
+):
+    ensure_assignment_columns(db)
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    if not assignment:
+        raise HTTPException(404, detail="과제를 찾을 수 없습니다.")
+
+    normalized_title = title.strip()
+    normalized_team_id = (team_id or "").strip() or None
+    normalized_resource_url = (resource_url or "").strip() or None
+    if not normalized_title:
+        raise HTTPException(400, detail="과제 제목을 입력해주세요.")
+    if normalized_team_id and not db.query(Team).filter(Team.id == normalized_team_id).first():
+        raise HTTPException(404, detail="선택한 팀을 찾을 수 없습니다.")
+    if copy_mode not in {"site", "student_copy", "material"}:
+        raise HTTPException(400, detail="지원하지 않는 과제 방식입니다.")
+    if workspace_type not in {"none", *WORKSPACE_MIME_TYPES.keys()}:
+        raise HTTPException(400, detail="지원하지 않는 Google 문서 유형입니다.")
+    if start_at and due_at:
+        try:
+            if datetime.fromisoformat(due_at) < datetime.fromisoformat(start_at):
+                raise HTTPException(400, detail="마감일은 시작일보다 빠를 수 없습니다.")
+        except ValueError:
+            raise HTTPException(400, detail="과제 날짜 형식이 올바르지 않습니다.")
+    if workspace_type != "none":
+        if not normalized_resource_url or "docs.google.com" not in normalized_resource_url:
+            raise HTTPException(400, detail="Google Docs, Sheets 또는 Slides 원본 링크를 입력해주세요.")
+        copy_mode = "student_copy"
+
+    normalized_points = None
+    if points not in (None, ""):
+        try:
+            normalized_points = int(points)
+        except ValueError:
+            raise HTTPException(400, detail="배점은 숫자로 입력해주세요.")
+        if normalized_points < 0:
+            raise HTTPException(400, detail="배점은 0점 이상이어야 합니다.")
+
+    old_file_path = None
+    if assignment.file_url and (remove_file or (file and file.filename)):
+        old_file_path = os.path.join(UPLOAD_DIR, assignment.file_url.split("/")[-1])
+
+    new_file_path = None
+    if file and file.filename:
+        ext = file.filename.rsplit(".", 1)[-1].lower()
+        allowed = ["pdf", "hwp", "hwpx", "docx", "doc", "txt", "pptx", "xlsx", "png", "jpg", "jpeg", "zip"]
+        if ext not in allowed:
+            raise HTTPException(400, detail="지원하지 않는 파일 형식입니다.")
+        save_name = f"{uuid.uuid4().hex}.{ext}"
+        save_path = os.path.join(UPLOAD_DIR, save_name)
+        with open(save_path, "wb") as target:
+            shutil.copyfileobj(file.file, target)
+        new_file_path = save_path
+        assignment.file_url = f"/api/assignments/files/{save_name}"
+        assignment.file_name = file.filename
+    elif remove_file:
+        assignment.file_url = None
+        assignment.file_name = None
+
+    assignment.title = normalized_title
+    assignment.content = (content or "").strip() or None
+    assignment.team_id = normalized_team_id
+    assignment.start_at = start_at or None
+    assignment.due_at = due_at or None
+    assignment.resource_url = normalized_resource_url
+    assignment.copy_mode = copy_mode
+    assignment.workspace_type = workspace_type
+    assignment.points = normalized_points
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        if new_file_path and os.path.exists(new_file_path):
+            os.remove(new_file_path)
+        raise
+    db.refresh(assignment)
+
+    if old_file_path and os.path.exists(old_file_path):
+        os.remove(old_file_path)
+
+    return serialize_assignment(assignment, db)
+
+
 @router.delete("/{assignment_id}")
 def delete_assignment(
     assignment_id: str,

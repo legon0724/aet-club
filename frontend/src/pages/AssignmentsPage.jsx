@@ -93,8 +93,11 @@ export default function AssignmentsPage() {
   const [createError, setCreateError] = useState('');
   const [workError, setWorkError] = useState('');
   const [showCreate, setShowCreate] = useState(false);
+  const [editingId, setEditingId] = useState('');
   const [newAssignment, setNewAssignment] = useState(emptyAssignment);
+  const [formTeamId, setFormTeamId] = useState('');
   const [assignmentFile, setAssignmentFile] = useState(null);
+  const [removeExistingFile, setRemoveExistingFile] = useState(false);
   const [creating, setCreating] = useState(false);
   const fileRef = useRef(null);
   const assignmentFileRef = useRef(null);
@@ -102,6 +105,7 @@ export default function AssignmentsPage() {
   const requestKeyRef = useRef('');
 
   const selected = assignments.find((item) => item.id === selectedId) || null;
+  const editingAssignment = assignments.find((item) => item.id === editingId) || null;
   const currentSubmission = submissions.find((item) => item.assignment_id === selectedId) || null;
   const selectedSubmissions = submissions.filter((item) => item.assignment_id === selectedId && item.status === 'submitted');
 
@@ -268,15 +272,38 @@ export default function AssignmentsPage() {
     setCreateError('');
     const data = new FormData();
     data.append('title', title);
-    if (teamId) data.append('team_id', teamId);
-    if (newAssignment.content.trim()) data.append('content', newAssignment.content.trim());
-    if (newAssignment.start_at) data.append('start_at', newAssignment.start_at);
-    if (newAssignment.due_at) data.append('due_at', newAssignment.due_at);
-    if (resourceUrl) data.append('resource_url', resourceUrl);
+    data.append('team_id', formTeamId);
+    data.append('content', newAssignment.content.trim());
+    data.append('start_at', newAssignment.start_at);
+    data.append('due_at', newAssignment.due_at);
+    data.append('resource_url', resourceUrl);
     data.append('workspace_type', newAssignment.workspace_type);
     data.append('copy_mode', newAssignment.workspace_type === 'none' ? 'site' : 'student_copy');
-    if (newAssignment.points !== '') data.append('points', String(newAssignment.points));
+    if (editingId || newAssignment.points !== '') data.append('points', String(newAssignment.points));
     if (assignmentFile) data.append('file', assignmentFile);
+    if (editingId) data.append('remove_file', String(removeExistingFile));
+
+    if (editingId) {
+      try {
+        const response = await api.patch(`/api/assignments/${editingId}`, data);
+        setAssignments((current) => current.map((item) => (item.id === editingId ? response.data : item)));
+        setSelectedId(response.data.id);
+        setTeamId(formTeamId);
+        setNewAssignment(emptyAssignment);
+        setAssignmentFile(null);
+        setRemoveExistingFile(false);
+        setEditingId('');
+        setShowCreate(false);
+        if (assignmentFileRef.current) assignmentFileRef.current.value = '';
+      } catch (requestError) {
+        setCreateError(requestError?.response?.data?.detail || '과제를 수정하지 못했습니다. 입력 내용을 확인하고 다시 시도해주세요.');
+      } finally {
+        creatingRef.current = false;
+        setCreating(false);
+      }
+      return;
+    }
+
     if (!requestKeyRef.current) {
       requestKeyRef.current = globalThis.crypto?.randomUUID?.() || `assignment-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     }
@@ -286,7 +313,7 @@ export default function AssignmentsPage() {
     const optimisticId = `pending-${requestKeyRef.current}`;
     const optimisticAssignment = {
       id: optimisticId,
-      team_id: teamId || null,
+      team_id: formTeamId || null,
       title,
       content: newAssignment.content.trim(),
       start_at: newAssignment.start_at || null,
@@ -309,6 +336,7 @@ export default function AssignmentsPage() {
       const response = await api.post('/api/assignments/', data);
       setAssignments((current) => [response.data, ...current.filter((item) => item.id !== optimisticId && item.id !== response.data.id)]);
       setSelectedId(response.data.id);
+      setTeamId(formTeamId);
       setCreateError('');
       requestKeyRef.current = '';
     } catch (requestError) {
@@ -322,6 +350,50 @@ export default function AssignmentsPage() {
       creatingRef.current = false;
       setCreating(false);
     }
+  };
+
+  const openCreateAssignment = () => {
+    if (showCreate && !editingId) {
+      setShowCreate(false);
+      return;
+    }
+    setEditingId('');
+    setFormTeamId(teamId);
+    setNewAssignment(emptyAssignment);
+    setAssignmentFile(null);
+    setRemoveExistingFile(false);
+    setCreateError('');
+    setShowCreate(true);
+    if (assignmentFileRef.current) assignmentFileRef.current.value = '';
+  };
+
+  const openEditAssignment = () => {
+    if (!selected) return;
+    setEditingId(selected.id);
+    setFormTeamId(selected.team_id || '');
+    setNewAssignment({
+      title: selected.title || '',
+      content: selected.content || '',
+      start_at: selected.start_at || '',
+      due_at: selected.due_at || '',
+      resource_url: selected.resource_url || '',
+      workspace_type: selected.workspace_type || 'none',
+      points: selected.points ?? '',
+    });
+    setAssignmentFile(null);
+    setRemoveExistingFile(false);
+    setCreateError('');
+    setShowCreate(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const closeAssignmentForm = () => {
+    setShowCreate(false);
+    setEditingId('');
+    setAssignmentFile(null);
+    setRemoveExistingFile(false);
+    setCreateError('');
+    if (assignmentFileRef.current) assignmentFileRef.current.value = '';
   };
 
   return (
@@ -339,8 +411,8 @@ export default function AssignmentsPage() {
             <span>전체 과제</span>
           </div>
           {user?.is_admin && (
-            <button className="classroom-create-button" type="button" onClick={() => setShowCreate((current) => !current)}>
-              <span>＋</span>{showCreate ? '닫기' : '과제 만들기'}
+            <button className="classroom-create-button" type="button" onClick={openCreateAssignment}>
+              <span>＋</span>{showCreate && !editingId ? '닫기' : '과제 만들기'}
             </button>
           )}
         </header>
@@ -351,14 +423,15 @@ export default function AssignmentsPage() {
           <form className="classroom-create-panel" onSubmit={createAssignment}>
             <header>
               <div>
-                <span>새 과제</span>
-                <h2>{teamId ? `${teams.find((team) => team.id === teamId)?.name || '선택한 팀'}에 과제 등록` : '모든 학생에게 과제 등록'}</h2>
+                <span>{editingId ? '과제 수정' : '새 과제'}</span>
+                <h2>{editingId ? '등록된 과제 내용 수정' : formTeamId ? `${teams.find((team) => team.id === formTeamId)?.name || '선택한 팀'}에 과제 등록` : '모든 학생에게 과제 등록'}</h2>
               </div>
-              <button type="button" onClick={() => setShowCreate(false)} aria-label="과제 만들기 닫기">×</button>
+              <button type="button" onClick={closeAssignmentForm} aria-label="과제 입력 닫기">×</button>
             </header>
             {createError && <div className="inline-alert error">{createError}</div>}
             <div className="classroom-create-grid">
               <label className="wide">과제 제목<input value={newAssignment.title} onChange={(event) => setNewAssignment((current) => ({ ...current, title: event.target.value }))} placeholder="과제 제목을 입력하세요" autoFocus /></label>
+              <label className="wide">공개 대상<select value={formTeamId} onChange={(event) => setFormTeamId(event.target.value)}><option value="">모든 학생</option>{teams.map((team) => <option key={team.id} value={team.id}>{team.name} 팀만</option>)}</select></label>
               <label>시작일<input type="date" value={newAssignment.start_at} onChange={(event) => setNewAssignment((current) => ({ ...current, start_at: event.target.value }))} /></label>
               <label>마감일<input type="date" min={newAssignment.start_at || undefined} value={newAssignment.due_at} onChange={(event) => setNewAssignment((current) => ({ ...current, due_at: event.target.value }))} /></label>
               <label>배점<input type="number" min="0" value={newAssignment.points} onChange={(event) => setNewAssignment((current) => ({ ...current, points: event.target.value }))} placeholder="선택사항" /></label>
@@ -369,12 +442,17 @@ export default function AssignmentsPage() {
               <div className="classroom-create-file wide">
                 <button type="button" onClick={() => assignmentFileRef.current?.click()}><span>↑</span>{assignmentFile ? assignmentFile.name : '첨부파일 추가'}</button>
                 {assignmentFile && <button className="remove" type="button" onClick={() => { setAssignmentFile(null); if (assignmentFileRef.current) assignmentFileRef.current.value = ''; }}>삭제</button>}
+                {editingAssignment?.file_url && !assignmentFile && (
+                  <button className={removeExistingFile ? 'remove active' : 'remove'} type="button" onClick={() => setRemoveExistingFile((current) => !current)}>
+                    {removeExistingFile ? '기존 파일 삭제 취소' : `기존 파일 삭제 (${editingAssignment.file_name || '첨부파일'})`}
+                  </button>
+                )}
                 <input ref={assignmentFileRef} type="file" hidden onChange={(event) => setAssignmentFile(event.target.files?.[0] || null)} />
               </div>
             </div>
             <footer>
-              <small>{teamId ? '선택한 팀 학생에게만 표시됩니다.' : '모든 학생에게 표시되는 전체 과제입니다.'}</small>
-              <button type="submit" disabled={creating}>{creating ? '등록 중…' : '과제 등록'}</button>
+              <small>{formTeamId ? '선택한 팀 학생에게만 표시됩니다.' : '모든 학생에게 표시되는 전체 과제입니다.'}</small>
+              <button type="submit" disabled={creating}>{creating ? '저장 중…' : editingId ? '수정 저장' : '과제 등록'}</button>
             </footer>
           </form>
         )}
@@ -430,6 +508,7 @@ export default function AssignmentsPage() {
                     <h2>{selected.title}</h2>
                     <p>{selected.created_by || '관리자'} · {selected.created_at ? new Date(selected.created_at).toLocaleDateString('ko-KR') : '방금 전'}</p>
                   </div>
+                  {user?.is_admin && <button className="classroom-edit-button" type="button" onClick={openEditAssignment}>수정</button>}
                   <div className="classroom-score">
                     <strong>{selected.points ? `${selected.points}점` : '배점 없음'}</strong>
                     {selected.start_at && <span>시작 {dueLabel(selected.start_at)}</span>}

@@ -275,6 +275,16 @@ def init_db():
         with engine.begin() as connection:
             connection.execute(text("ALTER TABLE users ADD COLUMN must_change_password BOOLEAN DEFAULT FALSE NOT NULL"))
     with engine.begin() as connection:
+        for retired_email in settings.RETIRED_ADMIN_EMAILS:
+            normalized_email = retired_email.strip().lower()
+            connection.execute(
+                text("DELETE FROM password_reset_codes WHERE LOWER(email) = :retired_email"),
+                {"retired_email": normalized_email},
+            )
+            connection.execute(
+                text("DELETE FROM users WHERE LOWER(email) = :retired_email"),
+                {"retired_email": normalized_email},
+            )
         connection.execute(
             text(
                 "UPDATE users SET is_admin = CASE "

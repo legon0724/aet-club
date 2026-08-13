@@ -9,7 +9,6 @@ const pageLoaders = {
   assignments: () => import('../pages/AssignmentsPage'),
   calendar: () => import('../pages/CalendarPage'),
   team: () => import('../pages/TeamPage'),
-  ai: () => import('../pages/AIPage'),
   search: () => import('../pages/SearchPage'),
   admin: () => import('../pages/AdminPage'),
   passwordChange: () => import('../pages/TemporaryPasswordPage'),
@@ -37,7 +36,6 @@ const routePageKeys = {
   '/team': 'team',
   '/assignments': 'assignments',
   '/calendar': 'calendar',
-  '/ai': 'ai',
   '/search': 'search',
   '/admin': 'admin',
   '/password-change': 'passwordChange',
@@ -53,7 +51,6 @@ export const routePages = {
   AssignmentsPage: lazyPage('assignments'),
   CalendarPage: lazyPage('calendar'),
   TeamPage: lazyPage('team'),
-  AIPage: lazyPage('ai'),
   SearchPage: lazyPage('search'),
   AdminPage: lazyPage('admin'),
   TemporaryPasswordPage: lazyPage('passwordChange'),
@@ -66,7 +63,6 @@ export const protectedRoutes = [
   { path: '/team', Component: routePages.TeamPage },
   { path: '/assignments', Component: routePages.AssignmentsPage },
   { path: '/calendar', Component: routePages.CalendarPage },
-  { path: '/ai', Component: routePages.AIPage },
   { path: '/search', Component: routePages.SearchPage },
   { path: '/admin', Component: routePages.AdminPage },
   { path: '/password-change', Component: routePages.TemporaryPasswordPage },
@@ -89,8 +85,4 @@ export function preloadRoute(to) {
   const request = loadPage(pageKey);
   request.catch(() => pagePromises.delete(pageKey));
   return request;
-}
-
-export function preloadRoutes(routes) {
-  routes.forEach((route) => preloadRoute(route));
 }

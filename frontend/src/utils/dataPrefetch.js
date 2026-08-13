@@ -7,7 +7,6 @@ const routeEndpoints = {
   '/calendar': ['/api/auth/me', '/api/calendar/'],
   '/portfolio': ['/api/auth/me', '/api/portfolio/me', '/api/portfolio/public'],
   '/team': ['/api/auth/me', '/api/teams/'],
-  '/ai': ['/api/auth/me', '/api/ai/usage'],
   '/admin': ['/api/auth/me', '/api/teams/'],
 };
 

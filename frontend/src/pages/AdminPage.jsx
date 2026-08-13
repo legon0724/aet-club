@@ -7,7 +7,6 @@ import { getCurrentLocalUser, rememberCurrentUser } from '../utils/localAuth';
 
 const BACKEND = 'https://web-production-00104.up.railway.app';
 
-const emptyGallery = { title: '', description: '', link_url: '' };
 function calendarDefaultStart() {
   const date = new Date();
   date.setHours(9, 0, 0, 0);
@@ -16,7 +15,7 @@ function calendarDefaultStart() {
 }
 
 const emptyCalendar = { title: '', start_date: calendarDefaultStart(), end_date: '', event_type: '일정', team_id: '' };
-const ADMIN_TAB_KEYS = ['users', 'teams', 'assignments', 'gallery', 'calendar', 'notices', 'portfolios', 'ai', 'backup'];
+const ADMIN_TAB_KEYS = ['users', 'teams', 'assignments', 'calendar', 'notices', 'portfolios', 'backup'];
 
 export default function AdminPage() {
   const [user, setUser] = useState(() => getCurrentLocalUser());
@@ -45,11 +44,9 @@ export default function AdminPage() {
     ['users', '회원 관리', '권한과 팀 배정'],
     ['teams', '팀 관리', '팀 생성과 정리'],
     ['assignments', '과제 관리', '학생별 작업본과 제출 흐름'],
-    ['gallery', '활동 갤러리', '사진과 발표 자료'],
     ['calendar', '캘린더', '발표일과 활동 일정'],
     ['notices', '공지 관리', '전체와 팀별 안내'],
     ['portfolios', '포트폴리오', '회원 작업물 확인'],
-    ['ai', 'AI 사용량', '분석 사용 현황'],
     ['backup', '백업/복원', '운영 데이터 저장'],
   ];
   const activeTab = tabs.find(([key]) => key === tab);
@@ -95,11 +92,9 @@ export default function AdminPage() {
           {tab === 'users' && <UsersTab currentUserId={user?.id} />}
           {tab === 'teams' && <TeamsTab />}
           {tab === 'assignments' && <AssignmentsTab />}
-          {tab === 'gallery' && <GalleryTab />}
           {tab === 'calendar' && <CalendarTab />}
           {tab === 'notices' && <NoticesTab />}
           {tab === 'portfolios' && <PortfoliosTab />}
-          {tab === 'ai' && <AITab />}
           {tab === 'backup' && <BackupTab />}
         </section>
       </main>
@@ -480,93 +475,6 @@ function AssignmentsTab() {
   );
 }
 
-function GalleryTab() {
-  const [items, setItems] = useState([]);
-  const [form, setForm] = useState(emptyGallery);
-  const [file, setFile] = useState(null);
-  const [show, setShow] = useState(false);
-  const fileRef = useRef(null);
-
-  useEffect(() => {
-    api.get('/api/gallery/').then((r) => setItems(r.data || [])).catch(() => setItems([]));
-  }, []);
-
-  const create = async () => {
-    if (!form.title.trim()) return;
-    const payload = { ...form, title: form.title.trim() };
-
-    try {
-      const formData = new FormData();
-      formData.append('title', payload.title);
-      if (payload.description) formData.append('description', payload.description);
-      if (payload.link_url) formData.append('link_url', payload.link_url);
-      if (file) formData.append('file', file);
-      await api.post('/api/gallery/', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      const r = await api.get('/api/gallery/');
-      setItems(r.data || []);
-    } catch (error) {
-      showSaveError(error);
-      return;
-    }
-    setForm(emptyGallery);
-    setFile(null);
-    setShow(false);
-    if (fileRef.current) fileRef.current.value = '';
-  };
-
-  const del = async (id) => {
-    if (!(await showSiteConfirm('갤러리 항목을 삭제할까요?', '갤러리 삭제'))) return;
-    try {
-      await api.delete(`/api/gallery/${id}`);
-    } catch (error) {
-      showSaveError(error);
-      return;
-    }
-    setItems((current) => current.filter((item) => item.id !== id));
-  };
-
-  return (
-    <div>
-      <div className="admin-toolbar">
-        <button className="modern-btn primary" type="button" onClick={() => setShow((current) => !current)}>갤러리 추가</button>
-      </div>
-      {show && (
-        <div className="admin-form-grid gallery-admin-form">
-          <input value={form.title} onChange={(e) => setForm((current) => ({ ...current, title: e.target.value }))} placeholder="활동 제목" />
-          <input value={form.link_url} onChange={(e) => setForm((current) => ({ ...current, link_url: e.target.value }))} placeholder="발표 자료, 영상, 결과물 링크" />
-          <textarea value={form.description} onChange={(e) => setForm((current) => ({ ...current, description: e.target.value }))} placeholder="활동 설명" rows={3} />
-          <div className="admin-file-pick" role="button" tabIndex={0} onClick={() => fileRef.current?.click()} onKeyDown={(e) => e.key === 'Enter' && fileRef.current?.click()}>
-            <strong>{file ? file.name : '사진 또는 자료 선택'}</strong>
-            <span>이미지, PDF, PPT, 문서, ZIP 자료를 올릴 수 있습니다.</span>
-          </div>
-          <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.ppt,.pptx,.doc,.docx,.hwp,.hwpx,.zip" onChange={(e) => setFile(e.target.files[0])} hidden />
-          <button className="modern-btn primary" type="button" onClick={create}>등록</button>
-        </div>
-      )}
-      <div className="admin-list gallery-admin-list">
-        {items.length === 0 && <p className="empty-state">아직 갤러리 항목이 없습니다.</p>}
-        {items.map((item) => {
-          const imageUrl = resolveFileUrl(item.image_url);
-          const fileUrl = resolveFileUrl(item.file_url);
-          return (
-            <article key={item.id} className="admin-list-item gallery-admin-item">
-              {imageUrl ? <img className="admin-thumb" src={imageUrl} alt="" loading="lazy" decoding="async" /> : <span className="gallery-file-mark">자료</span>}
-              <div>
-                <strong>{item.title}</strong>
-                {item.description && <span>{item.description}</span>}
-                <small>{new Date(item.created_at).toLocaleDateString()}</small>
-              </div>
-              {item.link_url && <a className="assignment-download" href={item.link_url} target="_blank" rel="noreferrer">링크</a>}
-              {fileUrl && <a className="assignment-download" href={fileUrl} target="_blank" rel="noreferrer" download={item.file_name || undefined}>파일</a>}
-              <button className="danger-button" type="button" onClick={() => del(item.id)}>삭제</button>
-            </article>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 function CalendarTab() {
   const [events, setEvents] = useState([]);
   const [teams, setTeams] = useState([]);
@@ -842,29 +750,6 @@ function PortfoliosTab() {
   );
 }
 
-function AITab() {
-  const [data, setData] = useState([]);
-
-  useEffect(() => {
-    api.get('/api/admin/ai-usage').then((r) => setData(r.data)).catch(() => setData([]));
-  }, []);
-
-  return (
-    <div className="admin-list">
-      {data.length === 0 && <p className="empty-state">사용 내역이 없습니다.</p>}
-      {data.map((item, index) => (
-        <article key={`${item.username}-${index}`} className="admin-list-item">
-          <div>
-            <strong>{item.username}</strong>
-            <span>{item.date}</span>
-          </div>
-          <b>{item.count}회 사용</b>
-        </article>
-      ))}
-    </div>
-  );
-}
-
 function BackupTab() {
   const [file, setFile] = useState(null);
   const [message, setMessage] = useState('');
@@ -919,7 +804,7 @@ function BackupTab() {
       <section>
         <span>Export</span>
         <h3>데이터 내보내기</h3>
-        <p>팀, 과제, 공지, 포트폴리오, 갤러리, 캘린더 운영 데이터를 JSON 파일로 저장합니다.</p>
+        <p>팀, 과제, 공지, 포트폴리오, 캘린더 운영 데이터를 JSON 파일로 저장합니다.</p>
         <button className="modern-btn primary" type="button" onClick={exportBackup}>백업 파일 만들기</button>
       </section>
       <section>

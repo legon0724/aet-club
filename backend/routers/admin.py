@@ -17,7 +17,6 @@ from backend.models.database import (
     User,
     Portfolio,
     Submission,
-    AIUsage,
     get_db,
 )
 from backend.models.schemas import UserResponse
@@ -401,18 +400,3 @@ def restore_backup(data: dict, db: Session = Depends(get_db), _: User = Depends(
 
     db.commit()
     return {"message": "백업을 복원했습니다."}
-
-
-@router.get("/ai-usage")
-def get_ai_usage(db: Session = Depends(get_db), _: User = Depends(get_admin_user)):
-    usage_list = db.query(AIUsage).order_by(AIUsage.last_used_at.desc()).all()
-    result = []
-    for u in usage_list:
-        user = db.query(User).filter(User.id == str(u.user_id)).first()
-        result.append({
-            "username": user.username if user else None,
-            "date": u.date,
-            "count": u.count,
-            "last_used_at": u.last_used_at,
-        })
-    return result

@@ -274,3 +274,11 @@ def init_db():
     if "must_change_password" not in columns:
         with engine.begin() as connection:
             connection.execute(text("ALTER TABLE users ADD COLUMN must_change_password BOOLEAN DEFAULT FALSE NOT NULL"))
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "UPDATE users SET is_admin = CASE "
+                "WHEN LOWER(email) = :admin_email THEN TRUE ELSE FALSE END"
+            ),
+            {"admin_email": settings.ADMIN_EMAIL.strip().lower()},
+        )

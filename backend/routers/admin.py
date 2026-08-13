@@ -39,14 +39,7 @@ def get_users(db: Session = Depends(get_db), _: User = Depends(get_admin_user)):
 
 @router.patch("/users/{user_id}/admin")
 def toggle_admin(user_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_admin_user)):
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(404, detail="사용자를 찾을 수 없습니다.")
-    if str(user.id) == str(current_user.id):
-        raise HTTPException(400, detail="본인의 권한은 변경할 수 없습니다.")
-    user.is_admin = not user.is_admin
-    db.commit()
-    return {"message": "권한이 변경되었습니다.", "is_admin": user.is_admin}
+    raise HTTPException(400, detail="관리자 권한은 지정된 단독 관리자 계정으로 고정되어 있습니다.")
 
 
 @router.patch("/users/{user_id}", response_model=UserResponse)
@@ -56,9 +49,7 @@ def update_user(user_id: str, body: UserAdminUpdate, db: Session = Depends(get_d
         raise HTTPException(404, detail="사용자를 찾을 수 없습니다.")
 
     if body.is_admin is not None:
-        if str(user.id) == str(current_user.id):
-            raise HTTPException(400, detail="본인의 권한은 변경할 수 없습니다.")
-        user.is_admin = body.is_admin
+        raise HTTPException(400, detail="관리자 권한은 지정된 단독 관리자 계정으로 고정되어 있습니다.")
 
     if body.team_id is not None:
         user.team_id = body.team_id or None
@@ -102,6 +93,21 @@ def issue_temporary_password(
     return {
         "message": "임시 비밀번호를 발급했습니다.",
         "temporary_password": temporary_password,
+    }
+
+
+@router.get("/users/{user_id}/password-status")
+def get_password_status(
+    user_id: str,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_admin_user),
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(404, detail="사용자를 찾을 수 없습니다.")
+    return {
+        "must_change_password": bool(user.must_change_password),
+        "password_reset_requested_at": user.password_reset_requested_at,
     }
 
 

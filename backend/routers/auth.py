@@ -22,7 +22,7 @@ router = APIRouter()
 
 def require_school_email(email: str):
     if not is_allowed_email(email):
-        raise HTTPException(400, detail="@cam.hs.kr 학교 이메일만 사용할 수 있습니다.")
+        raise HTTPException(400, detail="@cam.hs.kr 학교 이메일 또는 허용된 관리자 이메일만 사용할 수 있습니다.")
 
 
 def normalize_email(email: str) -> str:
@@ -31,6 +31,17 @@ def normalize_email(email: str) -> str:
 
 def normalize_username(username: str) -> str:
     return username.strip()
+
+
+def user_login_payload(user: User) -> dict:
+    return {
+        "id": str(user.id),
+        "email": user.email,
+        "username": user.username,
+        "is_admin": bool(user.is_admin and is_admin_email(user.email)),
+        "team_id": str(user.team_id) if user.team_id else None,
+        "must_change_password": bool(user.must_change_password),
+    }
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
@@ -66,7 +77,10 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == email).first()
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(401, detail="이메일 또는 비밀번호가 올바르지 않습니다.")
-    return TokenResponse(access_token=create_access_token({"sub": str(user.id)}))
+    return TokenResponse(
+        access_token=create_access_token({"sub": str(user.id)}),
+        user=user_login_payload(user),
+    )
 
 
 @router.post("/password-reset/request")

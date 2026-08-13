@@ -30,8 +30,12 @@ def decode_token(token: str) -> Optional[dict]:
 
 
 def is_allowed_email(email: str) -> bool:
-    return email.lower().endswith(settings.ALLOWED_EMAIL_DOMAIN.lower())
+    normalized_email = email.strip().lower()
+    return (
+        normalized_email.endswith(settings.ALLOWED_EMAIL_DOMAIN.lower())
+        or normalized_email == settings.ADMIN_EMAIL.strip().lower()
+    )
 
 
 def is_admin_email(email: str) -> bool:
-    return email in settings.ADMIN_EMAILS
+    return email.strip().lower() == settings.ADMIN_EMAIL.strip().lower()

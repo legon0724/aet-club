@@ -8,10 +8,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
 
-    ADMIN_EMAILS: List[str] = [
-        "2620325@cam.hs.kr",
-        "bliss00@cam.hs.kr",
-    ]
+    ADMIN_EMAIL: str = "aicirde2026@gmail.com"
+    ADMIN_EMAILS: List[str] = ["aicirde2026@gmail.com"]
 
     ALLOWED_EMAIL_DOMAIN: str = "@cam.hs.kr"
 

@@ -127,16 +127,6 @@ function UsersTab({ currentUserId }) {
     api.get('/api/teams/').then((r) => setTeams(r.data)).catch(() => setTeams([]));
   }, []);
 
-  const toggleAdmin = async (id, isAdmin) => {
-    try {
-      await api.patch(`/api/admin/users/${id}/admin`);
-    } catch (error) {
-      showSaveError(error);
-      return;
-    }
-    setUsers((current) => current.map((item) => (item.id === id ? { ...item, is_admin: !isAdmin } : item)));
-  };
-
   const assignTeam = async (id, teamId) => {
     try {
       await api.patch(`/api/admin/users/${id}`, { team_id: teamId || null });
@@ -164,6 +154,7 @@ function UsersTab({ currentUserId }) {
     try {
       const response = await api.post(`/api/admin/users/${item.id}/temporary-password`);
       setIssuedPassword({
+        id: item.id,
         username: item.username,
         email: item.email,
         value: response.data.temporary_password,
@@ -185,6 +176,34 @@ function UsersTab({ currentUserId }) {
     await navigator.clipboard.writeText(issuedPassword.value);
     await showSiteAlert('임시 비밀번호를 복사했습니다. 회원에게 안전하게 전달해주세요.');
   };
+
+  useEffect(() => {
+    if (!issuedPassword?.id) return undefined;
+
+    let active = true;
+    const refreshPasswordStatus = async () => {
+      try {
+        const response = await api.get(`/api/admin/users/${issuedPassword.id}/password-status`, { cache: false });
+        if (active && !response.data.must_change_password) {
+          setIssuedPassword(null);
+          setUsers((current) => current.map((item) => (
+            item.id === issuedPassword.id
+              ? { ...item, must_change_password: false, password_reset_requested_at: null }
+              : item
+          )));
+        }
+      } catch (error) {
+        if (active && error.response?.status === 404) setIssuedPassword(null);
+      }
+    };
+
+    refreshPasswordStatus();
+    const timer = window.setInterval(refreshPasswordStatus, 3000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [issuedPassword?.id]);
 
   return (
     <>
@@ -213,9 +232,9 @@ function UsersTab({ currentUserId }) {
               <option value="">팀 없음</option>
               {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
             </select>
-            <button className={item.is_admin ? 'status-button active' : 'status-button'} type="button" onClick={() => toggleAdmin(item.id, item.is_admin)}>
+            <span className={item.is_admin ? 'status-button active' : 'status-button'}>
               {item.is_admin ? '관리자' : '일반'}
-            </button>
+            </span>
             {item.id !== currentUserId && (
               <button className="temporary-password-button" type="button" onClick={() => issueTemporaryPassword(item)} disabled={resettingUserId === item.id}>
                 {resettingUserId === item.id ? '발급 중…' : '임시 비밀번호 발급'}

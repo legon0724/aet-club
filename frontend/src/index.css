@@ -7215,6 +7215,7 @@ body,
 @media (min-width: 901px) {
   .nc-login-stage .editorial-scene {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     place-items: center;
     padding: 52px;
   }
@@ -7228,6 +7229,8 @@ body,
   }
 
   .nc-login-stage .poster-stack {
+    position: relative;
+    inset: auto;
     width: min(100%, 560px);
     max-width: 560px;
     margin: 0;

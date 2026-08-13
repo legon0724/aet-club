@@ -6,7 +6,7 @@ export const LOCAL_RESET_VERSION_KEY = 'nc-local-auth-reset-version';
 export const LOCAL_RESET_VERSION = '2026-07-10-clean-start';
 export const LOCAL_DATA_RESET_VERSION_KEY = 'nc-local-data-reset-version';
 export const LOCAL_DATA_RESET_VERSION = '2026-07-14-server-only';
-export const ADMIN_EMAIL = 'aicirde2026@gmail.com';
+export const ADMIN_EMAIL = 'aicircle2026@gmail.com';
 export const ADMIN_EMAILS = [ADMIN_EMAIL];
 const LEGACY_WORKSPACE_KEYS = [
   LOCAL_USERS_KEY,

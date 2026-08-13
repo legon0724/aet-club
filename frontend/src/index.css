@@ -7212,6 +7212,40 @@ body,
 }
 
 /* Final mobile auth override. Keep this last so older responsive rules cannot reintroduce the frame. */
+@media (min-width: 901px) {
+  .nc-login-stage .editorial-scene {
+    display: grid;
+    place-items: center;
+    padding: 52px;
+  }
+
+  .nc-login-stage .editorial-nav {
+    position: absolute;
+    top: 42px;
+    right: 42px;
+    left: 42px;
+    justify-content: center;
+  }
+
+  .nc-login-stage .poster-stack {
+    width: min(100%, 560px);
+    max-width: 560px;
+    margin: 0;
+    justify-self: center;
+  }
+
+  .nc-login-stage .poster-card-main {
+    min-height: min(590px, 68dvh);
+  }
+
+  .nc-login-stage .paper-character {
+    right: 50%;
+    bottom: 92px;
+    transform: translateX(50%) scale(1.16);
+    transform-origin: center bottom;
+  }
+}
+
 @media (max-width: 900px) {
   html,
   body,

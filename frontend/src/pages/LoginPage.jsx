@@ -246,7 +246,6 @@ export default function LoginPage() {
     <main className="auth-page nc-editorial nc-login-stage">
       <section className="editorial-scene" aria-label="NC 소개">
         <div className="editorial-nav">
-          <span className="editorial-logo">NC</span>
           <span>CAM High Club</span>
         </div>
 
@@ -267,7 +266,6 @@ export default function LoginPage() {
               <span className="character-arm right" />
               <span className="character-shadow" />
             </div>
-            <span className="poster-title">NC</span>
           </div>
         </div>
       </section>

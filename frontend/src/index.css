@@ -3840,6 +3840,135 @@ a {
   align-items: start;
 }
 
+/* Assignment admin: searchable, high-contrast records */
+.assignment-admin-toolbar {
+  display: grid;
+  grid-template-columns: 170px minmax(260px, 1fr);
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.assignment-search {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0 12px;
+  background: #fff;
+  color: #111;
+}
+
+.assignment-search input {
+  min-width: 0;
+  border: 0;
+  padding: 11px 0;
+  background: transparent;
+  color: #111;
+  font: inherit;
+  outline: 0;
+}
+
+.assignment-search input::placeholder { color: #777; }
+.assignment-search button {
+  border: 0;
+  padding: 4px;
+  background: transparent;
+  color: #111;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.assignment-status-board,
+.assignment-record-board {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px;
+  background: #fff;
+  color: #111;
+}
+
+.assignment-record-board {
+  display: grid;
+  gap: 12px;
+}
+
+.assignment-record-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.assignment-record-head > div,
+.assignment-status-head > div {
+  display: grid;
+  gap: 3px;
+}
+
+.assignment-status-head span,
+.assignment-record-head span,
+.assignment-status-head strong,
+.assignment-record-head strong,
+.assignment-status-head small,
+.assignment-record-head small,
+.assignment-status-card strong,
+.assignment-status-card small,
+.assignment-status-metrics span,
+.assignment-student-status small,
+.assignment-record-board .admin-list-item strong,
+.assignment-record-board .admin-list-item span,
+.assignment-record-board .admin-list-item small {
+  color: #111;
+}
+
+.assignment-status-head span,
+.assignment-record-head span {
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.assignment-status-head strong,
+.assignment-record-head strong { font-size: 20px; }
+
+.assignment-status-card,
+.assignment-record-board .assignment-admin-item {
+  border: 1px solid #d9d9d9;
+  border-radius: 10px;
+  background: #fff;
+  color: #111;
+}
+
+.assignment-status-card:hover,
+.assignment-record-board .assignment-admin-item:hover {
+  border-color: #a9a9a9;
+  background: #fafafa;
+}
+
+.assignment-status-metrics span,
+.assignment-student-status small,
+.assignment-status-metrics .submitted,
+.assignment-status-metrics .draft,
+.assignment-status-metrics .missing,
+.assignment-student-status .submitted,
+.assignment-student-status .draft,
+.assignment-student-status .missing {
+  border-color: #cfcfcf;
+  background: #f4f4f4;
+  color: #111;
+}
+
+.assignment-record-list { max-height: 620px; overflow: auto; padding-right: 3px; }
+
+@media (max-width: 760px) {
+  .assignment-admin-toolbar { grid-template-columns: 1fr; }
+  .assignment-status-card { display: grid; }
+  .assignment-record-list { max-height: none; }
+}
+
 .admin-thumb {
   width: 72px;
   height: 44px;

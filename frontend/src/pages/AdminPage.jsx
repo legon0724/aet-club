@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/client';
 import Navbar from '../components/Navbar';
@@ -317,6 +317,7 @@ function AssignmentsTab() {
   const [teamId, setTeamId] = useState('');
   const [assignments, setAssignments] = useState([]);
   const [statusRows, setStatusRows] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     api.get('/api/teams/').then((r) => {
@@ -348,6 +349,25 @@ function AssignmentsTab() {
     return () => window.clearTimeout(timer);
   }, [teamId]);
 
+  const normalizedSearch = searchQuery.trim().toLocaleLowerCase('ko-KR');
+  const filteredAssignments = useMemo(() => {
+    if (!normalizedSearch) return assignments;
+    return assignments.filter((assignment) => [
+      assignment.title,
+      assignment.content,
+      assignment.start_at,
+      assignment.due_at,
+      assignment.file_name,
+    ].some((value) => String(value || '').toLocaleLowerCase('ko-KR').includes(normalizedSearch)));
+  }, [assignments, normalizedSearch]);
+  const filteredStatusRows = useMemo(() => {
+    if (!normalizedSearch) return statusRows;
+    return statusRows.filter((row) => (
+      [row.title, row.start_at, row.due_at, ...(row.students || []).map((student) => `${student.username} ${student.email}`)]
+        .some((value) => String(value || '').toLocaleLowerCase('ko-KR').includes(normalizedSearch))
+    ));
+  }, [normalizedSearch, statusRows]);
+
   const del = async (id) => {
     if (!(await showSiteConfirm('과제를 삭제할까요?', '과제 삭제'))) return;
     const previousAssignments = assignments;
@@ -366,11 +386,22 @@ function AssignmentsTab() {
 
   return (
     <div>
-      <div className="admin-toolbar">
+      <div className="admin-toolbar assignment-admin-toolbar">
         <select value={teamId} onChange={(e) => setTeamId(e.target.value)}>
           <option value="">전체 과제</option>
           {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
         </select>
+        <label className="assignment-search">
+          <span aria-hidden="true">⌕</span>
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="과제명, 내용, 날짜, 학생 검색"
+            aria-label="과제 검색"
+          />
+          {searchQuery && <button type="button" onClick={() => setSearchQuery('')} aria-label="검색어 지우기">×</button>}
+        </label>
       </div>
 
       <section className="assignment-status-board" aria-label="과제 제출 현황표">
@@ -379,13 +410,13 @@ function AssignmentsTab() {
             <span>Submission status</span>
             <strong>제출 현황표</strong>
           </div>
-          <small>{statusRows.length}개 과제</small>
+          <small>{filteredStatusRows.length}개 과제</small>
         </div>
-        {statusRows.length === 0 ? (
-          <p className="empty-state">현황을 집계할 과제가 없습니다.</p>
+        {filteredStatusRows.length === 0 ? (
+          <p className="empty-state">{normalizedSearch ? '검색 결과가 없습니다.' : '현황을 집계할 과제가 없습니다.'}</p>
         ) : (
           <div className="assignment-status-list">
-            {statusRows.map((row) => (
+            {filteredStatusRows.map((row) => (
               <article key={row.assignment_id} className="assignment-status-card">
                 <div>
                   <strong>{row.title}</strong>
@@ -411,9 +442,14 @@ function AssignmentsTab() {
         )}
       </section>
 
-      <div className="admin-list">
-        {assignments.length === 0 && <p className="empty-state">아직 등록된 과제가 없습니다.</p>}
-        {assignments.map((assignment) => {
+      <section className="assignment-record-board" aria-label="등록된 과제 기록">
+        <div className="assignment-record-head">
+          <div><span>Assignment records</span><strong>등록된 과제</strong></div>
+          <small>{filteredAssignments.length}개</small>
+        </div>
+        <div className="admin-list assignment-record-list">
+        {filteredAssignments.length === 0 && <p className="empty-state">{normalizedSearch ? '검색 결과가 없습니다.' : '아직 등록된 과제가 없습니다.'}</p>}
+        {filteredAssignments.map((assignment) => {
           const fileUrl = assignment.file_data || resolveFileUrl(assignment.file_url);
           return (
             <article key={assignment.id} className="admin-list-item assignment-admin-item">
@@ -438,7 +474,8 @@ function AssignmentsTab() {
             </article>
           );
         })}
-      </div>
+        </div>
+      </section>
     </div>
   );
 }

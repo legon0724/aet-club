@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 from backend.core.config import settings
 from backend.models.database import init_db
-from backend.routers import auth, portfolio, teams, assignments, submissions, notices, banners, gallery, activity, calendar, search, ai, admin, chat
+from backend.routers import auth, portfolio, teams, assignments, submissions, notices, banners, activity, calendar, search, admin, chat
 
 app = FastAPI(title=settings.APP_NAME, version="1.0.0", docs_url="/api/docs")
 
@@ -23,11 +23,9 @@ app.include_router(assignments.router, prefix="/api/assignments", tags=["과제�
 app.include_router(submissions.router, prefix="/api/submissions", tags=["과제제출"])
 app.include_router(notices.router,     prefix="/api/notices",     tags=["공지"])
 app.include_router(banners.router,     prefix="/api/banners",     tags=["배너"])
-app.include_router(gallery.router,     prefix="/api/gallery",     tags=["활동갤러리"])
 app.include_router(activity.router,    prefix="/api/activity",    tags=["활동점수"])
 app.include_router(calendar.router,    prefix="/api/calendar",    tags=["캘린더"])
 app.include_router(search.router,      prefix="/api/search",      tags=["검색"])
-app.include_router(ai.router,          prefix="/api/ai",          tags=["AI분석"])
 app.include_router(admin.router,       prefix="/api/admin",       tags=["관리자"])
 app.include_router(chat.router,        prefix="/api/chat",        tags=["채팅"])
 

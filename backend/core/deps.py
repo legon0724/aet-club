@@ -9,7 +9,7 @@ bearer = HTTPBearer()
 optional_bearer = HTTPBearer(auto_error=False)
 
 
-def get_current_user(
+def get_authenticated_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer),
     db: Session = Depends(get_db),
 ) -> User:
@@ -22,6 +22,15 @@ def get_current_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="사용자를 찾을 수 없습니다.")
     return user
+
+
+def get_current_user(current_user: User = Depends(get_authenticated_user)) -> User:
+    if current_user.must_change_password:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="임시 비밀번호를 새 비밀번호로 먼저 변경해주세요.",
+        )
+    return current_user
 
 
 def get_optional_user(

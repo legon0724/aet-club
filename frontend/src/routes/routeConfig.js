@@ -12,6 +12,7 @@ const pageLoaders = {
   ai: () => import('../pages/AIPage'),
   search: () => import('../pages/SearchPage'),
   admin: () => import('../pages/AdminPage'),
+  passwordChange: () => import('../pages/TemporaryPasswordPage'),
 };
 
 const pagePromises = new Map();
@@ -39,6 +40,7 @@ const routePageKeys = {
   '/ai': 'ai',
   '/search': 'search',
   '/admin': 'admin',
+  '/password-change': 'passwordChange',
   '/login': 'login',
 };
 
@@ -54,6 +56,7 @@ export const routePages = {
   AIPage: lazyPage('ai'),
   SearchPage: lazyPage('search'),
   AdminPage: lazyPage('admin'),
+  TemporaryPasswordPage: lazyPage('passwordChange'),
 };
 
 export const protectedRoutes = [
@@ -66,6 +69,7 @@ export const protectedRoutes = [
   { path: '/ai', Component: routePages.AIPage },
   { path: '/search', Component: routePages.SearchPage },
   { path: '/admin', Component: routePages.AdminPage },
+  { path: '/password-change', Component: routePages.TemporaryPasswordPage },
 ];
 
 export const publicRoutes = [

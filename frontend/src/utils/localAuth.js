@@ -51,6 +51,7 @@ export const normalizeUser = (user = {}) => {
     email: normalizedEmail,
     is_admin: Boolean(user.is_admin || isAdminEmail(normalizedEmail)),
     team_id: user.team_id || 'creative',
+    must_change_password: Boolean(user.must_change_password),
   };
 };
 

@@ -67,6 +67,9 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     privacy_consented = Column(Boolean, default=False)
     background_image = Column(Text, nullable=True)
+    password_reset_requested_at = Column(DateTime, nullable=True)
+    temporary_password_issued_at = Column(DateTime, nullable=True)
+    must_change_password = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     team_id = Column(UUID(), ForeignKey("teams.id", ondelete="SET NULL"), nullable=True)
 
@@ -262,3 +265,12 @@ def init_db():
     if "background_image" not in columns:
         with engine.begin() as connection:
             connection.execute(text("ALTER TABLE users ADD COLUMN background_image TEXT"))
+    if "password_reset_requested_at" not in columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE users ADD COLUMN password_reset_requested_at TIMESTAMP"))
+    if "temporary_password_issued_at" not in columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE users ADD COLUMN temporary_password_issued_at TIMESTAMP"))
+    if "must_change_password" not in columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE users ADD COLUMN must_change_password BOOLEAN DEFAULT FALSE NOT NULL"))

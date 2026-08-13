@@ -30,6 +30,10 @@ class PasswordChangeRequest(BaseModel):
     new_password: str
 
 
+class TemporaryPasswordChangeRequest(BaseModel):
+    new_password: str
+
+
 class BackgroundUpdateRequest(BaseModel):
     background_image: Optional[str] = None
 
@@ -49,6 +53,9 @@ class UserResponse(BaseModel):
     username: str
     is_admin: bool
     team_id: Optional[str] = None
+    password_reset_requested_at: Optional[datetime] = None
+    temporary_password_issued_at: Optional[datetime] = None
+    must_change_password: bool = False
     created_at: datetime
 
     @field_validator('id', 'team_id', mode='before')

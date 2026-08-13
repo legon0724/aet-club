@@ -48,20 +48,17 @@ const modeText = {
     helper: '@cam.hs.kr 학교 이메일로 가입할 수 있습니다.',
   },
   reset: {
-    tab: '재설정',
-    eyebrow: 'Email code',
-    title: '비밀번호 재설정',
-    helper: '가입한 이메일로 인증번호를 받고 새 비밀번호를 설정하세요.',
+    tab: '초기화 요청',
+    eyebrow: 'Admin reset',
+    title: '비밀번호 초기화 요청',
+    helper: '가입 이메일을 입력하면 관리자가 임시 비밀번호를 발급합니다.',
   },
 };
 
 export default function LoginPage() {
   const [mode, setMode] = useState('login');
-  const [resetStep, setResetStep] = useState('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [code, setCode] = useState('');
   const [username, setUsername] = useState('');
   const [agreements, setAgreements] = useState({ service: false, privacy: false, notice: false });
   const [openTerm, setOpenTerm] = useState('service');
@@ -99,7 +96,6 @@ export default function LoginPage() {
 
   const switchMode = (nextMode) => {
     setMode(nextMode);
-    setResetStep('email');
     resetMessage();
   };
 
@@ -136,7 +132,7 @@ export default function LoginPage() {
       } catch {
         // A temporary background failure must never block a successful login.
       }
-      navigate('/');
+      navigate(signedInUser.must_change_password ? '/password-change' : '/');
     } catch (err) {
       clearLocalSession();
       applyUserBackground(null);
@@ -181,7 +177,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleSendResetCode = async (e) => {
+  const handleResetRequest = async (e) => {
     e.preventDefault();
     resetMessage();
 
@@ -196,47 +192,9 @@ export default function LoginPage() {
 
     try {
       await api.post('/api/auth/password-reset/request', { email: normalizedEmail });
-      setSuccess('인증번호를 이메일로 보냈습니다. 메일함을 확인해주세요.');
-      setResetStep('code');
+      setSuccess('초기화 요청을 보냈습니다. 관리자에게 임시 비밀번호를 받아 로그인해주세요.');
     } catch (err) {
-      setError(err.response?.data?.detail || '이메일 발송에 실패했습니다. 관리자에게 SMTP 설정을 확인해달라고 알려주세요.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleConfirmReset = async (e) => {
-    e.preventDefault();
-    resetMessage();
-
-    if (!isSchoolEmail(email)) {
-      setError('@cam.hs.kr 학교 이메일만 재설정할 수 있습니다.');
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      setError('새 비밀번호는 8자 이상으로 설정해주세요.');
-      return;
-    }
-
-    setLoading(true);
-
-    const normalizedEmail = email.trim().toLowerCase();
-
-    try {
-      await api.post('/api/auth/password-reset/confirm', {
-        email: normalizedEmail,
-        code,
-        new_password: newPassword,
-      });
-      setSuccess('비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.');
-      setMode('login');
-      setResetStep('email');
-      setPassword('');
-      setCode('');
-      setNewPassword('');
-    } catch (err) {
-      setError(err.response?.data?.detail || '인증번호와 새 비밀번호를 다시 확인해주세요.');
+      setError(err.response?.data?.detail || '초기화 요청을 보내지 못했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
@@ -335,20 +293,11 @@ export default function LoginPage() {
             </form>
           )}
 
-          {mode === 'reset' && resetStep === 'email' && (
-            <form onSubmit={handleSendResetCode} className="auth-form">
+          {mode === 'reset' && (
+            <form onSubmit={handleResetRequest} className="auth-form">
               <Field label="가입 이메일" type="email" value={email} onChange={setEmail} placeholder="name@cam.hs.kr" autoComplete="email" />
-              <SubmitButton loading={loading}>인증번호 받기</SubmitButton>
-            </form>
-          )}
-
-          {mode === 'reset' && resetStep === 'code' && (
-            <form onSubmit={handleConfirmReset} className="auth-form">
-              <Field label="이메일" type="email" value={email} onChange={setEmail} placeholder="name@cam.hs.kr" autoComplete="email" />
-              <Field label="인증번호" type="text" value={code} onChange={setCode} placeholder="6자리 숫자" autoComplete="one-time-code" />
-              <Field label="새 비밀번호" type="password" value={newPassword} onChange={setNewPassword} placeholder="8자 이상" autoComplete="new-password" />
-              <SubmitButton loading={loading}>비밀번호 변경</SubmitButton>
-              <button className="text-button" type="button" onClick={() => setResetStep('email')}>이메일 다시 입력</button>
+              <SubmitButton loading={loading}>관리자에게 초기화 요청</SubmitButton>
+              <p className="reset-request-help">관리자가 발급한 임시 비밀번호는 관리자에게 직접 전달받으세요.</p>
             </form>
           )}
         </div>

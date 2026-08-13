@@ -3,7 +3,10 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
+import secrets
+import string
 from backend.core.deps import get_admin_user
+from backend.core.security import hash_password
 from backend.models.database import (
     ActivityGalleryItem,
     Assignment,
@@ -75,6 +78,31 @@ def delete_user(user_id: str, db: Session = Depends(get_db), current_user: User 
     db.delete(user)
     db.commit()
     return {"message": "삭제되었습니다."}
+
+
+@router.post("/users/{user_id}/temporary-password")
+def issue_temporary_password(
+    user_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user),
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(404, detail="사용자를 찾을 수 없습니다.")
+    if str(user.id) == str(current_user.id):
+        raise HTTPException(400, detail="현재 로그인한 관리자 계정에는 임시 비밀번호를 발급할 수 없습니다.")
+
+    alphabet = string.ascii_uppercase + string.ascii_lowercase + string.digits
+    temporary_password = "NC-" + "".join(secrets.choice(alphabet) for _ in range(9))
+    user.password_hash = hash_password(temporary_password)
+    user.password_reset_requested_at = None
+    user.temporary_password_issued_at = datetime.utcnow()
+    user.must_change_password = True
+    db.commit()
+    return {
+        "message": "임시 비밀번호를 발급했습니다.",
+        "temporary_password": temporary_password,
+    }
 
 
 @router.get("/portfolios")

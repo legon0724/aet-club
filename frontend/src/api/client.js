@@ -41,6 +41,21 @@ api.interceptors.response.use(
         if (window.location.pathname !== '/login') window.location.href = '/login';
       }
     }
+    if (
+      error.response?.status === 403
+      && error.response?.data?.detail === '임시 비밀번호를 새 비밀번호로 먼저 변경해주세요.'
+    ) {
+      try {
+        const storageKey = 'nc-current-user-v2';
+        const savedUser = JSON.parse(localStorage.getItem(storageKey) || 'null');
+        if (savedUser) {
+          localStorage.setItem(storageKey, JSON.stringify({ ...savedUser, must_change_password: true }));
+        }
+      } catch {
+        // The redirect below still protects the account if cached user data is malformed.
+      }
+      if (window.location.pathname !== '/password-change') window.location.href = '/password-change';
+    }
     return Promise.reject(error);
   }
 );

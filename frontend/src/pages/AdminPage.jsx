@@ -92,7 +92,7 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {tab === 'users' && <UsersTab />}
+          {tab === 'users' && <UsersTab currentUserId={user?.id} />}
           {tab === 'teams' && <TeamsTab />}
           {tab === 'assignments' && <AssignmentsTab />}
           {tab === 'gallery' && <GalleryTab />}
@@ -116,9 +116,11 @@ function showSaveError(error) {
   void showSiteAlert(error?.response?.data?.detail || '서버에 저장하지 못했습니다. 새로고침 후 다시 시도해주세요.');
 }
 
-function UsersTab() {
+function UsersTab({ currentUserId }) {
   const [users, setUsers] = useState([]);
   const [teams, setTeams] = useState([]);
+  const [issuedPassword, setIssuedPassword] = useState(null);
+  const [resettingUserId, setResettingUserId] = useState('');
 
   useEffect(() => {
     api.get('/api/admin/users').then((r) => setUsers(r.data)).catch(() => setUsers([]));
@@ -156,26 +158,75 @@ function UsersTab() {
     setUsers((current) => current.filter((item) => item.id !== id));
   };
 
+  const issueTemporaryPassword = async (item) => {
+    if (!(await showSiteConfirm(`${item.username} 회원의 기존 비밀번호를 임시 비밀번호로 바꿀까요?`, '임시 비밀번호 발급'))) return;
+    setResettingUserId(item.id);
+    try {
+      const response = await api.post(`/api/admin/users/${item.id}/temporary-password`);
+      setIssuedPassword({
+        username: item.username,
+        email: item.email,
+        value: response.data.temporary_password,
+      });
+      setUsers((current) => current.map((userItem) => (
+        userItem.id === item.id
+          ? { ...userItem, password_reset_requested_at: null, must_change_password: true }
+          : userItem
+      )));
+    } catch (error) {
+      showSaveError(error);
+    } finally {
+      setResettingUserId('');
+    }
+  };
+
+  const copyTemporaryPassword = async () => {
+    if (!issuedPassword?.value) return;
+    await navigator.clipboard.writeText(issuedPassword.value);
+    await showSiteAlert('임시 비밀번호를 복사했습니다. 회원에게 안전하게 전달해주세요.');
+  };
+
   return (
-    <div className="admin-list">
-      {users.map((item) => (
-        <article key={item.id} className="admin-list-item">
+    <>
+      {issuedPassword && (
+        <section className="temporary-password-result" aria-live="polite">
           <div>
-            <strong>{item.username}</strong>
-            <span>{item.email}</span>
+            <span>한 번만 표시되는 임시 비밀번호</span>
+            <strong>{issuedPassword.username} · {issuedPassword.email}</strong>
           </div>
-          <select value={item.team_id || ''} onChange={(e) => assignTeam(item.id, e.target.value)}>
-            <option value="">팀 없음</option>
-            {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
-          </select>
-          <button className={item.is_admin ? 'status-button active' : 'status-button'} type="button" onClick={() => toggleAdmin(item.id, item.is_admin)}>
-            {item.is_admin ? '관리자' : '일반'}
-          </button>
-          <button className="danger-button" type="button" onClick={() => deleteUser(item.id)}>삭제</button>
-        </article>
-      ))}
-      {users.length === 0 && <p className="empty-state">회원 목록이 없습니다.</p>}
-    </div>
+          <code>{issuedPassword.value}</code>
+          <button type="button" onClick={copyTemporaryPassword}>복사</button>
+          <button type="button" className="quiet" onClick={() => setIssuedPassword(null)}>닫기</button>
+        </section>
+      )}
+
+      <div className="admin-list">
+        {users.map((item) => (
+          <article key={item.id} className={`admin-list-item user-admin-item ${item.password_reset_requested_at ? 'reset-requested' : ''}`}>
+            <div>
+              <strong>{item.username}</strong>
+              <span>{item.email}</span>
+              {item.password_reset_requested_at && <b>비밀번호 초기화 요청</b>}
+              {!item.password_reset_requested_at && item.must_change_password && <small>임시 비밀번호 발급됨 · 변경 대기</small>}
+            </div>
+            <select value={item.team_id || ''} onChange={(e) => assignTeam(item.id, e.target.value)}>
+              <option value="">팀 없음</option>
+              {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
+            </select>
+            <button className={item.is_admin ? 'status-button active' : 'status-button'} type="button" onClick={() => toggleAdmin(item.id, item.is_admin)}>
+              {item.is_admin ? '관리자' : '일반'}
+            </button>
+            {item.id !== currentUserId && (
+              <button className="temporary-password-button" type="button" onClick={() => issueTemporaryPassword(item)} disabled={resettingUserId === item.id}>
+                {resettingUserId === item.id ? '발급 중…' : '임시 비밀번호 발급'}
+              </button>
+            )}
+            <button className="danger-button" type="button" onClick={() => deleteUser(item.id)}>삭제</button>
+          </article>
+        ))}
+        {users.length === 0 && <p className="empty-state">회원 목록이 없습니다.</p>}
+      </div>
+    </>
   );
 }
 

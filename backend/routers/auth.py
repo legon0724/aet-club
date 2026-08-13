@@ -1,19 +1,15 @@
-import random
-import smtplib
-from datetime import datetime, timedelta
-from email.message import EmailMessage
-from email.utils import formataddr
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from backend.core.config import settings
-from backend.core.deps import get_current_user
+from backend.core.deps import get_authenticated_user, get_current_user
 from backend.core.security import create_access_token, hash_password, is_admin_email, is_allowed_email, verify_password
-from backend.models.database import PasswordResetCode, User, get_db
+from backend.models.database import User, get_db
 from backend.models.schemas import (
     BackgroundUpdateRequest,
     BackgroundResponse,
     LoginRequest,
     PasswordChangeRequest,
+    TemporaryPasswordChangeRequest,
     PasswordResetCodeRequest,
     PasswordResetConfirmRequest,
     RegisterRequest,
@@ -35,62 +31,6 @@ def normalize_email(email: str) -> str:
 
 def normalize_username(username: str) -> str:
     return username.strip()
-
-
-def smtp_setting(*names: str) -> str:
-    for name in names:
-        value = getattr(settings, name, "")
-        if value:
-            return value
-    return ""
-
-
-def send_reset_email(to_email: str, code: str):
-    smtp_host = smtp_setting("SMTP_HOST", "EMAIL_HOST", "MAIL_SERVER")
-    smtp_port = int(smtp_setting("SMTP_PORT", "EMAIL_PORT", "MAIL_PORT") or 587)
-    smtp_username = smtp_setting("SMTP_USERNAME", "EMAIL_HOST_USER", "EMAIL_USERNAME", "MAIL_USERNAME")
-    smtp_password = smtp_setting("SMTP_PASSWORD", "EMAIL_HOST_PASSWORD", "EMAIL_PASSWORD", "MAIL_PASSWORD")
-    sender = smtp_setting("SMTP_FROM_EMAIL", "DEFAULT_FROM_EMAIL", "MAIL_FROM", "EMAIL_FROM") or smtp_username
-    sender_name = smtp_setting("SMTP_FROM_NAME", "MAIL_FROM_NAME") or "NC"
-
-    if not smtp_host or not smtp_username or not smtp_password or not sender:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="이메일 서버 설정이 아직 연결되지 않았습니다. 관리자에게 SMTP 설정을 확인해달라고 알려주세요.",
-        )
-
-    message = EmailMessage()
-    message["Subject"] = "NC 비밀번호 재설정 인증번호"
-    message["From"] = formataddr((sender_name, sender))
-    message["To"] = to_email
-    message.set_content(
-        "\n".join(
-            [
-                "NC 비밀번호 재설정 인증번호입니다.",
-                "",
-                f"인증번호: {code}",
-                "",
-                "이 번호는 10분 동안만 사용할 수 있습니다.",
-                "본인이 요청하지 않았다면 이 메일을 무시해주세요.",
-            ]
-        )
-    )
-
-    try:
-        with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as smtp:
-            smtp.starttls()
-            smtp.login(smtp_username, smtp_password)
-            smtp.send_message(message)
-    except smtplib.SMTPException as exc:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="이메일 서버에서 인증번호 발송을 거절했습니다. SMTP 계정 정보를 확인해주세요.",
-        ) from exc
-    except OSError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="이메일 서버에 연결하지 못했습니다. SMTP 주소와 포트를 확인해주세요.",
-        ) from exc
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
@@ -134,59 +74,22 @@ def request_password_reset(body: PasswordResetCodeRequest, db: Session = Depends
     email = normalize_email(body.email)
     require_school_email(email)
     user = db.query(User).filter(User.email == email).first()
-    if not user:
-        raise HTTPException(404, detail="가입된 이메일을 찾을 수 없습니다.")
-
-    code = f"{random.randint(0, 999999):06d}"
-    db.query(PasswordResetCode).filter(
-        PasswordResetCode.email == email,
-        PasswordResetCode.used == False,
-    ).update({"used": True})
-    db.add(
-        PasswordResetCode(
-            email=email,
-            code_hash=hash_password(code),
-            expires_at=datetime.utcnow() + timedelta(minutes=10),
-        )
-    )
-    try:
-        send_reset_email(email, code)
+    if user:
+        user.password_reset_requested_at = datetime.utcnow()
         db.commit()
-    except HTTPException:
-        db.rollback()
-        raise
-    return {"message": "비밀번호 재설정 인증번호를 이메일로 보냈습니다."}
+    return {"message": "초기화 요청을 관리자에게 전달했습니다."}
 
 
 @router.post("/password-reset/confirm")
 def confirm_password_reset(body: PasswordResetConfirmRequest, db: Session = Depends(get_db)):
-    email = normalize_email(body.email)
-    require_school_email(email)
-    reset_code = (
-        db.query(PasswordResetCode)
-        .filter(PasswordResetCode.email == email, PasswordResetCode.used == False)
-        .order_by(PasswordResetCode.created_at.desc())
-        .first()
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="이메일 인증 방식은 종료되었습니다. 관리자에게 초기화를 요청해주세요.",
     )
-    if not reset_code or reset_code.expires_at < datetime.utcnow():
-        raise HTTPException(400, detail="인증번호가 만료되었거나 유효하지 않습니다.")
-    if not verify_password(body.code, reset_code.code_hash):
-        raise HTTPException(400, detail="인증번호가 올바르지 않습니다.")
-    if len(body.new_password) < 8:
-        raise HTTPException(400, detail="비밀번호는 8자 이상으로 설정해주세요.")
-
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        raise HTTPException(404, detail="가입된 이메일을 찾을 수 없습니다.")
-
-    user.password_hash = hash_password(body.new_password)
-    reset_code.used = True
-    db.commit()
-    return {"message": "비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요."}
 
 
 @router.get("/me", response_model=UserResponse)
-def get_me(current_user: User = Depends(get_current_user)):
+def get_me(current_user: User = Depends(get_authenticated_user)):
     return current_user
 
 
@@ -204,8 +107,32 @@ def change_password(
         raise HTTPException(400, detail="? ????? ?? ????? ??? ???.")
 
     current_user.password_hash = hash_password(body.new_password)
+    current_user.must_change_password = False
+    current_user.temporary_password_issued_at = None
+    current_user.password_reset_requested_at = None
     db.commit()
     return {"message": "????? ???????."}
+
+
+@router.patch("/me/temporary-password")
+def complete_temporary_password(
+    body: TemporaryPasswordChangeRequest,
+    current_user: User = Depends(get_authenticated_user),
+    db: Session = Depends(get_db),
+):
+    if not current_user.must_change_password:
+        raise HTTPException(400, detail="임시 비밀번호 변경 대상이 아닙니다.")
+    if len(body.new_password) < 8:
+        raise HTTPException(400, detail="새 비밀번호는 8자 이상으로 설정해주세요.")
+    if verify_password(body.new_password, current_user.password_hash):
+        raise HTTPException(400, detail="임시 비밀번호와 다른 비밀번호를 입력해주세요.")
+
+    current_user.password_hash = hash_password(body.new_password)
+    current_user.must_change_password = False
+    current_user.temporary_password_issued_at = None
+    current_user.password_reset_requested_at = None
+    db.commit()
+    return {"message": "새 비밀번호가 저장되었습니다."}
 
 
 @router.get("/me/background", response_model=BackgroundResponse)

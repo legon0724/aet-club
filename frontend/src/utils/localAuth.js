@@ -6,7 +6,8 @@ export const LOCAL_RESET_VERSION_KEY = 'nc-local-auth-reset-version';
 export const LOCAL_RESET_VERSION = '2026-07-10-clean-start';
 export const LOCAL_DATA_RESET_VERSION_KEY = 'nc-local-data-reset-version';
 export const LOCAL_DATA_RESET_VERSION = '2026-07-14-server-only';
-export const ADMIN_EMAILS = ['2620325@cam.hs.kr', 'bliss00@cam.hs.kr'];
+export const ADMIN_EMAIL = 'aicirde2026@gmail.com';
+export const ADMIN_EMAILS = [ADMIN_EMAIL];
 const LEGACY_WORKSPACE_KEYS = [
   LOCAL_USERS_KEY,
   LOCAL_RESET_KEY,
@@ -24,6 +25,7 @@ const LEGACY_WORKSPACE_KEYS = [
 
 export const isSchoolEmail = (value = '') => value.trim().toLowerCase().endsWith(SCHOOL_EMAIL_DOMAIN);
 export const isAdminEmail = (value = '') => ADMIN_EMAILS.includes(value.trim().toLowerCase());
+export const isAllowedEmail = (value = '') => isSchoolEmail(value) || isAdminEmail(value);
 
 export const encodePassword = (value) => window.btoa(unescape(encodeURIComponent(value)));
 
@@ -49,7 +51,7 @@ export const normalizeUser = (user = {}) => {
     id: user.id || normalizedEmail,
     username: user.username || normalizedEmail.split('@')[0],
     email: normalizedEmail,
-    is_admin: Boolean(user.is_admin || isAdminEmail(normalizedEmail)),
+    is_admin: Boolean(user.is_admin && isAdminEmail(normalizedEmail)),
     team_id: user.team_id || 'creative',
     must_change_password: Boolean(user.must_change_password),
   };
@@ -82,7 +84,7 @@ export const getCurrentLocalUser = () => {
   try {
     const saved = JSON.parse(localStorage.getItem(LOCAL_CURRENT_USER_KEY) || 'null');
     if (saved?.email) {
-      return { ...saved, is_admin: Boolean(saved.is_admin || isAdminEmail(saved.email)) };
+      return { ...saved, is_admin: Boolean(saved.is_admin && isAdminEmail(saved.email)) };
     }
   } catch {
     // Ignore malformed local user data.

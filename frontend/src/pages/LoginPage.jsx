@@ -9,7 +9,7 @@ import {
   LOCAL_RESET_VERSION_KEY,
   LOCAL_USERS_KEY,
   clearLocalSession,
-  isSchoolEmail,
+  isAllowedEmail,
   rememberCurrentUser,
 } from '../utils/localAuth';
 
@@ -39,13 +39,13 @@ const modeText = {
     tab: '로그인',
     eyebrow: 'NC access',
     title: '로그인',
-    helper: '학교 이메일로만 접속할 수 있습니다.',
+    helper: '학교 계정과 지정된 관리자 계정으로 접속할 수 있습니다.',
   },
   register: {
     tab: '가입',
     eyebrow: 'Start now',
     title: '회원가입',
-    helper: '@cam.hs.kr 학교 이메일로 가입할 수 있습니다.',
+    helper: '학교 이메일 또는 지정된 관리자 이메일로 가입할 수 있습니다.',
   },
   reset: {
     tab: '초기화 요청',
@@ -111,8 +111,8 @@ export default function LoginPage() {
     e.preventDefault();
     resetMessage();
 
-    if (!isSchoolEmail(email)) {
-      setError('@cam.hs.kr 학교 이메일만 로그인할 수 있습니다.');
+    if (!isAllowedEmail(email)) {
+      setError('@cam.hs.kr 학교 이메일 또는 허용된 관리자 이메일만 로그인할 수 있습니다.');
       return;
     }
 
@@ -123,16 +123,13 @@ export default function LoginPage() {
     try {
       const res = await api.post('/api/auth/login', { email: normalizedEmail, password });
       localStorage.setItem('token', res.data.access_token);
-      const me = await api.get('/api/auth/me', { cache: false });
-      const signedInUser = rememberCurrentUser(me.data);
+      const user = res.data.user || (await api.get('/api/auth/me', { cache: false })).data;
+      const signedInUser = rememberCurrentUser(user);
       applyCachedUserBackground(signedInUser.id);
-      try {
-        const background = await api.get('/api/auth/me/background', { cache: false });
-        applyUserBackground(background.data.background_image, signedInUser.id);
-      } catch {
-        // A temporary background failure must never block a successful login.
-      }
-      navigate(signedInUser.must_change_password ? '/password-change' : '/');
+      navigate(signedInUser.must_change_password ? '/password-change' : '/', { replace: true });
+      api.get('/api/auth/me/background', { cache: false })
+        .then((background) => applyUserBackground(background.data.background_image, signedInUser.id))
+        .catch(() => {});
     } catch (err) {
       clearLocalSession();
       applyUserBackground(null);
@@ -146,8 +143,8 @@ export default function LoginPage() {
     e.preventDefault();
     resetMessage();
 
-    if (!isSchoolEmail(email)) {
-      setError('@cam.hs.kr 학교 이메일만 가입할 수 있습니다.');
+    if (!isAllowedEmail(email)) {
+      setError('@cam.hs.kr 학교 이메일 또는 허용된 관리자 이메일만 가입할 수 있습니다.');
       return;
     }
 
@@ -181,8 +178,8 @@ export default function LoginPage() {
     e.preventDefault();
     resetMessage();
 
-    if (!isSchoolEmail(email)) {
-      setError('@cam.hs.kr 학교 이메일만 재설정할 수 있습니다.');
+    if (!isAllowedEmail(email)) {
+      setError('@cam.hs.kr 학교 이메일 또는 허용된 관리자 이메일만 재설정할 수 있습니다.');
       return;
     }
 
@@ -250,7 +247,7 @@ export default function LoginPage() {
 
           {mode === 'login' && (
             <form onSubmit={handleLogin} className="auth-form">
-              <Field label="학교 이메일" type="email" value={email} onChange={setEmail} placeholder="name@cam.hs.kr" autoComplete="email" />
+              <Field label="이메일" type="email" value={email} onChange={setEmail} placeholder="name@cam.hs.kr" autoComplete="email" />
               <Field label="비밀번호" type="password" value={password} onChange={setPassword} placeholder="비밀번호" autoComplete="current-password" />
               <SubmitButton loading={loading}>로그인</SubmitButton>
               <button className="text-button" type="button" onClick={() => switchMode('reset')}>비밀번호를 잊으셨나요?</button>
@@ -259,7 +256,7 @@ export default function LoginPage() {
 
           {mode === 'register' && (
             <form onSubmit={handleRegister} className="auth-form">
-              <Field label="학교 이메일" type="email" value={email} onChange={setEmail} placeholder="name@cam.hs.kr" autoComplete="email" />
+              <Field label="이메일" type="email" value={email} onChange={setEmail} placeholder="name@cam.hs.kr" autoComplete="email" />
               <Field label="닉네임" type="text" value={username} onChange={setUsername} placeholder="활동명 또는 이름" autoComplete="nickname" />
               <Field label="비밀번호" type="password" value={password} onChange={setPassword} placeholder="8자 이상 권장" autoComplete="new-password" />
 

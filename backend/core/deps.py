@@ -3,6 +3,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from typing import Optional
 from backend.core.security import decode_token
+from backend.core.security import is_admin_email
 from backend.models.database import get_db, User
 
 bearer = HTTPBearer()
@@ -52,6 +53,6 @@ def get_optional_user(
 
 
 def get_admin_user(current_user: User = Depends(get_current_user)) -> User:
-    if not current_user.is_admin:
+    if not current_user.is_admin or not is_admin_email(current_user.email):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="관리자 권한이 필요합니다.")
     return current_user

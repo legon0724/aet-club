@@ -35,6 +35,11 @@ def on_startup():
     init_db()
 
 
+@app.get("/")
+def root():
+    return {"status": "ok", "service": "NC API"}
+
+
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
